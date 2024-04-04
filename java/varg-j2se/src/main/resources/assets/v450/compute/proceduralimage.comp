@@ -1,0 +1,112 @@
+#version 450
+
+#extension GL_GOOGLE_include_directive : require
+
+#include "defines.glsl"
+#include "pi_layout.glsl"
+#include "common.glsl"
+#include "opcodes.comp"
+#include "normalmap.comp"
+
+layout(local_size_x = SIZE_X, local_size_y = SIZE_Y, local_size_z = SIZE_Z) in;
+
+void getOpcode() {
+    uint16_t o = opcodes.code[opcode.index++]; //opcode and parameter
+    opcode.code = o & 0x0ff;
+    opcode.param = (o>>8) & 0x0ff;
+    o = opcodes.code[opcode.index++]; //output index input index count
+    opcode.outIndex = o & 0x0ff;
+    opcode.inputCount = (o>>8) & 0x0ff;
+}
+
+void main(){
+    opcode.index = 0;
+    if (settings.dimension.w > 0) {
+        //Forcing opcode count and skip header
+        opcode.operatorCount = settings.dimension.w;
+    } else {
+        //TODO - check for ascii "PI" meaning a valid opcode block.
+        opcode.index = opcode.index + 1; //skip magic
+        opcode.operatorCount = opcodes.code[opcode.index++] & 0x0ff;
+    }    
+    vec4 result;
+    do {
+        getOpcode();
+        if (opcode.outIndex < 0 || opcode.outIndex >= OUTPUT_COUNT) {
+                result = vec4(INVALID_OUTINDEX, INVALID_OUTINDEX, opcode.outIndex / 255.0, INVALID_OUTINDEX);
+                TERMINATE
+        } else {
+            switch (opcode.code) {
+              case 1: //blend
+                  result = opCodeBlend();
+                  break;
+              case 2: //voronoi
+                  result = opCodeVoronoi();
+                  break;
+              case 3: //uniform_color
+                  result = opCodeUniformColor();
+                  break;
+              case 4: //levels
+                  result = opCodeLevels();
+                  break;
+              case 5: //normalmap
+                  result = opCodeNormalMap();
+                  break;
+              case 6: //curve
+                  result = opCodeCurve(opcode.param);
+                  break;
+              case 9: //position
+                  vec3 pos = vec3(gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID) / settings.dimension.xyz;
+                  result = opCodePosition(pos);
+                  break;
+              case 10: //multiply
+                  result = opCodeMultiply();
+                  break;
+              case 11: //grayscale_conversion
+                  result = opCodeGrayscaleConversion();
+                  break;
+              case 12:
+                  result = opCodeNoise();
+                  break;
+              case 13:
+                  result = opCodeTransformTRS();
+                  break;
+              case 14:
+                  result = opCodeBlur();
+                  break;
+              case 15:
+                  result = opCodeColorize();
+                  break;
+              case 17:
+                  result = opCodeAdd();
+                  break;
+              case 18:
+                  result = opCodeDivide();
+                  break;
+              case 19:
+                  result = opCodeCombine();
+                  break;
+              case 20:
+                  result = opCodeSubtract();
+                  break;
+              case 21:
+                  result = opCodeL2Norm();
+                  break;
+              case 22:
+                  result = opCodeSawtoothWave();
+                  break;
+              default:
+                result = vec4(INVALID_OPCODE, INVALID_OPCODE, opcode.code / 255.0, INVALID_OPCODE);
+                TERMINATE
+                break;
+            }
+            opcode.outputData[opcode.outIndex] = result;
+        }
+    } while (--opcode.operatorCount > 0);
+    const uint w = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+    uint index = 3 * ((gl_WorkGroupID.y * gl_WorkGroupSize.y + gl_LocalInvocationID.y) * w + gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x); 
+    procedural.data[index++] = uint8_t(result.x * 255);
+    procedural.data[index++] = uint8_t(result.y * 255);
+    procedural.data[index++] = uint8_t(result.z * 255);
+}
+

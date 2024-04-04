@@ -1,0 +1,83 @@
+#version 450
+ 
+#extension GL_EXT_mesh_shader : require
+#extension GL_GOOGLE_include_directive : require
+
+#include "defines.glsl"
+#include "common_structs.glsl"
+
+#ifndef INCLUDED_LAYOUT
+#include "layout.glsl"
+#endif
+
+#include "pbr.glsl"
+
+/**
+ * Background renderer
+ */
+ 
+const float16_t SIZE = float16_t(1);
+const uint VERTEXCOUNT = 4;
+const uint TRIANGLECOUNT = 2;
+
+/**
+ * Array of screen rectangle vertices - order is front facing, upper left, upper right, lower right, lower left.
+ */
+const vec4[4] RECT_POS = { 
+    vec4(-SIZE,-SIZE,1,1), vec4(SIZE,-SIZE,1,1), 
+    vec4(SIZE,SIZE,1,1), vec4(-SIZE,SIZE,1,1)
+    };
+
+const uvec3[2] TRIANGLE_INDICES = { 
+    uvec3(2, 1, 0), uvec3(0,3,2)
+    };
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(triangles, max_vertices = VERTEXCOUNT, max_primitives = TRIANGLECOUNT) out;
+
+layout (location = SURFACE_LOCATION_OUT) out Surface[] surface;
+
+/**
+ * 
+ */
+void outputVertices(in vec4[4] rectangle, in vec3[4] viewVectors) {
+    uint vertex = 0;
+    gl_MeshVerticesEXT[vertex].gl_Position = rectangle[vertex];
+    surface[vertex++].normal = viewVectors[0];
+    
+    gl_MeshVerticesEXT[vertex].gl_Position = rectangle[vertex];
+    surface[vertex++].normal = viewVectors[1];
+    
+    gl_MeshVerticesEXT[vertex].gl_Position = rectangle[vertex];
+    surface[vertex++].normal = viewVectors[2];
+    
+    gl_MeshVerticesEXT[vertex].gl_Position = rectangle[vertex];
+    surface[vertex++].normal = viewVectors[3];
+}
+
+void outputIndices(in uvec3[2] triangle) {
+    uint triangleIndex = 0;
+    gl_PrimitiveTriangleIndicesEXT[triangleIndex++] =  triangle[0];
+    gl_PrimitiveTriangleIndicesEXT[triangleIndex++] =  triangle[1];
+}
+
+
+void main() {
+    vec3 cameraPos = vec3(uniforms.camera[0].x, uniforms.camera[0].y, uniforms.camera[0].z);
+    vec3 upperLeft = getIntersection(uniforms.cubemaps[0].boxMin.xyz, uniforms.cubemaps[0].boxMax.xyz, cameraPos, vec3(uniforms.camera[1].x, uniforms.camera[1].y, uniforms.camera[1].z));
+    vec3 upperRight = getIntersection(uniforms.cubemaps[0].boxMin.xyz, uniforms.cubemaps[0].boxMax.xyz, cameraPos,  vec3(-uniforms.camera[1].x, uniforms.camera[1].y, uniforms.camera[1].z));
+    vec3 lowerRight = getIntersection(uniforms.cubemaps[0].boxMin.xyz, uniforms.cubemaps[0].boxMax.xyz, cameraPos, vec3(-uniforms.camera[1].x, -uniforms.camera[1].y, uniforms.camera[1].z));
+    vec3 lowerLeft = getIntersection(uniforms.cubemaps[0].boxMin.xyz, uniforms.cubemaps[0].boxMax.xyz, cameraPos, vec3(uniforms.camera[1].x, -uniforms.camera[1].y, uniforms.camera[1].z));
+    
+    vec3[4] viewVectors;
+    mat4 cameraMatrix = inverse(uniforms.vpMatrix[0]);
+    viewVectors[0] = upperLeft * mat3(cameraMatrix);
+    viewVectors[1] = upperRight * mat3(cameraMatrix);
+    viewVectors[2] = lowerRight * mat3(cameraMatrix);
+    viewVectors[3] = lowerLeft * mat3(cameraMatrix);
+ 
+        
+    SetMeshOutputsEXT(VERTEXCOUNT, TRIANGLECOUNT);
+    outputVertices(RECT_POS, viewVectors);
+    outputIndices(TRIANGLE_INDICES);
+}

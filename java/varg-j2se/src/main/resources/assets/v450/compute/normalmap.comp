@@ -1,0 +1,4 @@
+
+vec4 opCodeNormalMap() {
+    return vec4(1);
+}

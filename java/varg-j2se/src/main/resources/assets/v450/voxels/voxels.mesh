@@ -1,0 +1,83 @@
+#version 450
+ 
+#extension GL_EXT_mesh_shader : require
+#extension GL_GOOGLE_include_directive : require
+
+#ifndef INCLUDED_LAYOUT
+#include "layout.glsl"
+#endif
+
+/**
+ * Voxel mesh shader, this renders non-rotated boxes
+ * Break cube into 4 invocations, each outputting 2 vertices and 3 triangles. 
+ * Use a two dimensional local workgroup size (4, 3, 1)
+ */
+ 
+#define SIZE_X 4
+
+const float16_t SIZE = float16_t(0.005);
+const uint CUBE_VERTEXCOUNT = 8;
+const uint VERTEXCOUNT = 2; //Cube split into 4 invocations
+const uint TRIANGLECOUNT = 3; //Cube split into 4 invocations
+/**
+ * Array of cube vertices - order is front facing, upper left, upper right, lower right, lower left.
+ */
+const f16vec4[4][2] CUBE_POS = { 
+    { f16vec4(-SIZE,SIZE,SIZE,1), f16vec4(SIZE,SIZE,SIZE,1) }, 
+    { f16vec4(SIZE,-SIZE,SIZE,1), f16vec4(-SIZE,-SIZE,SIZE,1) },
+    { f16vec4(-SIZE,SIZE,-SIZE,1), f16vec4(SIZE,SIZE,-SIZE,1) }, 
+    { f16vec4(SIZE,-SIZE,-SIZE,1), f16vec4(-SIZE,-SIZE,-SIZE,1) }
+};
+
+const u16vec3[4][3] TRIANGLE_INDICES = {
+    { u16vec3(2,1,0), u16vec3(0,3,2),u16vec3(7,4,5) },
+    { u16vec3(5,6,7),u16vec3(7,3,0),u16vec3(0,4,7) },
+    { u16vec3(1,2,6),u16vec3(6,5,1),u16vec3(1,5,4) },
+    { u16vec3(4,0,1),u16vec3(6,2,3),u16vec3(3,7,6) }
+};
+
+layout(local_size_x = SIZE_X, local_size_y = SIZE_Y, local_size_z = 1) in;
+layout(triangles, max_vertices = VERTEXCOUNT * SIZE_X * SIZE_Y, max_primitives = TRIANGLECOUNT * SIZE_X * SIZE_Y) out;
+
+layout (location = 0) out PerVertexData {
+  vec4 color;
+} vertexOutput[];
+
+/**
+ * Break cube down into 4 invocations, each outputting 2 vertices and 3 triangles
+ */
+void transformAndStoreVertices(in f16vec4[2] cube, uint writeVertex, uint cubeIndex) {
+
+    vec4 worldPos = ((cube[0] * spriteData.matrix[0]) + dataOut.positions[cubeIndex]);
+    gl_MeshVerticesEXT[writeVertex].gl_Position = (worldPos * matrix.uModelMatrix[0]) * matrix.uModelMatrix[1] * matrix.uModelMatrix[2];
+    vertexOutput[writeVertex++].color = globals.colorTable[voxelData.indexes[cubeIndex]];
+    
+    worldPos = ((cube[1] * spriteData.matrix[0]) + dataOut.positions[cubeIndex]);
+    gl_MeshVerticesEXT[writeVertex].gl_Position = (worldPos * matrix.uModelMatrix[0]) * matrix.uModelMatrix[1] * matrix.uModelMatrix[2];
+    vertexOutput[writeVertex++].color = globals.colorTable[voxelData.indexes[cubeIndex]];
+}
+
+/**
+ * Break cube down into 4 invocations, each outputting 2 vertices and 3 triangles.
+ */
+void outputIndices(in u16vec3[3] triangle, uint triangleIndex, uint vertexOffset) {
+    uvec3 offset = uvec3(vertexOffset);
+    gl_PrimitiveTriangleIndicesEXT[triangleIndex++] =  triangle[0] + offset;
+    gl_PrimitiveTriangleIndicesEXT[triangleIndex++] =  triangle[1] + offset;
+    gl_PrimitiveTriangleIndicesEXT[triangleIndex] =  triangle[2] + offset;
+}
+
+
+void main()
+{
+    SetMeshOutputsEXT(VERTEXCOUNT * gl_WorkGroupSize.x * gl_WorkGroupSize.y, TRIANGLECOUNT * gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+    // This is the read index for voxel position etc.
+    // gl_WorkGroupSize.y = number of voxels per invocation
+    uint voxelIndex = gl_LocalInvocationID.y + gl_WorkGroupID.x * gl_WorkGroupSize.y + (taskPayload.taskIndex * gl_WorkGroupSize.y * globals.taskWorkGroups.x);
+    // This is the index of the output vertex
+    uint writeVertex = gl_LocalInvocationIndex * VERTEXCOUNT;
+    // This is the index of the output triangle
+    uint writeTriangle = gl_LocalInvocationIndex * TRIANGLECOUNT;
+    transformAndStoreVertices(CUBE_POS[gl_LocalInvocationID.x], writeVertex, voxelIndex);
+    outputIndices(TRIANGLE_INDICES[gl_LocalInvocationID.x], writeTriangle, gl_LocalInvocationID.y * CUBE_VERTEXCOUNT);
+}
