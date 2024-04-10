@@ -96,5 +96,9 @@ This project uses maven to build.
 In order to build, some project dependencies needs to be cloned and built beforehand.  
 To be sure of project dependencies - check the pom.  
   
-gltf-io  
-gltf-imageio  
+gltf-io - build using 'mvn clean compile install -DskipTests'  
+gltf-imageio - build using 'mvn clean compile install -DskipTests'  
+  
+build varg-engine using 'mvn clean compile install -DskipTests'  
+  
+  
