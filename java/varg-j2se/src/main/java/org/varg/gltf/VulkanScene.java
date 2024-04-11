@@ -47,7 +47,7 @@ public class VulkanScene extends JSONScene implements VulkanRenderableScene {
     private transient HashMap<Integer, VertexMemory> memoryBuffers;
     private transient VulkanDrawCallBundle drawCallBundle;
     private transient int primitiveInstanceCount;
-    public static final AttributeSorter sorter = AttributeSorter.getInstance();
+    public static final AttributeSorter SORTER = AttributeSorter.getInstance();
 
     @Override
     public PrimitiveVertexInputState[] getVertexInputStates() {

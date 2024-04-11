@@ -75,7 +75,7 @@ public class LWJGL3VARGTest extends VARGViewer {
         // return "WaterBottle/glTF/WaterBottle.gltf";
         // return "Corset/glTF-Binary/Corset.glb";
         // return "FlightHelmet/glTF/FlightHelmet.gltf";
-        return "Duck/glTF/Duck.gltf";
+        // return "Duck/glTF/Duck.gltf";
         // return "Avocado/glTF/Avocado.gltf";
         // return "TextureTransformTest/glTF/TextureTransformTest.gltf";
         // return "2CylinderEngine/glTF/2CylinderEngine.gltf";
@@ -99,7 +99,7 @@ public class LWJGL3VARGTest extends VARGViewer {
         // return "gltf/car_toy_cartoon_style/car_toy_cartoon_style.glb";
         // return "extensions.gltf";
         // return "EKET_00333947_70x35x35.glb";
-        // return "CREATOR:save2.gltf";
+        return "CREATOR:save2.gltf";
         // return "gltfio-creator/indoor_2.glb";
     }
 
@@ -107,8 +107,8 @@ public class LWJGL3VARGTest extends VARGViewer {
     protected String getResourcePath() {
         // return "C:/assets/test-assets/";
         // return "C:/source/glTF-Sample-Assets/Models/";
-        return "C:/source/glTF-Sample-Models/2.0/";
-        // return "C:/assets/test-assets/gltfio-creator/";
+        // return "C:/source/glTF-Sample-Models/2.0/";
+        return "C:/assets/test-assets/gltfio-creator/";
         // return "C:/source/IKEA3DAssemblyDataset/Dataset/EKET_00333947_70x35x35/glTF_glb";
     }
 
@@ -116,7 +116,7 @@ public class LWJGL3VARGTest extends VARGViewer {
     protected void init() {
         super.init();
         try {
-            boolean createTracer = true;
+            boolean createTracer = false;
             if (createTracer) {
                 createRayTracer();
             }

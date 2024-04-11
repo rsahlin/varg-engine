@@ -36,6 +36,7 @@ import org.varg.shader.Gltf2GraphicsShader;
 import org.varg.shader.Gltf2GraphicsShader.GltfDescriptorSetTarget;
 import org.varg.shader.MeshShader;
 import org.varg.shader.MeshShader.MeshDescriptorSetTarget;
+import org.varg.shader.MeshShader.MeshShaderCreateInfo;
 import org.varg.shader.Shader.Stage;
 import org.varg.shader.Shader.Subtype;
 import org.varg.uniform.BindBuffer;
@@ -556,15 +557,14 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
 
     @SuppressWarnings("unchecked")
     @Override
-    public DescriptorBuffers<MeshShader> prepareFrameData(MeshShader shader, Transform sceneTransform) {
+    public DescriptorBuffers<MeshShader<? extends MeshShaderCreateInfo>> prepareFrameData(MeshShader shader, Transform sceneTransform) {
         if (shader != null) {
             // Todo - remove and use global uniform data shared with gltf
             mvpMatrices.setViewProjectionMatrices(camera, vulkanDepthMatrix);
             mvpMatrices.setMatrix(Matrices.MODEL, sceneTransform.getMatrix());
             FP16Convert matrixConverter = new FP16Convert(new short[Matrix.MATRIX_ELEMENTS * MVPMatrices.MATRIX_COUNT]);
             matrixConverter.convert(mvpMatrices.getMatrices());
-            DescriptorBuffers<MeshShader> descriptorBuffers = (DescriptorBuffers<MeshShader>) getAssets()
-                    .getStorageBuffers(shader.getShaderInfo().shaderType);
+            DescriptorBuffers<MeshShader<? extends MeshShaderCreateInfo>> descriptorBuffers = (DescriptorBuffers<MeshShader<? extends MeshShaderCreateInfo>>) getAssets().getStorageBuffers(shader.getShaderInfo().shaderType);
             descriptorBuffers.storeShortData(MeshDescriptorSetTarget.MATRIX, 0, matrixConverter.result);
             for (BindBuffer upload : descriptorBuffers.getBuffers()) {
                 if (upload.getState() == BufferState.updated) {
@@ -609,7 +609,7 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
             renderMesh(node, uniforms, renderQueue);
         }
         // Render children.
-        renderNodes(node.getChildren(), uniforms, renderQueue);
+        renderNodes(node.getChildNodes(), uniforms, renderQueue);
         // mvpMatrices.pop(Matrices.MODEL);
     }
 
@@ -652,11 +652,11 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
             long buffer = indices.getPointer();
             IndexType type = GltfUtils.getFromGltfType(primitive.getIndicesType());
             renderQueue.cmdBindIndexBuffer(buffer, primitive.getIndicesOffset(), type);
-            renderQueue.cmdDrawIndexed(count, 1, 0, 0, primitive.streamVertexIndex);
+            renderQueue.cmdDrawIndexed(count, 1, 0, 0, primitive.getStreamVertexIndex());
             renderLogger.logIndexedDraw(count);
         } else {
             count = primitive.getAccessor(Attributes.POSITION).getCount();
-            renderQueue.cmdDraw(count, 1, 0, primitive.streamVertexIndex);
+            renderQueue.cmdDraw(count, 1, 0, primitive.getStreamVertexIndex());
             renderLogger.logArrayDraw(count);
         }
     }

@@ -23,7 +23,7 @@ public abstract class KHRRayTracingPipeline<Q extends Queue> {
         VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR(1),
         VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR(2);
 
-        public int value;
+        public final int value;
 
         RayTracingShaderGroupTypeKHR(int value) {
             this.value = value;

@@ -78,10 +78,6 @@ public class VulkanDrawCallBundle extends DrawCallBundle<IndirectDrawCalls> {
         }
     }
 
-    public DeviceMemory getDeviceMemory() {
-        return deviceMemory;
-    }
-
     @Override
     public IndirectDrawCalls[] getAllDrawCalls() {
         return drawCalls.toArray(new IndirectDrawCalls[0]);

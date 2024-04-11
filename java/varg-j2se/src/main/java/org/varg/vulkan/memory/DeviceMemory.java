@@ -33,7 +33,7 @@ public interface DeviceMemory {
      * @param size
      * @return
      */
-    public static long getPaddedBufferSize(long size) {
+    static long getPaddedBufferSize(long size) {
         return size + ((size % DeviceMemory.MIN_BUFFER_DATASIZE) == 0 ? 0 : DeviceMemory.MIN_BUFFER_DATASIZE
                 - (size % DeviceMemory.MIN_BUFFER_DATASIZE));
     }
@@ -85,8 +85,7 @@ public interface DeviceMemory {
      * 
      * @return
      */
-    public VertexMemory allocateVertexMemory(int indexUsage, VertexBuffer[] indexBuffers, int vertexUsage,
-            VertexBuffer[] vertexBuffers);
+    VertexMemory allocateVertexMemory(int indexUsage, VertexBuffer[] indexBuffers, int vertexUsage, VertexBuffer[] vertexBuffers);
 
     /**
      * Allocates memory, creates buffers and binds to the memory - use this to allocate vertex memory.

@@ -1,5 +1,6 @@
 package org.varg.vulkan.extensions;
 
+import org.gltfio.lib.AllowPublic;
 import org.varg.vulkan.structs.PlatformStruct;
 
 /**
@@ -7,10 +8,15 @@ import org.varg.vulkan.structs.PlatformStruct;
  */
 public class PhysicalDeviceAccelerationStructureFeaturesKHR extends PlatformStruct {
 
+    @AllowPublic
     public boolean accelerationStructure;
+    @AllowPublic
     public boolean accelerationStructureCaptureReplay;
+    @AllowPublic
     public boolean accelerationStructureIndirectBuild;
+    @AllowPublic
     public boolean accelerationStructureHostCommands;
+    @AllowPublic
     public boolean descriptorBindingAccelerationStructureUpdateAfterBind;
 
     public PhysicalDeviceAccelerationStructureFeaturesKHR() {

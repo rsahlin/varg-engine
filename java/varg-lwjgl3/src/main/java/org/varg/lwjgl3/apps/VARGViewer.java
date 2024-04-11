@@ -21,6 +21,7 @@ import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.FileUtils;
 import org.gltfio.lib.Logger;
 import org.gltfio.lib.Settings;
+import org.gltfio.lib.Settings.BooleanProperty;
 import org.gltfio.lib.WindowListener;
 import org.gltfio.prepare.GltfSettings.Alignment;
 import org.gltfio.serialize.Writer;
@@ -45,8 +46,34 @@ import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
 import org.varg.vulkan.structs.ExtensionProperties;
 import org.varg.vulkan.structs.RequestedFeatures;
 
-public class VARGViewer extends LWJGL3Application implements Glb2Streamer<VulkanStreamingScene>, WindowListener,
-        CreateDevice {
+public class VARGViewer extends LWJGL3Application implements Glb2Streamer<VulkanStreamingScene>, WindowListener, CreateDevice {
+
+    public enum VargViewerBooleanProperties implements BooleanProperty {
+        LIST_GLTF_FILES("varg.viewer.listfiles", false);
+
+        private final String key;
+        private final boolean defaultValue;
+
+        VargViewerBooleanProperties(String key, boolean defaultValue) {
+            this.key = key;
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        public String getName() {
+            return this.name();
+        }
+
+        @Override
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String getDefault() {
+            return Boolean.toString(defaultValue);
+        }
+    }
 
     // ***********************************
     // Model loading fields
@@ -91,7 +118,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
      * @return
      */
     protected String getDefaultModelName() {
-        return "asteroids.glb";
+        return "asteroids/asteroids.glb";
     }
 
     /**
@@ -150,7 +177,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
                 buffers.setStaticStorage(scene, getRenderer());
             }
             scene.addIndirectDrawCalls();
-            scene.getIndirectDrawCall().copyToDevice(getRenderer().getBufferFactory(), getRenderer().getQueue());
+            // scene.getIndirectDrawCall().copyToDevice(getRenderer().getBufferFactory(), getRenderer().getQueue());
 
         } catch (IOException | BackendException e) {
             throw new IllegalArgumentException(e);
@@ -196,22 +223,22 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
      */
     protected void loadDefaultModel() throws URISyntaxException, IOException {
         String modelName = getDefaultModelName();
+        String foldername = getResourcePath();
         if (modelName.startsWith("CREATOR:")) {
             modelName = modelName.substring("CREATOR:".length());
             VanillaCreatorCallback callback = new VanillaCreatorCallback();
             VanillaGltfCreator creator = new VanillaGltfCreator(callback.getCopyRight(), callback
                     .getInitialBuffer(), callback);
-            Writer.writeGltf(creator.createAsset(), getResourcePath(), modelName);
-            fetchGltfFilenames();
-        }
-        if (gltfFilenames == null || gltfFilenames.size() == 0) {
-            fetchGltfFilenames();
-        }
-        modelIndex = findModelIndex(modelName);
-        if (modelIndex > -1) {
-            loadGltfAsset(modelIndex);
+            Writer.writeGltf(creator.createAsset(), foldername, modelName);
+            loadGltfAsset(foldername, modelName);
         } else {
-            loadGltfAsset(getResourcePath(), getDefaultModelName());
+            if (Settings.getInstance().getBoolean(VargViewerBooleanProperties.LIST_GLTF_FILES)) {
+                fetchGltfFilenames();
+                modelIndex = findModelIndex(modelName);
+                loadGltfAsset(modelIndex);
+            } else {
+                loadGltfAsset(foldername, modelName);
+            }
         }
     }
 

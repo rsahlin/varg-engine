@@ -182,7 +182,6 @@
         <module name="VisibilityModifier">
             <property name="allowPublicFinalFields" value="true" />
             <property name="allowPublicImmutableFields" value="true" />
-            <property name="allowSetter" value="true" />
             <property name="packageAllowed" value="true" />
             <property name="protectedAllowed" value="true" />
             <property name="ignoreAnnotationCanonicalNames" value="AllowPublic" />

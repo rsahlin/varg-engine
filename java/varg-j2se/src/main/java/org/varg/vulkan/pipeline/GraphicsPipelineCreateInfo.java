@@ -53,10 +53,10 @@ public class GraphicsPipelineCreateInfo extends PipelineCreateInfo {
     /**
      * Sets the fragmentshadingrate create info - use when fragment shading rate extension is enabled
      * 
-     * @param shadingRateCreateInfo
+     * @param srcShadingRateCreateInfo
      */
-    public void setFragmentShadingRateCreateInfo(PipelineFragmentShadingRateStateCreateInfoKHR shadingRateCreateInfo) {
-        this.shadingRateCreateInfo = shadingRateCreateInfo;
+    public void setFragmentShadingRateCreateInfo(PipelineFragmentShadingRateStateCreateInfoKHR srcShadingRateCreateInfo) {
+        this.shadingRateCreateInfo = srcShadingRateCreateInfo;
     }
 
     /**

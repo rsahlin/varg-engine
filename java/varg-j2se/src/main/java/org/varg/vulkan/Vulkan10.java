@@ -79,7 +79,7 @@ public interface Vulkan10 {
         // Provided by VK_KHR_video_queue
         VK_QUERY_RESULT_WITH_STATUS_BIT_KHR(0x00000010);
 
-        public int value;
+        public final int value;
 
         QueryResultFlagBits(int value) {
             this.value = value;
@@ -130,7 +130,7 @@ public interface Vulkan10 {
         // Provided by VK_EXT_opacity_micromap
         VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT(1000396001);
 
-        public int value;
+        public final int value;
 
         QueryType(int value) {
             this.value = value;

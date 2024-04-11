@@ -1,5 +1,6 @@
 package org.varg.vulkan.extensions;
 
+import org.gltfio.lib.AllowPublic;
 import org.gltfio.lib.BitFlag;
 import org.gltfio.lib.BitFlags;
 import org.varg.vulkan.Queue;
@@ -68,7 +69,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR(0x80000),
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR(0x100000);
 
-        public int value;
+        public final int value;
 
         BufferUsageFlagBit(int value) {
             this.value = value;
@@ -93,7 +94,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         // Provided by VK_NV_ray_tracing_motion_blur
         VK_ACCELERATION_STRUCTURE_CREATE_MOTION_BIT_NV(4);
 
-        public int value;
+        public final int value;
 
         AccelerationStructureCreateFlagBitsKHR(int value) {
             this.value = value;
@@ -115,7 +116,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR(1),
         VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR(2);
 
-        public int value;
+        public final int value;
 
         AccelerationStructureBuildTypeKHR(int value) {
             this.value = value;
@@ -136,7 +137,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         VK_GEOMETRY_OPAQUE_BIT_KHR(1),
         VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR(2);
 
-        public int value;
+        public final int value;
 
         GeometryFlagBitsKHR(int value) {
             this.value = value;
@@ -158,7 +159,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         VK_GEOMETRY_TYPE_AABBS_KHR(1),
         VK_GEOMETRY_TYPE_INSTANCES_KHR(2);
 
-        public int value;
+        public final int value;
 
         GeometryTypeKHR(int value) {
             this.value = value;
@@ -170,7 +171,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR(0),
         VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR(1);
 
-        public int value;
+        public final int value;
 
         BuildAccelerationStructureModeKHR(int value) {
             this.value = value;
@@ -196,7 +197,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         // Provided by VK_KHR_ray_tracing_position_fetch
         VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR(0x00000800);
 
-        public int value;
+        public final int value;
 
         BuildAccelerationStructureFlagBitsKHR(int value) {
             this.value = value;
@@ -218,7 +219,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR(1),
         VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR(2);
 
-        public int value;
+        public final int value;
 
         AccelerationStructureTypeKHR(int value) {
             this.value = value;
@@ -288,15 +289,18 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
     public static class AccelerationStructureBuildGeometryInfoKHR extends PlatformStruct {
         public final AccelerationStructureTypeKHR type;
         public final int flags;
-        public BuildAccelerationStructureModeKHR mode;
+        public final BuildAccelerationStructureModeKHR mode;
         /**
          * srcAccelerationStructure is a pointer to an existing acceleration structure that is to be used to update the
          * dst acceleration structure when mode is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
          */
+        @AllowPublic
         public AccelerationStructureKHR srcAccelerationStructure;
+        @AllowPublic
         public AccelerationStructureKHR dstAccelerationStructure;
-        public int geometryCount;
-        public AccelerationStructureGeometryKHR geometries;
+        public final int geometryCount;
+        public final AccelerationStructureGeometryKHR geometries;
+        @AllowPublic
         public DeviceOrHostAddress scratchData;
 
         public AccelerationStructureBuildGeometryInfoKHR(AccelerationStructureTypeKHR type,
@@ -324,13 +328,18 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
             this.flags = BitFlags.getFlagsValue(flags);
         }
 
-        public void setAccelerationStruct(AccelerationStructureKHR accelerationStruct,
-                DeviceOrHostAddress scratchData) {
+        /**
+         * Sets the AS data
+         * 
+         * @param srcAccelerationStruct
+         * @param srcScratchData
+         */
+        public void setAccelerationStruct(AccelerationStructureKHR srcAccelerationStruct, DeviceOrHostAddress srcScratchData) {
             if (this.scratchData != null || this.dstAccelerationStructure != null) {
                 throw new IllegalArgumentException();
             }
-            this.scratchData = scratchData;
-            this.dstAccelerationStructure = accelerationStruct;
+            this.scratchData = srcScratchData;
+            this.dstAccelerationStructure = srcAccelerationStruct;
         }
 
     }
@@ -382,6 +391,11 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
             this.buildInfo = buildInfo;
         }
 
+        /**
+         * Returns the buildinfo
+         * 
+         * @return
+         */
         public AccelerationStructureBuildGeometryInfoKHR getBuildInfo() {
             return buildInfo;
         }

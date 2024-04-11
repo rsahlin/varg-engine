@@ -82,14 +82,14 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
     /**
      * Sets the indirect buffer (device memory)
      * 
-     * @param vkIndirectBuffer
+     * @param srcVkIndirectBuffer
      * @param bufferOffset Offset into buffer where commands start
      */
-    public void setCommandMemoryBuffer(MemoryBuffer vkIndirectBuffer, int bufferOffset) {
+    public void setCommandMemoryBuffer(MemoryBuffer srcVkIndirectBuffer, int bufferOffset) {
         if (this.vkIndirectBuffer != null) {
             throw new IllegalArgumentException();
         }
-        this.vkIndirectBuffer = vkIndirectBuffer;
+        this.vkIndirectBuffer = srcVkIndirectBuffer;
         this.vkIndirectBufferOffset = bufferOffset;
     }
 
@@ -125,6 +125,11 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
         return vertexBuffers;
     }
 
+    /**
+     * Returns the indirect device memory
+     * 
+     * @return
+     */
     public MemoryBuffer getIndirectMemory() {
         return vkIndirectBuffer;
     }
@@ -159,7 +164,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
         return JSONPrimitive.getPipelineHash(attributeHash, textureChannels, drawMode, alphaMode);
     }
 
-    protected void copyToDevice(DeviceMemory deviceMemory, Queue queue, ByteBuffer source, MemoryBuffer destination,
+    private void copyToDevice(DeviceMemory deviceMemory, Queue queue, ByteBuffer source, MemoryBuffer destination,
             int offset) {
         if (source != null) {
             queue.queueBegin();
@@ -214,7 +219,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
         return new PrimitiveVertexInputState(createBindings(), drawMode);
     }
 
-    public PipelineVertexInputState createBindings() {
+    private PipelineVertexInputState createBindings() {
         return IndirectDrawCalls.createBindings(attributes, textureChannels);
     }
 
@@ -272,6 +277,12 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
         return textureChannels;
     }
 
+    /**
+     * Returns the indexbuffer pointer for the type
+     * 
+     * @param indexType
+     * @return
+     */
     public long getIndexBufferPointer(IndexType indexType) {
         return indexBuffers.getBuffers().get(indexType.index);
     }

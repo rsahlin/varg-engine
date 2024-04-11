@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import org.varg.renderer.Renderers;
 import org.varg.vulkan.extensions.KHRAccelerationStructure;
 import org.varg.vulkan.extensions.KHRRayTracingPipeline;
-import org.varg.vulkan.pipeline.RayTracingPipeline;
 import org.varg.vulkan.structs.SubmitInfo;
 import org.varg.vulkan.structs.TimelineSemaphore;
 import org.varg.vulkan.structs.TimelineSemaphore.TimelineSemaphoreSubmitInfo;

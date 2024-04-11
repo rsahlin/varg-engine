@@ -84,6 +84,11 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
         fragmentShadingRateFeatures = features;
     }
 
+    /**
+     * Adds the khraccelerationstructure extension and features
+     * 
+     * @param features
+     */
     protected void addKHRAccelerationStructure(PhysicalDeviceAccelerationStructureFeaturesKHR features) {
         if (!available.getPhysicalDeviceAccelerationStructureFeatures().checkBooleansTrue(features,
                 PhysicalDeviceAccelerationStructureFeaturesKHR.class.getDeclaredFields())) {

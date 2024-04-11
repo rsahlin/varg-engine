@@ -11,6 +11,7 @@ import org.varg.pipeline.Pipelines;
 import org.varg.pipeline.Pipelines.DescriptorSetTarget;
 import org.varg.shader.ComputeShader;
 import org.varg.shader.MeshShader;
+import org.varg.shader.MeshShader.MeshShaderCreateInfo;
 import org.varg.shader.Shader.Subtype;
 import org.varg.uniform.BindBuffer;
 import org.varg.uniform.DescriptorBuffers;
@@ -88,7 +89,7 @@ public interface GltfRenderer<R extends RenderableScene, M extends JSONMesh<?>> 
      * @param shader
      * @return
      */
-    DescriptorBuffers<MeshShader> prepareFrameData(MeshShader shader, Transform sceneTransform);
+    DescriptorBuffers<MeshShader<? extends MeshShaderCreateInfo>> prepareFrameData(MeshShader shader, Transform sceneTransform);
 
     /**
      * Binds the descriptorsets for buffers, must be called before renderpass is started

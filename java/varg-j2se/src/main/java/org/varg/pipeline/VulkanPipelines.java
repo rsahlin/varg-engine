@@ -21,7 +21,6 @@ import org.varg.assets.TextureDescriptor;
 import org.varg.assets.TextureImages;
 import org.varg.assets.TextureImages.SamplerType;
 import org.varg.gltf.VulkanMesh;
-import org.varg.gltf.VulkanStreamingScene;
 import org.varg.pipeline.Pipelines.InternalPipelines;
 import org.varg.renderer.GltfRenderer;
 import org.varg.renderer.GltfRenderer.RenderPasses;
@@ -643,28 +642,6 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     @Override
     public ComputePipeline getPipeline(Shader.Subtype shaderType) {
         return computePipelines.get(shaderType.getName());
-    }
-
-    private void createVertexInputBindingsStreaming(VulkanStreamingScene scene,
-            ArrayList<PrimitiveVertexInputState> inputStates) {
-        PrimitiveVertexInputState[] vertexInputs = scene.getVertexInputStates();
-        for (PrimitiveVertexInputState inputState : vertexInputs) {
-            inputStates.add(inputState);
-            Logger.d(getClass(), "Added  PrimitiveVertexInputState " + inputState);
-        }
-    }
-
-    private PrimitiveVertexInputState[] createVertexInputBindings(VulkanRenderableScene glTF) {
-        PrimitiveVertexInputState[] vertexInputs = glTF.getVertexInputStates();
-        for (PrimitiveVertexInputState inputState : vertexInputs) {
-            inputStates.add(inputState);
-            Logger.d(getClass(), "Added  PrimitiveVertexInputState " + inputState);
-        }
-        // VertexMemory vertexMemory = renderer.getAssets().getVertexBuffers(glTF);
-        // MemoryBuffer[] vertexBuffers = vertexMemory.getMemoryBuffers();
-        // createVertexInputStates(glTF, vertexBuffers, inputStates);
-        PrimitiveVertexInputState[] array = inputStates.toArray(new PrimitiveVertexInputState[0]);
-        return array;
     }
 
 }

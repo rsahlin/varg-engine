@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.gltfio.gltf2.AttributeSorter;
-import org.gltfio.gltf2.JSONBuffer;
 import org.gltfio.gltf2.JSONMesh;
 import org.gltfio.gltf2.JSONNode;
 import org.gltfio.gltf2.JSONPrimitive.Attributes;
@@ -51,7 +50,7 @@ public class VulkanStreamingScene extends StreamingScene implements VulkanRender
                 new VertexInputAttributeDescription[AttributeSorter.GLTF_SORT_ORDER.length];
         VertexInputBindingDescription[] vertexBindings =
                 new VertexInputBindingDescription[vertexInputs.length];
-        Attributes[] sorted = VulkanScene.sorter.sortAttributes(attributes);
+        Attributes[] sorted = VulkanScene.SORTER.sortAttributes(attributes);
         for (int i = 0; i < sorted.length; i++) {
             Attributes attribute = sorted[i];
             Vulkan10.Format format = VulkanScene.getDefaultFormat(AttributeSorter.GLTF_SORT_ORDER[i]);
@@ -82,14 +81,6 @@ public class VulkanStreamingScene extends StreamingScene implements VulkanRender
         return currentMeshIndex;
     }
 
-    public JSONBuffer[] getIndexBuffers() {
-        return indexBuffers;
-    }
-
-    public int[] getIndexCount() {
-        return indexCount;
-    }
-
     @Override
     protected JSONMesh createMesh(MeshStream stream) {
         return new VulkanStreamingMesh(stream, currentPrimitiveIndex);
@@ -101,13 +92,6 @@ public class VulkanStreamingScene extends StreamingScene implements VulkanRender
                 throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + objName + " is null");
             }
         }
-    }
-
-    void assertBuffers() {
-        assertArray(materials, "MATERIAL");
-        assertArray(nodes, "NODE");
-        assertArray(meshes, "MESH");
-        JSONBuffer[] buffers = getBuffers();
     }
 
     @Override
@@ -131,15 +115,19 @@ public class VulkanStreamingScene extends StreamingScene implements VulkanRender
         return inputStates;
     }
 
-    public void setIndirectDrawCalls(IndirectDrawCalls[] indirectDrawCalls) {
-        this.indirectDrawCalls = indirectDrawCalls;
+    /**
+     * Returns the indirect drawcalls
+     * 
+     * @return
+     */
+    public IndirectDrawing[] getIndirectDrawCall() {
+        return indirectDrawCalls;
+
     }
 
-    public IndirectDrawing getIndirectDrawCall() {
-        return indirectDrawCalls[0];
-
-    }
-
+    /**
+     * Adds the indirect drawcalls
+     */
     public void addIndirectDrawCalls() {
         // TODO - NEEDS synchronization!!!!!
         IndirectDrawCalls dc = indirectDrawCalls[0];

@@ -199,9 +199,8 @@ public abstract class BaseShaderImplementation<T extends ShaderCreateInfo> {
      * 
      * @return
      */
-    protected PipelineShaderStageCreateInfo[] createShaderStageInfos(ShaderCreateInfo shaderInfo,
-            SpecializationInfo specializationInfo) {
-        Subtype shaderType = shaderInfo.shaderType;
+    protected PipelineShaderStageCreateInfo[] createShaderStageInfos(ShaderCreateInfo srcShaderInfo, SpecializationInfo specializationInfo) {
+        Subtype shaderType = srcShaderInfo.shaderType;
         String entrypoint = "main";
         PipelineShaderStageCreateInfo[] createInfos = new PipelineShaderStageCreateInfo[shaderType.getStages().length];
         ShaderStageFlagBit stageFlag = null;
@@ -245,22 +244,21 @@ public abstract class BaseShaderImplementation<T extends ShaderCreateInfo> {
      * Loads the shader modules
      * 
      * @param backend
-     * @param shaderInfo
+     * @param srcShaderInfo
      * @throws IOException
      */
-    protected void internalLoadModules(Vulkan10Backend<?> backend, Shader<?> shader, ShaderCreateInfo shaderInfo,
-            int pipelineHash) throws IOException {
-        Stage[] stages = shaderInfo.shaderType.getStages();
+    protected void internalLoadModules(Vulkan10Backend<?> backend, Shader<?> shader, ShaderCreateInfo srcShaderInfo, int pipelineHash) throws IOException {
+        Stage[] stages = srcShaderInfo.shaderType.getStages();
         for (Stage stage : stages) {
             ShaderBinary shaderBinary = shader.getShaderSource(stage);
             if (Settings.getInstance().getBoolean(VulkanBackend.BackendProperties.RECOMPILE_SPIRV)) {
-                shaderBinary.compileShader(shaderInfo, Integer.toString(pipelineHash));
+                shaderBinary.compileShader(srcShaderInfo, Integer.toString(pipelineHash));
             } else {
-                shaderBinary.loadShader(shaderInfo, Integer.toString(pipelineHash));
+                shaderBinary.loadShader(srcShaderInfo, Integer.toString(pipelineHash));
             }
-            addBinary(stage, shaderInfo, shaderBinary);
+            addBinary(stage, srcShaderInfo, shaderBinary);
         }
-        putShaderModules(shaderInfo.shaderType, createShaderModules(backend, shaderInfo));
+        putShaderModules(srcShaderInfo.shaderType, createShaderModules(backend, srcShaderInfo));
     }
 
     /**

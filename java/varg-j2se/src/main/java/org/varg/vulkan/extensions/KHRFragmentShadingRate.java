@@ -14,7 +14,7 @@ public abstract class KHRFragmentShadingRate {
 
         public final int value;
 
-        private FragmentShadingRateCombinerOpKHR(int value) {
+        FragmentShadingRateCombinerOpKHR(int value) {
             this.value = value;
         }
 

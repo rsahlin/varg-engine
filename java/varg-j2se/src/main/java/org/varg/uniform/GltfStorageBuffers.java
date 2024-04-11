@@ -419,7 +419,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                 buffer.storeFloatData(node.getMatrixIndex() * Matrix.MATRIX_ELEMENTS, matrices.getMatrix(
                         Matrices.MODEL));
             }
-            setNodeModelMatrices(node.getChildren(), matrices, buffer);
+            setNodeModelMatrices(node.getChildNodes(), matrices, buffer);
             matrices.pop(Matrices.MODEL);
         }
     }

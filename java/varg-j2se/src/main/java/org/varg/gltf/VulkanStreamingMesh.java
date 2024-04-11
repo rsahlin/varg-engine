@@ -28,8 +28,4 @@ public class VulkanStreamingMesh extends VulkanMesh {
         return primitiveArray;
     }
 
-    public int[] getPrimitiveIndexes() {
-        return primitiveIndexes;
-    }
-
 }

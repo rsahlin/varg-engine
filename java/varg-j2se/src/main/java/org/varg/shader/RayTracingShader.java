@@ -73,7 +73,7 @@ public interface RayTracingShader extends Shader<RayTracingCreateInfo> {
         }
     }
 
-    public static final int RAYTRACING_BINDING = 2;
+    int RAYTRACING_BINDING = 2;
 
     enum RayTracingDescriptorSetTarget implements DescriptorSetTarget {
 
@@ -191,8 +191,6 @@ public interface RayTracingShader extends Shader<RayTracingCreateInfo> {
          * @param stages
          */
         protected void setMacros(GLSLCompiler compiler, Stage... stages) {
-            for (Stage stage : stages) {
-            }
         }
 
     }

@@ -60,19 +60,17 @@ public abstract class DrawCallBundle<T extends AbstractDrawCalls> {
         primitiveUniformArray = new int[instanceCount * instanceDataSize];
     }
 
+    /**
+     * Creates the drawcalls
+     * 
+     * @param primitivesByPipeline
+     * @param vertexBuffers
+     */
     public void createDrawCalls(PrimitiveSorterMap primitivesByPipeline, VertexBufferBundle vertexBuffers) {
         for (PrimitiveSorter primitives : primitivesByPipeline.sort()) {
             drawCalls.add(createDrawCalls(primitives, vertexBuffers));
         }
         createMemory();
-    }
-
-    public void createDrawCalls(PrimitiveSorter[] primitives, int[] pipelineHash, VertexBufferBundle vertexBuffers) {
-        for (int i = 0; i < primitives.length; i++) {
-            drawCalls.add(createDrawCalls(primitives[i], vertexBuffers));
-        }
-        createMemory();
-
     }
 
     /**
@@ -106,7 +104,7 @@ public abstract class DrawCallBundle<T extends AbstractDrawCalls> {
                     int indexCount = primitive.getDrawCount();
                     primitiveUniformArray[firstInstance * instanceDataSize] = primitive.getMaterialIndex();
                     primitiveUniformArray[firstInstance * instanceDataSize + 1] = matrixIndexes[primitiveIndex++];
-                    dc.addIndexedIndirectDraw(type, indexCount, 1, indexOffsets[primitive.streamIndicesIndex], vertexOffsets[primitive.streamVertexIndex], firstInstance);
+                    dc.addIndexedIndirectDraw(type, indexCount, 1, indexOffsets[primitive.getStreamIndicesIndex()], vertexOffsets[primitive.getStreamVertexIndex()], firstInstance);
                     firstInstance++;
                 }
             }
@@ -117,7 +115,7 @@ public abstract class DrawCallBundle<T extends AbstractDrawCalls> {
             int count = primitive.getDrawCount();
             primitiveUniformArray[firstInstance * instanceDataSize] = primitive.getMaterialIndex();
             primitiveUniformArray[firstInstance * instanceDataSize + 1] = matrixIndexes[primitiveIndex++];
-            dc.addIndirectDraw(count, 1, vertexOffsets[primitive.streamVertexIndex], firstInstance);
+            dc.addIndirectDraw(count, 1, vertexOffsets[primitive.getStreamVertexIndex()], firstInstance);
             firstInstance++;
         }
         if ((firstInstance - instanceCounter) != primitiveList.getPrimitiveCount()) {

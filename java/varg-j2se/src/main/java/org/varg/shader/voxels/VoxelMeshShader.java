@@ -21,8 +21,7 @@ import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderPropertiesEXT;
 import org.varg.vulkan.pipeline.PipelineShaderStageCreateInfo;
 import org.varg.vulkan.pipeline.PipelineShaderStageCreateInfo.SpecializationInfo;
 
-public class VoxelMeshShader extends BaseShaderImplementation<VoxelMeshShaderCreateInfo>
-        implements MeshShader<VoxelMeshShaderCreateInfo> {
+public class VoxelMeshShader extends BaseShaderImplementation<VoxelMeshShaderCreateInfo> implements MeshShader<VoxelMeshShaderCreateInfo> {
 
     private static final int INVOCATIONS_PER_CUBE = 4;
 
@@ -53,10 +52,9 @@ public class VoxelMeshShader extends BaseShaderImplementation<VoxelMeshShaderCre
         private final int requestedCubeCount;
         private final PhysicalDeviceMeshShaderPropertiesEXT properties;
         private final int cubesPerWorkGroup;
-        public Format offsetFormat = Format.VK_FORMAT_R32_SFLOAT;
+        public final Format offsetFormat = Format.VK_FORMAT_R32_SFLOAT;
 
-        public VoxelMeshShaderCreateInfo(int cubeCount, @NonNull Renderers version,
-                PhysicalDeviceMeshShaderPropertiesEXT properties) {
+        public VoxelMeshShaderCreateInfo(int cubeCount, @NonNull Renderers version, PhysicalDeviceMeshShaderPropertiesEXT properties) {
             super(null, version, MeshShaderType.VOXELS);
             this.requestedCubeCount = cubeCount;
             int count = properties.maxPreferredMeshWorkGroupInvocations / INVOCATIONS_PER_CUBE;

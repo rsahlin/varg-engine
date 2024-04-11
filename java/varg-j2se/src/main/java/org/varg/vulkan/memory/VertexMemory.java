@@ -71,26 +71,56 @@ public class VertexMemory {
         }
     }
 
+    /**
+     * Returns the array of offset
+     * 
+     * @return
+     */
     public int[] getOffsets() {
         return offsets;
     }
 
+    /**
+     * Returns the array with memorybuffer
+     * 
+     * @return
+     */
     public MemoryBuffer[] getMemoryBuffers() {
         return memoryBuffers;
     }
 
+    /**
+     * Returns the array of bytebuffers
+     * 
+     * @return
+     */
     public ByteBuffer[] getBuffers() {
         return buffers;
     }
 
+    /**
+     * Returns the array with indexbuffers
+     * 
+     * @return
+     */
     public ByteBuffer[] getIndexBuffers() {
         return indexBuffers;
     }
 
+    /**
+     * Returns the index memory device memory buffers
+     * 
+     * @return
+     */
     public MemoryBuffer[] getIndexMemoryBuffers() {
         return indexMemory;
     }
 
+    /**
+     * Returns the mode
+     * 
+     * @return
+     */
     public Mode getMode() {
         return mode;
     }

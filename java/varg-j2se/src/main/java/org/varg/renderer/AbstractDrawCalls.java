@@ -122,10 +122,21 @@ public abstract class AbstractDrawCalls {
         return indexedInstanceCount != null ? indexedInstanceCount[indexType.index] : 0;
     }
 
+    /**
+     * Returns the indirect byte buffer or null
+     * 
+     * @return
+     */
     protected ByteBuffer getIndirectByteBuffer() {
         return indirectCommandBuffer != null ? indirectCommandBuffer.position(0) : null;
     }
 
+    /**
+     * Returns the indexedbuffer for the type, or null
+     * 
+     * @param indexType
+     * @return
+     */
     protected ByteBuffer getIndexIndirectByteBuffer(IndexType indexType) {
         if (indirectIndexCommandBuffers != null) {
             return indirectIndexCommandBuffers[indexType.index] != null ? indirectIndexCommandBuffers[indexType.index]
