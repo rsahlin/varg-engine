@@ -99,16 +99,17 @@ public class LWJGL3VARGTest extends VARGViewer {
         // return "gltf/car_toy_cartoon_style/car_toy_cartoon_style.glb";
         // return "extensions.gltf";
         // return "EKET_00333947_70x35x35.glb";
-        return "CREATOR:save2.gltf";
+        return "gltf/IkeaPlayroom/IkeaPlayroom.glb";
+        // return "CREATOR:save2.gltf";
         // return "gltfio-creator/indoor_2.glb";
     }
 
     @Override
     protected String getResourcePath() {
-        // return "C:/assets/test-assets/";
+        return "C:/assets/test-assets/";
         // return "C:/source/glTF-Sample-Assets/Models/";
         // return "C:/source/glTF-Sample-Models/2.0/";
-        return "C:/assets/test-assets/gltfio-creator/";
+        // return "C:/assets/test-assets/gltfio-creator/";
         // return "C:/source/IKEA3DAssemblyDataset/Dataset/EKET_00333947_70x35x35/glTF_glb";
     }
 
@@ -295,12 +296,12 @@ public class LWJGL3VARGTest extends VARGViewer {
         settings.setProperty(BackendIntProperties.FRAGMENTSIZE, 1);
         settings.setProperty(BackendIntProperties.SAMPLE_COUNT, 8);
         settings.setProperty(BackendStringProperties.COLORSPACE, "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
-        settings.setProperty(BackendIntProperties.MAX_WHITE, 10000);
+        settings.setProperty(BackendIntProperties.MAX_WHITE, 1000);
         settings.setProperty(IntArrayProperties.CLEAR_COLOR, null);
 
-        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:9000|irmap:STUDIO_5");
+        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:200|irmap:STUDIO_5");
         settings.setProperty(LaddaProperties.ENVMAP_BACKGROUND, "SH");
-        settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:17000|color:1,1,1|position:0,10000,1000");
+        // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:17000|color:1,1,1|position:0,10000,1000");
         // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT1,
         // "intensity:5000|color:1,0,0|position:-1000,0,10000");
         // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT2, "intensity:5000|color:0,1,0|position:1000,0,10000");

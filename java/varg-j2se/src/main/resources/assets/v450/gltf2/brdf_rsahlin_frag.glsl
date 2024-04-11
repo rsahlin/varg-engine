@@ -215,7 +215,6 @@ float getGeometricAttenuationFactor(in float a) {
     return brdf.debug.b;
 }
 
-
 vec4 brdf_main(in vec4 baseColor) {
     // Reflected light at F0 - for a dielectric this is the IOR (defaults to 1.5 = 0.04%)
     // For metals this is 1 - all light count as being reflected, although it is 'tinted' by metals baseColor
@@ -235,7 +234,6 @@ vec4 brdf_main(in vec4 baseColor) {
 #else
     float alpha = 1.0;
 #endif
-
  
 #ifdef DIRECTIONAL
     for (int lightNumber = 0; lightNumber < DIRECTIONAL_LIGHT_COUNT; lightNumber++) {
@@ -244,7 +242,7 @@ vec4 brdf_main(in vec4 baseColor) {
         float oneMinusRP = 1.0 - RPower;
         if (brdf.NdotL >= 0) {
             getPerPixelBRDFDirectional(uniforms.directionallight[lightNumber].direction.xyz);
-            vec3 illumination = vec3((uniforms.directionallight[lightNumber].color.rgb * uniforms.directionallight[lightNumber].color.a));
+            vec3 illumination = vec3(uniforms.directionallight[lightNumber].color.a * uniforms.directionallight[lightNumber].color.rgb);
             //Here we assume transmitted light enters the material and exits evenly over the hemisphere (/ PI), in the baseColor of the material
             //As the solid angle from lightsource decreases (the angle to the lightsource increases) the power goes down.
             //Note that there is no distinction here based on metalness since this is already given by RPower
@@ -263,23 +261,41 @@ vec4 brdf_main(in vec4 baseColor) {
             brdf.colors[TRANSMITTED_COLOR_INDEX] += oneMinusRP * mix(0, oneByTwoPi, gaf) * transmittedColor * illumination;
             brdf.colors[REFLECTED_COLOR_INDEX] += RPower * ndf * gaf * (reflectedColor * illumination);
 #endif
-        } 
+        }
     }
 #endif
+
 #ifdef POINT
     for (int lightNumber = 0; lightNumber < POINT_LIGHT_COUNT; lightNumber++) {
-        getPerPixelBRDFDirectional(vPointLight[lightNumber].xyz);
-        float FV = getSchlick(brdf.NdotV);
-        float FL = getSchlick(brdf.NdotL);
-        float Fd90 = 0.5 + 2 * (brdf.HdotL* brdf.HdotL) * a;
-        float Fd = mix(1.0, Fd90, FL) * mix(1.0, Fd90, FV);
-        vec3 c_diff = Fd * baseColor.rgb * (1 - brdf.orm.b);
-        float intensity = uniforms.pointlight[lightNumber].color.a / pow(vPointLight[lightNumber].w,2);
-        vec3 illumination = vec3((uniforms.pointlight[lightNumber].color.rgb * intensity) * max(0, brdf.NdotL));
-        brdf.colors[TRANSMITTED_COLOR_INDEX] += GETTRANSMITTED;
-        brdf.colors[REFLECTED_COLOR_INDEX] += brdf.fresnel * disney_ndf(a, anisotropic, uniforms.directionallight[lightNumber].direction.xyz) * illumination;
+        brdf.NdotL = max(0, dot(brdf.normal, -vPointLight[lightNumber].xyz));
+        float RPower = getFresnelFactor(R0, brdf.NdotL);
+        float oneMinusRP = 1.0 - RPower;
+        if (brdf.NdotL >= 0) {
+            getPerPixelBRDFDirectional(vPointLight[lightNumber].xyz);
+            float intensity = uniforms.pointlight[lightNumber].color.a / pow(vPointLight[lightNumber].w,2);
+            vec3 illumination = vec3((uniforms.pointlight[lightNumber].color.rgb * intensity) * max(0, brdf.NdotL));
+            //Here we assume transmitted light enters the material and exits evenly over the hemisphere (/ PI), in the baseColor of the material
+            //As the solid angle from lightsource decreases (the angle to the lightsource increases) the power goes down.
+            //Note that there is no distinction here based on metalness since this is already given by RPower
+            //Pointlights in glTF does not specify solid angle - this means we have to fudge the normal distribution function
+            //We do this by choosing a max return value greater than 1.0
+            float ndf = getNormalDistributionFactor(a);
+            float gaf = getGeometricAttenuationFactor(a);
+#ifdef BLEND
+            //Amount that will enter into surface: (1 - RPower) - when the light exits the material (1 - RPower) will be left, of that (RPower * absorbFactor) will reflect back and exit the material
+            float absorb = oneMinusRP * absorbFactor;
+            float reemit = (oneMinusRP - absorb) * RPower;
+            float retransmit = reemit * absorbFactor;
+            brdf.colors[TRANSMITTED_COLOR_INDEX] += (absorb + retransmit) * mix(0, oneByTwoPi, gaf) * transmittedColor * illumination;
+            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower + (reemit - retransmit)) * ndf * gaf * (reflectedColor * illumination);
+#else
+            brdf.colors[TRANSMITTED_COLOR_INDEX] += oneMinusRP * mix(0, oneByTwoPi, gaf) * transmittedColor * illumination;
+            brdf.colors[REFLECTED_COLOR_INDEX] += RPower * ndf * gaf * (reflectedColor * illumination);
+#endif
+        }
     }
 #endif
+
 #ifdef CUBEMAP
     vec3 reflection = getReflection(brdf.orm.g, uniforms.cubemaps[0].cubeMapInfo.y);
     brdf.colors[REFLECTED_COLOR_INDEX] += NdotVPower * reflectedColor * reflection;
