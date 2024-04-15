@@ -164,8 +164,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
         return JSONPrimitive.getPipelineHash(attributeHash, textureChannels, drawMode, alphaMode);
     }
 
-    private void copyToDevice(DeviceMemory deviceMemory, Queue queue, ByteBuffer source, MemoryBuffer destination,
-            int offset) {
+    private void copyToDevice(DeviceMemory deviceMemory, Queue queue, ByteBuffer source, MemoryBuffer destination, int offset) {
         if (source != null) {
             queue.queueBegin();
             if (source.remaining() <= Queue.UPDATE_BUFFER_MAX_BYTES) {

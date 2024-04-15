@@ -55,7 +55,7 @@ void positionLightTexture() {
 #endif
 #ifdef POINT
     for (int lightNumber = 0; lightNumber < POINT; lightNumber++) {
-        vec4 lightVec = (uniforms.pointlight[lightNumber].position * matrix.uModelMatrix[instance.primitive.y]) - worldPos;
+        vec4 lightVec = uniforms.pointlight[lightNumber].position - worldPos;
         vPointLight[lightNumber].xyz = normalize(lightVec.xyz);
         vPointLight[lightNumber].w = length(lightVec);
     }

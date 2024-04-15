@@ -20,13 +20,13 @@ import org.gltfio.gltf2.JSONCamera;
 import org.gltfio.lib.Buffers;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.FileUtils;
-import org.gltfio.lib.FileUtils.FilesystemProperties;
-import org.ktximageio.ktx.AwtImageUtils;
-import org.ktximageio.ktx.ImageReader.ImageFormat;
 import org.gltfio.lib.ImageUtils;
 import org.gltfio.lib.Logger;
 import org.gltfio.lib.Settings;
+import org.gltfio.lib.Settings.StringProperty;
 import org.gltfio.lib.ThreadService;
+import org.ktximageio.ktx.AwtImageUtils;
+import org.ktximageio.ktx.ImageReader.ImageFormat;
 import org.varg.renderer.Renderers;
 import org.varg.vulkan.Features;
 import org.varg.vulkan.Queue;
@@ -55,6 +55,50 @@ import org.varg.vulkan.structs.Extent3D;
 import org.varg.vulkan.structs.RequestedFeatures;
 
 public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
+
+    public enum ScreenGrabberProperties implements StringProperty {
+
+        /**
+         * Specify the source folder
+         */
+        SOURCE_FOLDER("screengrabber.folder", "C:/assets/test-assets/shaf/"),
+        /**
+         * Name of file containing input names
+         */
+        INPUT_FILENAME("screengrabber.input", null),
+        /**
+         * Specify name of listfile
+         */
+        LIST_FILENAME("screengrabber.listfilename", null),
+        /**
+         * Set to true to only list filename - no render or output
+         */
+        SAVE_LISTFILE("screengrabber.savelistfile", null);
+
+        private final String key;
+        private final String defaultValue;
+
+        ScreenGrabberProperties(String key, String defaultValue) {
+            this.key = key;
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        public String getName() {
+            return this.name();
+        }
+
+        @Override
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String getDefault() {
+            return defaultValue;
+        }
+
+    }
 
     public enum VIEWPOINT {
 
@@ -154,7 +198,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
     private int viewpointIndex = 0;
     private CameraSetup[] viewpoints;
 
-    private String shafFolder = "C:/assets/test-assets/shaf/";
+    private String shafFolder;
     private String outputFolder = shafFolder + "png/";
     private ArrayList<String> shafNames;
 
@@ -167,17 +211,26 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
     private Exception saveException;
 
     public static void main(String[] args) {
-        Settings.getInstance().setProperty(FilesystemProperties.JAVA_TARGET_DIRECTORY, "target/test-classes");
-        Settings.getInstance().setProperty(FilesystemProperties.SOURCE_DIRECTORY, "src/test");
-        Settings.getInstance().setProperty(IntArrayProperties.CLEAR_COLOR, new int[] { 200, 200, 200, 255 });
+        Settings.getInstance().setProperty(IntArrayProperties.CLEAR_COLOR, new int[] { 250, 250, 250, 255 });
         Settings.getInstance().setProperty(BackendStringProperties.COLORSPACE, "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
         Settings.getInstance().setProperty(BackendStringProperties.SURFACE_FORMAT, "8888_UNORM");
         Settings.getInstance().setProperty(BackendStringProperties.SWAPCHAIN_USAGE, "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
         Settings.getInstance().setProperty(BackendIntProperties.SAMPLE_COUNT, 8);
-        Settings.getInstance().setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:3000|irmap:STUDIO_5");
+        Settings.getInstance().setProperty(BackendIntProperties.MAX_WHITE, 1000);
+        Settings.getInstance().setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:600|irmap:STUDIO_5");
+        Settings.getInstance().setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:1000|color:1,1,1|position:0,10000,10000");
+        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_WIDTH, 1920);
+        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_HEIGHT, 1080);
+
         ScreenGrabber grabber = new ScreenGrabber(args, Renderers.VULKAN13, "VARG Model Viewer");
-        grabber.createApp();
-        grabber.run();
+        try {
+            if (!grabber.setupFiles()) {
+                grabber.createApp();
+                grabber.run();
+            }
+        } catch (IOException | URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
     private ArrayList<String> listFilenames(String path, boolean listFolders, String... extensions) throws IOException,
@@ -193,6 +246,29 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
 
     }
 
+    /**
+     * Returns true if the only action shall be to list and save filename - do not render or save anything
+     * 
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    private boolean setupFiles() throws IOException, URISyntaxException {
+        shafFolder = Settings.getInstance().getProperty(ScreenGrabberProperties.SOURCE_FOLDER);
+        shafNames = listFilenames(shafFolder, false, ".glb");
+        String filename = Settings.getInstance().getProperty(ScreenGrabberProperties.LIST_FILENAME);
+        saveFilenames(shafNames, shafFolder, filename != null ? filename : "shaffiles.txt");
+        /**
+         * Last check the input filename
+         */
+        String input = Settings.getInstance().getProperty(ScreenGrabberProperties.INPUT_FILENAME);
+        if (input != null) {
+            shafNames.clear();
+            shafNames = loadFilenames(shafFolder, input);
+        }
+        return Settings.getInstance().getBoolean(ScreenGrabberProperties.SAVE_LISTFILE);
+    }
+
     @Override
     public Features getRequestedDeviceFeatures(Features availableFeatures) {
         RequestedFeatures requestedFeatures = getDefaultRequestedFeatures(availableFeatures);
@@ -202,8 +278,6 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
     @Override
     public void init() {
         try {
-            shafNames = listFilenames(shafFolder, false, ".glb");
-            saveFilenames(shafNames, shafFolder, "shaffiles.txt");
             viewpoints = DEFAULT_CAMERAS;
             // TODO Move creation of renderer to after loading of glTF JSON (not buffers and textures)
             createRenderer(this);
@@ -217,8 +291,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
         }
     }
 
-    private List<String> loadFilenames(String folder, String inputname) throws FileNotFoundException,
-            URISyntaxException, IOException {
+    private ArrayList<String> loadFilenames(String folder, String inputname) throws FileNotFoundException, URISyntaxException, IOException {
         FileInputStream fis = new FileInputStream(FileUtils.getInstance().getFile(folder, inputname));
         ArrayList<String> filenames = new ArrayList<String>();
         byte[] data = fis.readAllBytes();
@@ -230,8 +303,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
         return filenames;
     }
 
-    private void saveFilenames(List<String> filenames, String folder, String outputname)
-            throws FileNotFoundException,
+    private void saveFilenames(List<String> filenames, String folder, String outputname) throws FileNotFoundException,
             URISyntaxException,
             IOException {
         FileOutputStream fos = new FileOutputStream(FileUtils.getInstance().getFile(shafFolder, outputname));

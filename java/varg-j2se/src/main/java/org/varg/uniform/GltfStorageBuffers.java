@@ -491,6 +491,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             int directionalIndex = 0;
             int pointIndex = 0;
             FloatBuffer destination = buffer.getBackingBuffer().position(0).asFloatBuffer();
+            float[] transformedPosition = new float[4];
             for (int i = 0; i < lights.length; i++) {
                 if (lights[i] != null) {
                     if (directionalIndex >= MAX_DIRECTIONAL_LIGHTS || pointIndex >= MAX_POINT_LIGHTS) {
@@ -498,7 +499,6 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                     }
                     KHRLightsPunctualReference lightNode = lights[i].getLight();
                     Light light = lightNode.getLight();
-                    float[] lightMatrix = getLightMatrix(lights[i]);
                     switch (light.getType()) {
                         case directional:
                             /**
@@ -508,8 +508,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                              * orientation of the node that it belongs to; position and scale are ignored except for
                              * their effect on the inherited node orientation
                              */
+                            float[] lightMatrix = getLightMatrix(lights[i]);
                             float[] nodePosition = new float[] { 0, 0, -1 };
-                            float[] transformedPosition = new float[4];
                             MatrixUtils.setTranslate(lightMatrix, 0, 0, 0);
                             MatrixUtils.transformVec3(lightMatrix, 0, nodePosition, transformedPosition, 1);
                             Vec3.normalize(transformedPosition);
@@ -517,7 +517,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                             directionalIndex++;
                             break;
                         case point:
-                            setPointLight(destination, pointIndex, light, MatrixUtils.getTranslate(lightMatrix));
+                            setPointLight(destination, pointIndex, light, getLightPosition(lights[i]));
                             pointIndex++;
                             break;
                         default:
@@ -530,15 +530,34 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     }
 
     private float[] getLightMatrix(JSONNode node) {
+        float[] matrix = MatrixUtils.createMatrix();
+        MatrixUtils.setIdentity(matrix, 0);
+        getParentsMatrix(node, matrix);
         Transform t = node.getTransform();
-        float[] lightMatrix = t.updateMatrix();
+        return t.concatTransform(matrix);
+    }
+
+    private float[] getParentsMatrix(JSONNode node, float[] matrix) {
         JSONNode parent = null;
         JSONNode current = node;
         while ((parent = current.getParent()) != null) {
-            lightMatrix = parent.getTransform().concatTransform(lightMatrix);
+            parent.getTransform().concatTransform(matrix);
             current = parent;
         }
-        return lightMatrix;
+        return matrix;
+
+    }
+
+    private float[] getLightPosition(JSONNode node) {
+        float[] matrix = MatrixUtils.createMatrix();
+        float[] vec4 = new float[4];
+        MatrixUtils.setIdentity(matrix, 0);
+        getParentsMatrix(node, matrix);
+        Transform t = node.getTransform();
+        MatrixUtils.translate(matrix, t.getTranslate());
+        MatrixUtils.setScaleM(matrix, 0, t.getScale());
+        MatrixUtils.rotateM(matrix, t.getRotation());
+        return MatrixUtils.getTranslate(matrix);
     }
 
     private void setIrradianceMap(BindBuffer buffer, EnvironmentMap environmentMap) {

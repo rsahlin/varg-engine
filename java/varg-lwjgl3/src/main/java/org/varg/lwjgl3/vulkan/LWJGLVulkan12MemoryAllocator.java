@@ -123,8 +123,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
             unbindBuffer(transferStagingBuffer);
             freeMemory(transferStagingBuffer.getBoundMemory());
         }
-        transferStagingBuffer = createStagingBuffer(sizeInBytes,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_SRC_BIT.value);
+        transferStagingBuffer = createStagingBuffer(sizeInBytes, BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_SRC_BIT.value);
         return transferStagingBuffer;
     }
 
@@ -135,9 +134,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
                 MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
         bindBufferMemory(stagingBuf, staging, 0L);
-        Logger.d(getClass(), "Allocated staging buffer with size: " + staging.size + ", usageflags " +
-                BitFlags.toString(usageFlags, BufferUsageFlagBit.values()) + ", in " + (System.currentTimeMillis()
-                        - start)
+        Logger.d(getClass(), "Allocated staging buffer with size: " + staging.size + ", usageflags " + BitFlags.toString(usageFlags, BufferUsageFlagBit.values()) + ", in " + (System.currentTimeMillis() - start)
                 + " millis");
         return stagingBuf;
     }
@@ -168,9 +165,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
                     + "Memory offset does not match alignment: " + memoryOffset + ", " + buffer.alignment + " ("
                     + memoryOffset % buffer.alignment + ")");
         }
-        if ((buffer.usage & Vulkan10.BufferUsageFlagBit.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT.value) != 0
-                && (memory.allocateFlags
-                        & Vulkan12.MemoryAllocateFlagBits.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.value) == 0) {
+        if ((buffer.usage & Vulkan10.BufferUsageFlagBit.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT.value) != 0 && (memory.allocateFlags & Vulkan12.MemoryAllocateFlagBits.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.value) == 0) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
                     + "Buffer created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,"
                     + "memory must be allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT");
@@ -186,9 +181,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
         VulkanBackend.assertResult(result);
         buffer.bindMemory(memory, memoryOffset);
         Logger.d(getClass(),
-                "Bound buffer to memory, size " + buffer.size + "(" + buffer.allocationSize + ") at offset: "
-                        + memoryOffset + ", usageflags "
-                        + BitFlags.toString(buffer.usage, BufferUsageFlagBit.values()));
+                "Bound buffer to memory, size " + buffer.size + "(" + buffer.allocationSize + ") at offset: " + memoryOffset + ", usageflags " + BitFlags.toString(buffer.usage, BufferUsageFlagBit.values()));
         boundBuffers.put(memory.pointer + memoryOffset, buffer);
     }
 
@@ -329,19 +322,15 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
     @Override
     public long mapMemory(Memory memory, long offset) {
         if ((memory.memoryProperties & VK12.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message
-                    + "Memory must have VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Memory must have VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT");
         }
         if (memory.isMapped()) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + ", memory is mapped");
         }
-        VulkanBackend.assertResult(VK12.vkMapMemory(deviceInstance, memory.pointer, offset, memory.size,
-                VulkanBackend.RESERVED_FOR_FUTURE_USE, pointer));
+        VulkanBackend.assertResult(VK12.vkMapMemory(deviceInstance, memory.pointer, offset, memory.size, VulkanBackend.RESERVED_FOR_FUTURE_USE, pointer));
         int align = (int) ((pointer.get(0) - offset) % limits.getMinMemoryMapAlignment());
         if (align != 0) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Invalid mapped memory ptr, does not fit with minMemoryMapAlignment " + limits
-                            .getMinMemoryMapAlignment());
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Invalid mapped memory ptr, does not fit with minMemoryMapAlignment " + limits.getMinMemoryMapAlignment());
         }
         memory.setMapped(pointer.get(0));
         return memory.getMapped();
@@ -352,8 +341,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
         if (!memory.isMapped()) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + ", memory is not mapped");
         }
-        VkMappedMemoryRange mappedRange = VkMappedMemoryRange.calloc()
-                .sType(VK10.VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
+        VkMappedMemoryRange mappedRange = VkMappedMemoryRange.calloc().sType(VK10.VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
                 .memory(memory.pointer)
                 .offset(0)
                 .size(memory.size)
@@ -898,11 +886,11 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
                 throw new IllegalArgumentException();
             }
             ByteBuffer deviceBuffer = MemoryUtil.memByteBuffer(destPointer, size);
-            deviceBuffer.position(destOffset);
+            deviceBuffer.position(0);
             deviceBuffer.put(buffer);
             buffer.reset();
             queue.queueBegin();
-            queue.cmdCopyBuffer(transferStagingBuffer, memory, 0, 0, size);
+            queue.cmdCopyBuffer(transferStagingBuffer, memory, 0, destOffset, size);
             queue.cmdBufferMemoryBarrier2(PipelineStateFlagBits2.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT.value,
                     AccessFlagBits2.VK_ACCESS_2_MEMORY_READ_BIT.value,
                     PipelineStateFlagBits2.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT.value,
