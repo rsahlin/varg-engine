@@ -20,7 +20,6 @@ import org.gltfio.gltf2.extensions.GltfExtensions.ExtensionTypes;
 import org.gltfio.gltf2.extensions.KHREnvironmentMap.KHREnvironmentMapReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.KHRLightsPunctualReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.Light;
-import org.gltfio.gltf2.extensions.KHRMaterialsEmissiveStrength;
 import org.gltfio.gltf2.extensions.KHRdisplayencoding;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.Logger;
@@ -280,24 +279,17 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             int startPos = destination.position();
             ShortBuffer buffer = destination.asShortBuffer();
             buffer.position(ORM_INDEX);
-            put(buffer, material.getOcclusionTextureInfo() != null ? material.getOcclusionTextureInfo().getStrength()
-                    : 1.0f);
+            put(buffer, material.getOcclusionTextureInfo() != null ? material.getOcclusionTextureInfo().getStrength() : 1.0f);
             put(buffer, pbr.getRoughnessFactor());
             put(buffer, pbr.getMetallicFactor());
             float fresnelPower = (environmentIOR - material.getIOR()) / (environmentIOR + material.getIOR());
             fresnelPower = fresnelPower * fresnelPower;
             put(buffer, fresnelPower);
             buffer.position(SCALE_FACTORS_INDEX);
-            KHRMaterialsEmissiveStrength khrEmissive = (KHRMaterialsEmissiveStrength) material.getExtension(
-                    ExtensionTypes.KHR_materials_emissive_strength);
-            float maxWhite = Settings.getInstance().getInt(BackendIntProperties.MAX_WHITE);
-            float emissiveStrength = khrEmissive != null ? khrEmissive.getEmissiveStrength() : maxWhite;
-            put(buffer, material.getEmissiveFactor() != null ? material.getEmissiveFactor()[0] * emissiveStrength
-                    : 0.0f);
-            put(buffer, material.getEmissiveFactor() != null ? material.getEmissiveFactor()[1] * emissiveStrength
-                    : 0.0f);
-            put(buffer, material.getEmissiveFactor() != null ? material.getEmissiveFactor()[2] * emissiveStrength
-                    : 0.0f);
+            Float emissiveStrength = material.getEmissiveStrength();
+            float factor = emissiveStrength != null ? emissiveStrength : Settings.getInstance().getInt(BackendIntProperties.MAX_WHITE);
+            float[] emissive = new float[3];
+            put(buffer, material.getEmissive(factor, emissive));
             put(buffer, material.getNormalTextureInfo() != null ? material.getNormalTextureInfo().getScale() : 1.0f);
             buffer.position(BASECOLOR_INDEX);
             put(buffer, pbr.getBaseColorFactor());
@@ -369,7 +361,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                 setIrradianceMap(buffer, environmentMap);
             }
         }
-        setLights(buffer, lights);
+        setLights(root, buffer, lights);
         // Todo - move to static - displayencoding does not change dynamically
         KHRdisplayencoding dm = (KHRdisplayencoding) (root.getRoot()
                 .getExtension(ExtensionTypes.KHR_displayencoding));
@@ -395,8 +387,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     private void setNodeModelMatrices(RenderableScene root, BindBuffer buffer) {
         // buffer.resetElement();
         JSONNode[] sceneNodes = root.getNodes();
-        MVPMatrices matrices = new MVPMatrices();
         if (sceneNodes != null) {
+            MVPMatrices matrices = new MVPMatrices();
             Transform sceneTransform = root.getSceneTransform();
             matrices.setMatrix(Matrices.MODEL, sceneTransform.updateMatrix());
             for (int i = 0; i < sceneNodes.length; i++) {
@@ -486,8 +478,11 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
         }
     }
 
-    private void setLights(BindBuffer buffer, JSONNode[] lights) {
+    private void setLights(RenderableScene root, BindBuffer buffer, JSONNode[] lights) {
         if (lights != null) {
+            float[] sceneMatrix = root.getSceneTransform().updateMatrix();
+            // Create a temp matrix
+            float[] matrix = MatrixUtils.createMatrix();
             int directionalIndex = 0;
             int pointIndex = 0;
             FloatBuffer destination = buffer.getBackingBuffer().position(0).asFloatBuffer();
@@ -517,7 +512,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                             directionalIndex++;
                             break;
                         case point:
-                            setPointLight(destination, pointIndex, light, getLightPosition(lights[i]));
+                            MatrixUtils.copy(sceneMatrix, 0, matrix, 0);
+                            setPointLight(destination, pointIndex, light, getLightPosition(lights[i], matrix));
                             pointIndex++;
                             break;
                         default:
@@ -541,22 +537,20 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
         JSONNode parent = null;
         JSONNode current = node;
         while ((parent = current.getParent()) != null) {
-            parent.getTransform().concatTransform(matrix);
+            matrix = parent.getTransform().concatTransform(matrix);
             current = parent;
         }
         return matrix;
 
     }
 
-    private float[] getLightPosition(JSONNode node) {
-        float[] matrix = MatrixUtils.createMatrix();
+    private float[] getLightPosition(JSONNode node, float[] matrix) {
         float[] vec4 = new float[4];
-        MatrixUtils.setIdentity(matrix, 0);
-        getParentsMatrix(node, matrix);
+        matrix = getParentsMatrix(node, matrix);
         Transform t = node.getTransform();
+        // MatrixUtils.setScaleM(matrix, 0, t.getScale());
+        // MatrixUtils.rotateM(matrix, t.getRotation());
         MatrixUtils.translate(matrix, t.getTranslate());
-        MatrixUtils.setScaleM(matrix, 0, t.getScale());
-        MatrixUtils.rotateM(matrix, t.getRotation());
         return MatrixUtils.getTranslate(matrix);
     }
 

@@ -49,6 +49,6 @@ void main() {
 #ifdef EMISSIVE
     outputPixel(pixel + vec4(GETTEXTURE(material.samplersData[EMISSIVE_TEXTURE_INDEX]).rgb * material.scaleFactors.rgb, 0));
 #else
-    outputPixel(pixel);
+    outputPixel(pixel + vec4(material.scaleFactors.rgb, 0));
 #endif
 }

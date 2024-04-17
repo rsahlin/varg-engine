@@ -237,7 +237,7 @@ vec4 brdf_main(in vec4 baseColor) {
  
 #ifdef DIRECTIONAL
     for (int lightNumber = 0; lightNumber < DIRECTIONAL_LIGHT_COUNT; lightNumber++) {
-        brdf.NdotL = max(0, dot(brdf.normal, -uniforms.directionallight[lightNumber].direction.xyz));
+        brdf.NdotL = dot(brdf.normal, -uniforms.directionallight[lightNumber].direction.xyz);
         float RPower = getFresnelFactor(R0, brdf.NdotL);
         float oneMinusRP = 1.0 - RPower;
         if (brdf.NdotL >= 0) {
@@ -267,13 +267,13 @@ vec4 brdf_main(in vec4 baseColor) {
 
 #ifdef POINT
     for (int lightNumber = 0; lightNumber < POINT_LIGHT_COUNT; lightNumber++) {
-        brdf.NdotL = max(0, dot(brdf.normal, -vPointLight[lightNumber].xyz));
+        brdf.NdotL = dot(brdf.normal, -vPointLight[lightNumber].xyz);
         float RPower = getFresnelFactor(R0, brdf.NdotL);
         float oneMinusRP = 1.0 - RPower;
         if (brdf.NdotL >= 0) {
             getPerPixelBRDFDirectional(vPointLight[lightNumber].xyz);
             float intensity = uniforms.pointlight[lightNumber].color.a / pow(vPointLight[lightNumber].w,2);
-            vec3 illumination = vec3((uniforms.pointlight[lightNumber].color.rgb * intensity) * max(0, brdf.NdotL));
+            vec3 illumination = vec3(uniforms.pointlight[lightNumber].color.rgb * intensity);
             //Here we assume transmitted light enters the material and exits evenly over the hemisphere (/ PI), in the baseColor of the material
             //As the solid angle from lightsource decreases (the angle to the lightsource increases) the power goes down.
             //Note that there is no distinction here based on metalness since this is already given by RPower
