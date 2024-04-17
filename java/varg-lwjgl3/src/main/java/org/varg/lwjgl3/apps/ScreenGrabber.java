@@ -56,6 +56,29 @@ import org.varg.vulkan.structs.RequestedFeatures;
 
 public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
 
+    public enum OutputFormat {
+        PNG("png"),
+        JPEG("jpg");
+
+        public final String type;
+
+        OutputFormat(String type) {
+            this.type = type;
+        }
+
+        public static OutputFormat get(String format) {
+            if (format != null) {
+                for (OutputFormat f : values()) {
+                    if (f.name().equalsIgnoreCase(format)) {
+                        return f;
+                    }
+                }
+            }
+            return null;
+        }
+
+    }
+
     public enum ScreenGrabberProperties implements StringProperty {
 
         /**
@@ -158,8 +181,8 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
                         try {
                             if (!dryRun) {
                                 int index = filename.indexOf(".");
-                                String outputname = outputFolder + filename.substring(0, index) + "_" + viewpoints[viewPointIndex].name + ".png";
-                                saveImage(bImg, outputname, "png");
+                                String outputname = outputFolder + filename.substring(0, index) + "_" + viewpoints[viewPointIndex].name + "." + outputFormat.type;
+                                saveImage(bImg, outputname, outputFormat.type);
                                 Logger.d(getClass(), "Convert and save " + outputname + " " + size[0] + "," + size[1] + " " + (System.currentTimeMillis() - timeStart) + " millis");
                             }
                         } catch (IOException e) {
@@ -195,6 +218,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
     private String shafFolder;
     private String outputFolder;
     private ArrayList<String> shafNames;
+    private OutputFormat outputFormat = OutputFormat.PNG;
 
     private int currentModel = 0;
     private long timeStart;
