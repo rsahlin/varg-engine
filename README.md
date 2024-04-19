@@ -57,7 +57,33 @@ The glTF Sponza model which usually renders with some 100 drawcalls (check PlayC
     <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/6dece0d1-3bdb-4c30-9120-45896140db76"  alt="Example of drawcall optimization - 3 drawcalls" width = 360px></td>
   </tr>
 </table>
+  
+  
+## Framegrabber  
+  
+Load any number of glTF models - render a given set of camera angles and save the output in PNG or JPG format.  
+The framebuffer content will be fetched after render of one frame.  
+This means that the saved image will contain what you actually see on the screen, if using multisamplebuffer the output will be the resolved buffer.  
+Pixel data is converted to 8 bit RGB and saved either as PNG or JPEG.  
+Any number of camera angles can be configured, once these are output the grabber will move on to the next glTF in the list.  
 
+
+<table>
+  <tr>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/91ac4821-201c-4dd7-9da6-dd6c3a648dd0"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/df036968-4fdb-4918-9a35-99a01a901cd1"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/4c08c942-afd3-4e21-82ff-63008e246980"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/f2c0815c-0969-4fb4-873b-7e04981522a4"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/6fadd0b6-8dae-46bd-87b5-60d019ce7a37"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/b31235ed-0491-420c-aa00-6526a28f367a"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/3251f5ca-567b-49df-87d2-a792a25b75a5"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/e3a17ade-4a00-4c29-a64d-c4eec2aa2841"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/faafcc72-e048-4301-9f4c-22ec7ce04c32"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/cdf01a59-c970-4554-affd-719de974b70f"  alt="Framegrabber output using camera Y axis rotation" width = 250px></td>
+  </tr>
+</table>
+  
+  
   
 ## Mesh shader experiment using voxels:  
 
