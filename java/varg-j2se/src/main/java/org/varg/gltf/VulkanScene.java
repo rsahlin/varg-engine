@@ -228,10 +228,18 @@ public class VulkanScene extends JSONScene implements VulkanRenderableScene {
                 mem.freeDeviceMemory(deviceMemory);
             }
             memoryBuffers.clear();
+            memoryBuffers = null;
         }
         if (drawCallBundle != null) {
             drawCallBundle.freeMemory();
+            drawCallBundle = null;
         }
+    }
+
+    @Override
+    public void destroy() {
+        this.inputs = null;
+        this.inputStates = null;
     }
 
 }

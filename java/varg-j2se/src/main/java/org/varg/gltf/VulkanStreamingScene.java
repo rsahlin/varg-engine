@@ -169,4 +169,10 @@ public class VulkanStreamingScene extends StreamingScene implements VulkanRender
 
     }
 
+    @Override
+    public void destroy() {
+        // TODO Auto-generated method stub
+
+    }
+
 }

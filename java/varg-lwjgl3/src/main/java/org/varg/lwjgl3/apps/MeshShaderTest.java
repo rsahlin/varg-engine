@@ -2,9 +2,6 @@ package org.varg.lwjgl3.apps;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 
 import org.gltfio.deserialize.LaddaProperties;
 import org.gltfio.lib.ErrorMessage;
@@ -136,33 +133,6 @@ public class MeshShaderTest extends LWJGL3Application implements WindowListener,
         VoxelData result = converter.convert(imageName,
                 // VoxelData result = converter.convert("assets/voxels/bob-small-transparency.png",
                 new float[] { 0.015f, 0.015f, 0.015f }, VoxelMeshShader.TIA_COLOR_PALETTE);
-        return result;
-    }
-
-    private ByteBuffer toIntArray(ByteBuffer bytes) {
-        ByteBuffer result = ByteBuffer.allocateDirect(bytes.limit() * 4).order(ByteOrder.nativeOrder());
-        IntBuffer intBuffer = result.asIntBuffer();
-        bytes.position(0);
-        while (bytes.remaining() > 0) {
-            intBuffer.put(bytes.get());
-        }
-        result.position(0);
-        return result;
-    }
-
-    private byte[] createColorIndexes(int count, int maxIndex, int modulo) {
-        byte[] result = new byte[count];
-        int colorIndex = 0;
-        int mCount = 0;
-        for (int i = 0; i < count; i++) {
-            result[i] = (byte) colorIndex;
-            mCount++;
-            if (mCount == modulo) {
-                mCount = 0;
-                colorIndex++;
-                colorIndex = colorIndex >= maxIndex ? 0 : colorIndex;
-            }
-        }
         return result;
     }
 

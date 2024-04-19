@@ -99,14 +99,15 @@ public class LWJGL3VARGTest extends VARGViewer {
         // return "gltf/car_toy_cartoon_style/car_toy_cartoon_style.glb";
         // return "extensions.gltf";
         // return "EKET_00333947_70x35x35.glb";
-        return "gltf/IkeaPlayroom/IkeaPlayroom.glb";
+        return "shaf/input/9f530490-31b3-4a18-98bc-55b375ce19a3.glb";
         // return "CREATOR:save2.gltf";
         // return "gltfio-creator/indoor_2.glb";
     }
 
     @Override
     protected String getResourcePath() {
-        return "C:/assets/test-assets/";
+        // return "C:/assets/test-assets/";
+        return "C:/";
         // return "C:/source/glTF-Sample-Assets/Models/";
         // return "C:/source/glTF-Sample-Models/2.0/";
         // return "C:/assets/test-assets/gltfio-creator/";
@@ -289,21 +290,20 @@ public class LWJGL3VARGTest extends VARGViewer {
         Settings settings = Settings.getInstance();
         settings.setProperty(FilesystemProperties.JAVA_TARGET_DIRECTORY, "target/test-classes");
         settings.setProperty(FilesystemProperties.SOURCE_DIRECTORY, "src/test");
-        settings.setProperty(BackendIntProperties.SURFACE_WIDTH, 1080);
+        settings.setProperty(BackendIntProperties.SURFACE_WIDTH, 1920);
         settings.setProperty(BackendIntProperties.SURFACE_HEIGHT, 1080);
         settings.setProperty(BackendProperties.FULLSCREEN, false);
         settings.setProperty(BackendIntProperties.BACKGROUND_FRAGMENTSIZE, 1);
         settings.setProperty(BackendIntProperties.FRAGMENTSIZE, 1);
         settings.setProperty(BackendIntProperties.SAMPLE_COUNT, 8);
         settings.setProperty(BackendStringProperties.COLORSPACE, "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
-        settings.setProperty(BackendIntProperties.MAX_WHITE, 1000);
-        settings.setProperty(IntArrayProperties.CLEAR_COLOR, null);
+        settings.setProperty(BackendIntProperties.MAX_WHITE, 500);
+        settings.setProperty(IntArrayProperties.CLEAR_COLOR, 0, 0, 0, 255);
 
-        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:200|irmap:STUDIO_5");
-        settings.setProperty(LaddaProperties.ENVMAP_BACKGROUND, "SH");
+        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:500|irmap:STUDIO_5");
+        // settings.setProperty(LaddaProperties.ENVMAP_BACKGROUND, "SH");
         // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:17000|color:1,1,1|position:0,10000,1000");
-        // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT1,
-        // "intensity:5000|color:1,0,0|position:-1000,0,10000");
+        // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT1,"intensity:5000|color:1,0,0|position:-1000,0,10000");
         // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT2, "intensity:5000|color:0,1,0|position:1000,0,10000");
         // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT3, "intensity:5000|color:0,0,1|position:0,10000,00");
         // settings.setProperty(LaddaProperties.ENVIRONMENTMAP,

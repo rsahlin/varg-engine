@@ -22,4 +22,10 @@ public class VulkanStreamingGltf extends StreamingGltf<VulkanStreamingScene> {
         return scene;
     }
 
+    @Override
+    public void destroy() {
+        // TODO Auto-generated method stub
+
+    }
+
 }

@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import org.gltfio.lib.Buffers;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.FileUtils;
+import org.gltfio.lib.Logger;
 import org.gltfio.lib.Vec3;
 import org.ktximageio.ktx.AwtImageUtils;
 import org.ktximageio.ktx.ByteArrayImageBuffer;
@@ -23,7 +25,6 @@ import org.ktximageio.ktx.ImageHeader;
 import org.ktximageio.ktx.ImageReader;
 import org.ktximageio.ktx.ImageReader.ImageFormat;
 import org.varg.vulkan.Vulkan10;
-import org.gltfio.lib.Logger;
 
 /**
  * Converts bitmap images to voxeldata
@@ -133,8 +134,8 @@ public class PixelsToVoxels {
 
     private VoxelData toVoxels(byte[] rgba, int w, int h, float[] spacing, int[] palette, float[] offsets) {
         int index = 0;
-        FloatBuffer positions = ByteBuffer.allocateDirect(w * h * 4 * 4).asFloatBuffer();
-        ByteBuffer paletteIndexesByte = ByteBuffer.allocateDirect(w * h * 2).order(ByteOrder.LITTLE_ENDIAN);
+        FloatBuffer positions = Buffers.createFloatBuffer(w * h * 4);
+        ByteBuffer paletteIndexesByte = Buffers.createByteBuffer(w * h * 2).order(ByteOrder.LITTLE_ENDIAN);
         float centerX = -(w / 2) * spacing[0];
         float centerY = -(h / 2) * spacing[1];
         Hashtable<Integer, Integer> lookups = new Hashtable<>();
@@ -291,7 +292,8 @@ public class PixelsToVoxels {
                                 Logger.d(getClass(), "First palette color: " + Integer.toHexString(
                                         palette[paletteIndex[checkIndex]]) + "(" + paletteIndex[checkIndex] + ")"
                                         + ", second: " + Integer.toHexString(
-                                                palette[i]) + "(" + i + ")");
+                                                palette[i])
+                                        + "(" + i + ")");
                             }
                             insertBefore();
                         }

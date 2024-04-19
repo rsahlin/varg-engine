@@ -280,10 +280,9 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
     }
 
     private void initSettings(Features deviceFeatures) {
-        PhysicalDeviceFeatureExtensions featureExtensions = deviceFeatures.getPhysicalDeviceFeatureExtensions();
         if (settings == null) {
-            Alignment cameraAlignment =
-                    Alignment.get(Settings.getInstance().getProperty(LaddaProperties.CAMERA_ALIGNMENT));
+            PhysicalDeviceFeatureExtensions featureExtensions = deviceFeatures.getPhysicalDeviceFeatureExtensions();
+            Alignment cameraAlignment = Alignment.get(Settings.getInstance().getProperty(LaddaProperties.CAMERA_ALIGNMENT));
             settings = new GltfSettings(cameraAlignment);
             if (!featureExtensions.hasIndexTypeUint8()) {
                 settings.setIndexedToShort(modelPrep);
@@ -318,8 +317,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             GltfSettings gltfSettings) {
         try {
             long start = System.currentTimeMillis();
-            loadedAsset = Ladda.getInstance(VulkanGltf.class).loadGltf(path, asset,
-                    modelPreparation, gltfSettings);
+            loadedAsset = Ladda.getInstance(VulkanGltf.class).loadGltf(path, asset, modelPreparation, gltfSettings);
             long loaded = System.currentTimeMillis();
             VulkanRenderableScene currentScene = loadedAsset.getScene(sceneIndex);
             prepareAsset(currentScene);
@@ -452,6 +450,8 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             renderer.getAssets().deleteTextureImages(s);
             renderer.getAssets().deleteStorageBuffers(shaderInfo);
             s.freeVertexMemory(renderer.getBufferFactory());
+            s.getRoot().destroy();
+            s.destroy();
         }
         renderer.getBufferFactory().logMemory();
     }

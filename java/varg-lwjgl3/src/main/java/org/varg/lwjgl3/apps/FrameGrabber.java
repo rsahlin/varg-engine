@@ -22,6 +22,7 @@ import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.FileUtils;
 import org.gltfio.lib.ImageUtils;
 import org.gltfio.lib.Logger;
+import org.gltfio.lib.Quaternion;
 import org.gltfio.lib.Settings;
 import org.gltfio.lib.Settings.StringProperty;
 import org.gltfio.lib.ThreadService;
@@ -54,7 +55,7 @@ import org.varg.vulkan.structs.Extent2D;
 import org.varg.vulkan.structs.Extent3D;
 import org.varg.vulkan.structs.RequestedFeatures;
 
-public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
+public class FrameGrabber extends LWJGL3Application implements CreateDevice {
 
     public enum OutputFormat {
         PNG("png"),
@@ -79,29 +80,37 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
 
     }
 
-    public enum ScreenGrabberProperties implements StringProperty {
+    public enum FrameGrabberProperties implements StringProperty {
 
         /**
          * Specify the source folder
          */
-        SOURCE_FOLDER("screengrabber.folder", "C:/assets/test-assets/shaf/"),
+        SOURCE_FOLDER("framegrabber.folder", "C:/assets/test-assets/shaf/"),
+        /**
+         * Specify the output folder
+         */
+        OUTPUT_FOLDER("framegrabber.output", "C:/assets/test-assets/shaf/"),
         /**
          * Name of file containing input names
          */
-        INPUT_FILENAME("screengrabber.input", null),
+        INPUT_FILENAME("framegrabber.input", null),
         /**
          * Specify name of listfile
          */
-        LIST_FILENAME("screengrabber.listfilename", null),
+        LIST_FILENAME("framegrabber.listfilename", null),
         /**
          * Set to true to only list filename - no render or output
          */
-        SAVE_LISTFILE("screengrabber.savelistfile", null);
+        SAVE_LISTFILE("framegrabber.savelistfile", null),
+        /**
+         * Set to true to only render - do not save any framegrabs
+         */
+        DRYRUN("framegrabber.dryrun", "false");
 
         private final String key;
         private final String defaultValue;
 
-        ScreenGrabberProperties(String key, String defaultValue) {
+        FrameGrabberProperties(String key, String defaultValue) {
             this.key = key;
             this.defaultValue = defaultValue;
         }
@@ -146,13 +155,18 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
             this.name = viewpoint.name().toLowerCase();
         }
 
+        private CameraSetup(float[] rotation, String name) {
+            this.rotation = rotation;
+            this.name = name;
+        }
+
     }
 
     private class ImageSaveRunnable implements Runnable {
 
         private final String filename;
         private final Vulkan10.Format format;
-        private final ByteBuffer buffer;
+        private ByteBuffer buffer;
         private final int viewPointIndex;
         private final int[] size;
         private final Semaphore semaphore;
@@ -179,12 +193,10 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
                         BufferedImage bImg = AwtImageUtils.toBufferedImage(destination, size[0], size[1],
                                 ImageFormat.VK_FORMAT_B8G8R8_UNORM);
                         try {
-                            if (!dryRun) {
-                                int index = filename.indexOf(".");
-                                String outputname = outputFolder + filename.substring(0, index) + "_" + viewpoints[viewPointIndex].name + "." + outputFormat.type;
-                                saveImage(bImg, outputname, outputFormat.type);
-                                Logger.d(getClass(), "Convert and save " + outputname + " " + size[0] + "," + size[1] + " " + (System.currentTimeMillis() - timeStart) + " millis");
-                            }
+                            int index = filename.indexOf(".");
+                            String outputname = outputFolder + outputFormat.type + "/" + filename.substring(0, index) + "_" + viewpoints[viewPointIndex].name + "." + outputFormat.type;
+                            saveImage(bImg, outputname, outputFormat.type);
+                            Logger.d(getClass(), "Convert and save " + outputname + " " + size[0] + "," + size[1] + " " + (System.currentTimeMillis() - timeStart) + " millis");
                         } catch (IOException e) {
                             Logger.d(getClass(), "Exception saving to " + filename + "\n" + e.toString());
                             throw new RuntimeException(e);
@@ -197,6 +209,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
                 Logger.d(getClass(), "Exception saving " + filename + "\n" + e.toString());
                 saveException = e;
             } finally {
+                buffer = null;
                 semaphore.release();
             }
         }
@@ -206,7 +219,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
     private static final CameraSetup[] DEFAULT_CAMERAS = new CameraSetup[] { new CameraSetup(VIEWPOINT.FRONT_FACING),
             new CameraSetup(VIEWPOINT.THREEDEE_DESIGN), new CameraSetup(VIEWPOINT.FLOORPLAN) };
 
-    public ScreenGrabber(String[] args, Renderers version, String title) {
+    public FrameGrabber(String[] args, Renderers version, String title) {
         super(args, version, title);
     }
 
@@ -222,7 +235,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
 
     private int currentModel = 0;
     private long timeStart;
-    // Set to true to skip saving of grabbed screen
+    // Set to true to skip saving of grabbed frame
     private boolean dryRun = false;
     private Semaphore lock = new Semaphore(0);
     private int lockCount = 0;
@@ -237,10 +250,10 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
         Settings.getInstance().setProperty(BackendIntProperties.MAX_WHITE, 1000);
         Settings.getInstance().setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:600|irmap:STUDIO_5");
         Settings.getInstance().setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:1000|color:1,1,1|position:0,10000,10000");
-        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_WIDTH, 1920);
-        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_HEIGHT, 1080);
+        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_WIDTH, 1280);
+        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_HEIGHT, 720);
 
-        ScreenGrabber grabber = new ScreenGrabber(args, Renderers.VULKAN13, "VARG Model Viewer");
+        FrameGrabber grabber = new FrameGrabber(args, Renderers.VULKAN13, "VARG Model Viewer");
         try {
             if (!grabber.setupFiles()) {
                 grabber.createApp();
@@ -272,20 +285,21 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
      * @throws URISyntaxException
      */
     private boolean setupFiles() throws IOException, URISyntaxException {
-        shafFolder = Settings.getInstance().getProperty(ScreenGrabberProperties.SOURCE_FOLDER);
-        outputFolder = shafFolder + "png/";
+        shafFolder = Settings.getInstance().getProperty(FrameGrabberProperties.SOURCE_FOLDER);
+        outputFolder = Settings.getInstance().getProperty(FrameGrabberProperties.OUTPUT_FOLDER);
         shafNames = listFilenames(shafFolder, false, ".glb");
-        String filename = Settings.getInstance().getProperty(ScreenGrabberProperties.LIST_FILENAME);
+        String filename = Settings.getInstance().getProperty(FrameGrabberProperties.LIST_FILENAME);
         saveFilenames(shafNames, shafFolder, filename != null ? filename : "shaffiles.txt");
         /**
          * Last check the input filename
          */
-        String input = Settings.getInstance().getProperty(ScreenGrabberProperties.INPUT_FILENAME);
+        String input = Settings.getInstance().getProperty(FrameGrabberProperties.INPUT_FILENAME);
         if (input != null) {
             shafNames.clear();
-            shafNames = loadFilenames(shafFolder, input);
+            String p = FileUtils.getInstance().isAbsolute(input) ? "" : shafFolder;
+            shafNames = loadFilenames(p, input);
         }
-        return Settings.getInstance().getBoolean(ScreenGrabberProperties.SAVE_LISTFILE);
+        return Settings.getInstance().getBoolean(FrameGrabberProperties.SAVE_LISTFILE);
     }
 
     @Override
@@ -297,7 +311,8 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
     @Override
     public void init() {
         try {
-            viewpoints = DEFAULT_CAMERAS;
+            dryRun = Settings.getInstance().getBoolean(FrameGrabberProperties.DRYRUN);
+            viewpoints = createCameras();
             // TODO Move creation of renderer to after loading of glTF JSON (not buffers and textures)
             createRenderer(this);
             createDescriptorPool(10, 0, 0, 10);
@@ -308,6 +323,24 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
+    }
+
+    private CameraSetup[] createCameras() {
+        boolean test = true;
+        if (test) {
+            int steps = 20;
+            CameraSetup[] result = new CameraSetup[steps];
+            float toRad = 1f / 57.2957795f;
+            int index = 0;
+            for (int i = 0; i < 360; i += (360 / steps)) {
+                float[] quat = new float[4];
+                float angle = i * toRad;
+                Quaternion.setYAxisRotation(angle, quat);
+                result[index++] = new CameraSetup(quat, Integer.toString(i));
+            }
+            return result;
+        }
+        return DEFAULT_CAMERAS;
     }
 
     private ArrayList<String> loadFilenames(String folder, String inputname) throws FileNotFoundException, URISyntaxException, IOException {
@@ -325,7 +358,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
     private void saveFilenames(List<String> filenames, String folder, String outputname) throws FileNotFoundException,
             URISyntaxException,
             IOException {
-        FileOutputStream fos = new FileOutputStream(FileUtils.getInstance().getFile(shafFolder, outputname));
+        FileOutputStream fos = new FileOutputStream(FileUtils.getInstance().getFile(outputFolder, outputname));
         for (String filename : filenames) {
             fos.write(filename.getBytes());
             fos.write("\n".getBytes());
@@ -352,9 +385,7 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
     private void loadModel() {
         loadGltfAsset(shafFolder, shafNames.get(currentModel));
         scene = loadedAsset.getScene(0);
-        Logger.d(getClass(), "Load asset " + shafNames.get(currentModel) + " took " + (System.currentTimeMillis()
-                - timeStart)
-                + " millis");
+        Logger.d(getClass(), "Load asset " + shafNames.get(currentModel) + " took " + (System.currentTimeMillis() - timeStart) + " millis");
         // Returns the added default camera
         camera = loadedAsset.getCamera(0);
         camera.translateCamera(0, 0, 2);
@@ -379,28 +410,38 @@ public class ScreenGrabber extends LWJGL3Application implements CreateDevice {
         Image image = imageView.getImage();
         Vulkan10.Format format = Vulkan10.Format.get(image.getCreateInfo().formatValue);
         Extent3D size = image.getCreateInfo().extent;
-        ImageSubresourceLayers subLayer = new ImageSubresourceLayers(ImageAspectFlagBit.VK_IMAGE_ASPECT_COLOR_BIT,
-                0, 0,
-                image.getArrayLayers());
+        ImageSubresourceLayers subLayer = new ImageSubresourceLayers(ImageAspectFlagBit.VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, image.getArrayLayers());
         Queue queue = getRenderer().getQueue();
         queue.queueBegin();
         queue.transitionToLayout(image, ImageLayout.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subLayer);
-        ByteBuffer buffer = getBuffer(image, size);
-        ImageSaveRunnable save = new ImageSaveRunnable(lock, shafNames.get(currentModel), viewpointIndex, format, buffer, size.width, size.height);
-        ThreadService.getInstance().execute(save);
-        lockCount++;
+        if (!dryRun) {
+            ByteBuffer buffer = getBuffer(image, size);
+            ImageSaveRunnable save = new ImageSaveRunnable(lock, shafNames.get(currentModel), viewpointIndex, format, buffer, size.width, size.height);
+            try {
+                if (lockCount >= ThreadService.getInstance().threadCount - 1) {
+                    lock.acquire(1);
+                    lockCount--;
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            ThreadService.getInstance().execute(save);
+            lockCount++;
+        }
         viewpointIndex++;
         if (viewpointIndex >= viewpoints.length) {
             viewpointIndex = 0;
             deleteAssets(scene);
+            Runtime.getRuntime().gc();
             loadModel();
-            try {
-                lock.acquire(lockCount);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            lockCount = 0;
             if (!hasMoreModels()) {
+                // Wait for all images to be saved before exiting.
+                try {
+                    lock.acquire(lockCount);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                lockCount = 0;
                 setRunning(false);
             }
         }
