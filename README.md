@@ -6,7 +6,59 @@ This project is licensed under the terms of the MIT license.
 This project is a continuation of:  
 https://github.com/rsahlin/graphics-by-opengl  
 https://github.com/rsahlin/gltf-viewer  
+
+# BXDF's and PBR  
   
+  
+First some words about 'Physically Based Rendering' - or PBR for short.  
+  
+I think it is time to move past the PBR moniker.  
+Sure, it's served us well for the past 20 odd years - with it's origin in the 'dark ages' where _everyone_ was using fudge values to get renderers to create somewhat plausible results.  
+Along came PBR as a concept and instead of having arbitrary values we got to choose parameters (loosely) based on physical parameters.  
+This was a huge improvement and a major leap for designers, modellers and material technicians - basically anyone using content creation tools to produce models or materials.  
+
+However....  
+
+With physical properties chosen mostly based on what made sense in editors, we ended up with parameters such as:  
+Metalness, or dielectrics/insulators  
+Gloss  
+Albedo or basecolor  
+Roughness  
+
+All of these make sense when used an editor by someone that wants to create the 3D appearance of something realistic.  
+But, come on - metalness???
+That's not a good parameter to base the fulcrum of your physically correct render - maybe if you are communicating with a welder or a mine operation - but not for calculating the light interactions of the material.  
+
+The solution?  
+Let's take a holistic look at how these models come to be.  
+
+## 3D Workflow
+  
+To end up with something awesome rendered on the screen we need to support a 3D workflow:  
+
+### Content Creation  
+The creation of the 3D data - this encompasses everything done in different editor such as 3D modelling packages or image tools.  
+Here it makes perfect sense to use simple to understand names for parameters - I would argue that this is where most of the influence on PBR comes from.  
+This is everything from material creation to modelling of 3D topology.  
+
+### The Dataset 
+
+This is the data that is saved/exported or converted from the content creation step.  
+The dataset absolutely must be firmly based in the physics of light, not electricity or metallurgy.  
+This should be totally removed from both the previous, content creation step, and the following render step.  
+With current PBR proposals I would say that this step is somewhat broken, it's deviated from the light/surface interactions that it must model.  
+
+### Rendering  
+
+The final step, or at least the almost final step - before post-processing - taking the dataset and calculating an output that is physically correct.  
+To do this correct we must take a step back and look at the single most important event in all light calculations:  
+What happes when light travels between different media - in our case - as the light 'hits' the surface defined by the dataset.  
+This has been known for over 100 years and is given by the Fresnel equations - the fulcrum of physically correct shading.    
+  
+  
+So, let's use the following 
+IOR - with angle of incidence we get reflection and transmission.  
+
   
 ## VARG - Engine  
   
