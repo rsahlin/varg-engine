@@ -7,7 +7,7 @@ This project is a continuation of:
 https://github.com/rsahlin/graphics-by-opengl  
 https://github.com/rsahlin/gltf-viewer  
 
-# BXDF's and PBR  
+# PBR and Physically Correct Shading  
   
   
 First some words about 'Physically Based Rendering' - or PBR for short.  
@@ -25,9 +25,9 @@ Gloss
 Albedo or basecolor  
 Roughness  
 
-All of these make sense when used an editor by someone that wants to create the 3D appearance of something realistic.  
+All of these make sense when used an editor by someone that wants to create the 3D appearance of something realistically looking.   
 But, come on - metalness???
-That's not a good parameter to base the fulcrum of your physically correct render - maybe if you are communicating with a welder or a mine operation - but not for calculating the light interactions of the material.  
+That's not a good parameter to put at the core of your physically correct render - maybe if you are communicating with a welder or a mine operation - but not for calculating the light interactions of the material.  
 
 The solution?  
 Let's take a holistic look at how these models come to be.  
@@ -66,11 +66,31 @@ It is needed for some cases of roughness, though I really dislike the roughness 
 What we are modelling is a theoretic model of how light is scattered by a micro-surface geometry.  
 Using this model light is broken down into fractions - maybe somewhat plausible for some cases of 'diffuse' refraction - the incoming light is scaled [0.0 - 1.0] based on roughness.  
 Clearly not what happens to reflected light - this issue is also connected to the omission of lightsource solid angle - for instance in the glTF datamodel.  
+  
+  
+To put this into action we need to adress the last 2 stages of the 3D Workflow - namely the dataset and light shading.  
+
+### Media (Surface) Light Property Dataset  
+  
+This is the dataset for the media properties when it comes to light calculations.  
+In short - physical properties that model how light interacts with the surface and inside the media.    
+
+### Fresnel Based Light Shading  
+  
+Physically correct light shading using the Media Light Property Dataset.  
+The first rule of Fresnel Based Light Shading is to start with the IOR and angle of incidence to calculate the Fresnel power function.  
+Use the media reflection color for the reflective part and the media transmission color for re-emitted transmission.  
+How much of the transmitted light that may be re-emitted is govererned by the absorption factor (for metals this value is 1).  
+Transmitted light is affected by surface dispersion factor:  
+-0 means no dispersion.  
+-1 means fully dispersed over 2PI.  
+Transmission intensity goes from 1 down to 1 / 2PI as dispersion goes up.  
+Irradiance Map (Spherical Harmonics) is calculated in same way as the transmissive light.  
+Environment map reflections use first rule of FBLS.  
 
   
   
-  
-## VARG - Engine  
+# The VARG - Engine - A Fresnel Based Light Shader   
   
 VARG is written in Java.  
 To interface with Vulkan, which is a C based API, LWJGL3 is used.  
@@ -79,8 +99,8 @@ The communication with LWJGL3 is separated into it's own module.
 Currently Windows and Linux platforms are supported - VARG can run on any platform that LWJGL3 [GLFW and Vulkan] can be built for.  
   
 VARG supports compute and graphics pipelines, geometry is streamlined and made into drawcalls before being executed by the renderer.  
-Physically based rendering is supported using a custom BRDF - most importantly the BRDF uses Fresnel power equations for all light/material interactions.  
-It's based on the metal/roughness parameters of glTF.  
+Physically based rendering is supported using Fresnel Based Light Shading.  
+    
   
 SPIR-V compilation is currently done on target, using the platform command 'glslc'.  
 Hash values are used to differentiate shader permutations.  
