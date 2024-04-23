@@ -79,11 +79,26 @@ public class SceneControl implements PointerListener, KeyListener {
      * @param camera
      * @param screenSize
      */
-    protected SceneControl(JSONCamera camera, VulkanRenderableScene scene, @NonNull Extent2D screenSize) {
-        setCamera(camera);
-        setScene(scene);
+    protected SceneControl(VulkanRenderableScene scene, JSONCamera camera, @NonNull Extent2D screenSize) {
         screenDimension = screenSize;
-        bounds = scene.calculateBounds();
+        setScene(scene, camera);
+    }
+
+    /**
+     * Sets the scene and camera
+     * 
+     * @param srcScene
+     * @param srcCamera
+     */
+    public void setScene(VulkanRenderableScene srcScene, JSONCamera srcCamera) {
+        setCamera(srcCamera);
+        setScene(srcScene);
+        bounds = srcScene.calculateBounds();
+        if (bounds != null) {
+            float[] xyDimension = bounds.getMaxDeltaXY(new float[2]);
+            cameraTranslateScale = Math.max(xyDimension[0], xyDimension[1]);
+        }
+
     }
 
     /**

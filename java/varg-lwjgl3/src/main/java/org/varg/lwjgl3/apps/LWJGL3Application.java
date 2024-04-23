@@ -82,7 +82,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
     protected static final int MAX_DESCRIPTORSET_SAMPLERS = 32;
     protected static final WindowType DEFAULT_WINDOW_TYPE = WindowType.GLFW;
 
-    protected GltfSceneControl sceneControl;
+    protected volatile GltfSceneControl sceneControl;
     protected AssetBaseObject<VulkanRenderableScene> loadedAsset;
     protected int sceneIndex = 0;
     private volatile boolean running = false;
@@ -333,11 +333,15 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
      * Creates scenecontrol for the loaded asset, sets camera and adds key/pointer listeners to scenecontrol
      */
     protected void createSceneControl(VulkanRenderableScene currentScene) {
-        Extent2D extent = getRenderer().getBackend().getKHRSwapchain().getExtent();
-        sceneControl = new GltfSceneControl(loadedAsset, currentScene, extent);
-        getRenderer().setCamera(sceneControl.getCamera());
-        getJ2SEWindow().addPointerListener(sceneControl);
-        getJ2SEWindow().addKeyListener(sceneControl);
+        if (sceneControl == null) {
+            Extent2D extent = getRenderer().getBackend().getKHRSwapchain().getExtent();
+            sceneControl = new GltfSceneControl(loadedAsset.getCameraInstance(), currentScene, extent);
+            getRenderer().setCamera(sceneControl.getCamera());
+            getJ2SEWindow().addPointerListener(sceneControl);
+            getJ2SEWindow().addKeyListener(sceneControl);
+        } else {
+            sceneControl.setScene(currentScene, loadedAsset.getCameraInstance());
+        }
     }
 
     /**

@@ -2,9 +2,8 @@
 package org.varg.scene;
 
 import org.eclipse.jdt.annotation.NonNull;
-import org.gltfio.gltf2.AssetBaseObject;
+import org.gltfio.gltf2.JSONCamera;
 import org.gltfio.gltf2.JSONNode;
-import org.gltfio.gltf2.MinMax;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.KHRLightsPunctualReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.Light;
 import org.gltfio.lib.Logger;
@@ -18,14 +17,8 @@ import org.varg.vulkan.structs.Extent2D;
  */
 public class GltfSceneControl extends SceneControl {
 
-    public GltfSceneControl(@NonNull AssetBaseObject glTF, @NonNull VulkanRenderableScene scene,
-            @NonNull Extent2D screenSize) {
-        super(glTF.getCameraInstance(), scene, screenSize);
-        MinMax bbox = scene.calculateBounds();
-        if (bbox != null) {
-            float[] xyDimension = bbox.getMaxDeltaXY(new float[2]);
-            cameraTranslateScale = Math.max(xyDimension[0], xyDimension[1]);
-        }
+    public GltfSceneControl(@NonNull JSONCamera camera, @NonNull VulkanRenderableScene scene, @NonNull Extent2D screenSize) {
+        super(scene, camera, screenSize);
     }
 
     /**

@@ -15,8 +15,8 @@ import java.util.concurrent.Semaphore;
 
 import javax.imageio.ImageIO;
 
+import org.gltfio.deserialize.LaddaFloatProperties;
 import org.gltfio.deserialize.LaddaProperties;
-import org.gltfio.gltf2.JSONCamera;
 import org.gltfio.lib.Buffers;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.FileUtils;
@@ -43,7 +43,6 @@ import org.varg.vulkan.Vulkan13.PipelineStateFlagBits2;
 import org.varg.vulkan.VulkanBackend.BackendIntProperties;
 import org.varg.vulkan.VulkanBackend.BackendStringProperties;
 import org.varg.vulkan.VulkanBackend.IntArrayProperties;
-import org.varg.vulkan.VulkanRenderableScene;
 import org.varg.vulkan.image.Image;
 import org.varg.vulkan.image.ImageCreateInfo;
 import org.varg.vulkan.image.ImageSubresourceLayers;
@@ -223,14 +222,13 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
         super(args, version, title);
     }
 
-    private VulkanRenderableScene scene;
-    private JSONCamera camera;
     private int viewpointIndex = 0;
     private CameraSetup[] viewpoints;
 
     private String shafFolder;
     private String outputFolder;
     private ArrayList<String> shafNames;
+    private ArrayList<String> skippedFiles = new ArrayList<String>();
     private OutputFormat outputFormat = OutputFormat.PNG;
 
     private int currentModel = 0;
@@ -250,8 +248,9 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
         Settings.getInstance().setProperty(BackendIntProperties.MAX_WHITE, 1000);
         Settings.getInstance().setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:600|irmap:STUDIO_5");
         Settings.getInstance().setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:1000|color:1,1,1|position:0,10000,10000");
-        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_WIDTH, 1280);
-        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_HEIGHT, 720);
+        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_WIDTH, 1920);
+        Settings.getInstance().setProperty(BackendIntProperties.SURFACE_HEIGHT, 1080);
+        Settings.getInstance().setProperty(LaddaFloatProperties.CAMERA_NEAR, 1.0f);
 
         FrameGrabber grabber = new FrameGrabber(args, Renderers.VULKAN13, "VARG Model Viewer");
         try {
@@ -326,7 +325,7 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
     }
 
     private CameraSetup[] createCameras() {
-        boolean test = true;
+        boolean test = false;
         if (test) {
             int steps = 20;
             CameraSetup[] result = new CameraSetup[steps];
@@ -373,7 +372,8 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
         if (currentModel < shafNames.size()) {
             try {
                 List<String> remaining = shafNames.subList(currentModel, shafNames.size() - 1);
-                saveFilenames(remaining, shafFolder, "remaining_shaffiles.txt");
+                skippedFiles.addAll(remaining);
+                saveFilenames(skippedFiles, shafFolder, "remaining_shaffiles.txt");
             } catch (URISyntaxException | IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -383,19 +383,18 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
     }
 
     private void loadModel() {
-        loadGltfAsset(shafFolder, shafNames.get(currentModel));
-        scene = loadedAsset.getScene(0);
-        Logger.d(getClass(), "Load asset " + shafNames.get(currentModel) + " took " + (System.currentTimeMillis() - timeStart) + " millis");
-        // Returns the added default camera
-        camera = loadedAsset.getCamera(0);
-        camera.translateCamera(0, 0, 2);
-        getRenderer().setCamera(camera);
-
-    }
-
-    private boolean hasMoreModels() {
-        currentModel++;
-        return currentModel < shafNames.size();
+        while (loadedAsset == null && currentModel < shafNames.size()) {
+            try {
+                loadGltfAsset(shafFolder, shafNames.get(currentModel));
+                Logger.d(getClass(), "Loaded asset " + shafNames.get(currentModel) + " took " + (System.currentTimeMillis() - timeStart) + " millis");
+                sceneControl.getCamera().translateCamera(0, 0, 2);
+                getRenderer().setCamera(sceneControl.getCamera());
+            } catch (RuntimeException e) {
+                Logger.d(getClass(), "Skipping file - exception:" + e.toString());
+                skippedFiles.add(shafNames.get(currentModel));
+                currentModel++;
+            }
+        }
     }
 
     @Override
@@ -404,8 +403,8 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
             throw new RuntimeException(saveException);
         }
         timeStart = System.currentTimeMillis();
-        camera.setCameraRotation(viewpoints[viewpointIndex].rotation);
-        internalDrawFrame(scene);
+        sceneControl.getCamera().setCameraRotation(viewpoints[viewpointIndex].rotation);
+        internalDrawFrame(sceneControl.getCurrentScene());
         ImageView imageView = getRenderer().getSwapBuffer().getCurrentImageView();
         Image image = imageView.getImage();
         Vulkan10.Format format = Vulkan10.Format.get(image.getCreateInfo().formatValue);
@@ -431,10 +430,16 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
         viewpointIndex++;
         if (viewpointIndex >= viewpoints.length) {
             viewpointIndex = 0;
-            deleteAssets(scene);
-            Runtime.getRuntime().gc();
+            deleteAssets(sceneControl.getCurrentScene());
+            loadedAsset = null;
+            currentModel++;
             loadModel();
-            if (!hasMoreModels()) {
+            if (currentModel >= shafNames.size()) {
+                try {
+                    saveFilenames(skippedFiles, shafFolder, "remaining_shaffiles.txt");
+                } catch (URISyntaxException | IOException e) {
+                    e.printStackTrace();
+                }
                 // Wait for all images to be saved before exiting.
                 try {
                     lock.acquire(lockCount);
@@ -458,11 +463,8 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
 
     private ByteBuffer getBuffer(Image image, Extent3D size) {
         Queue queue = getRenderer().getQueue();
-        MemoryBuffer pixels = getRenderer().getBufferFactory().copyFromDeviceMemory(image,
-                ImageAspectFlagBit.VK_IMAGE_ASPECT_COLOR_BIT, queue);
-        queue.cmdBufferMemoryBarrier2(PipelineStateFlagBits2.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT.value,
-                AccessFlagBits2.VK_ACCESS_2_MEMORY_READ_BIT.value,
-                PipelineStateFlagBits2.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT.value,
+        MemoryBuffer pixels = getRenderer().getBufferFactory().copyFromDeviceMemory(image, ImageAspectFlagBit.VK_IMAGE_ASPECT_COLOR_BIT, queue);
+        queue.cmdBufferMemoryBarrier2(PipelineStateFlagBits2.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT.value, AccessFlagBits2.VK_ACCESS_2_MEMORY_READ_BIT.value, PipelineStateFlagBits2.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT.value,
                 AccessFlagBits2.VK_ACCESS_2_MEMORY_WRITE_BIT.value, pixels);
         ByteBuffer buffer = Buffers.createByteBuffer((int) pixels.size);
         queue.queueWaitIdle();
