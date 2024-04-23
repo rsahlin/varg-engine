@@ -56,9 +56,19 @@ What happes when light travels between different media - in our case - as the li
 This has been known for over 100 years and is given by the Fresnel equations - the fulcrum of physically correct shading.    
   
   
-So, let's use the following 
-IOR - with angle of incidence we get reflection and transmission.  
+So, let's use the following  
+-IOR - with angle of incidence we get reflection and transmission.  
+-Absorption factor - amount of transmitted light that is absorbed in the material.  
+-Reflection color - how the material colors the reflected light.  
+-Transmission color - how the material colors the transmitted light.  
+-Surface dispersion - how the material disperses light on a micro-surface level. In my opinion this is an anomaly.  
+It is needed for some cases of roughness, though I really dislike the roughness property - we are not _really_ modelling the surface roughness per se.  
+What we are modelling is a theoretic model of how light is scattered by a micro-surface geometry.  
+Using this model light is broken down into fractions - maybe somewhat plausible for some cases of 'diffuse' refraction - the incoming light is scaled [0.0 - 1.0] based on roughness.  
+Clearly not what happens to reflected light - this issue is also connected to the omission of lightsource solid angle - for instance in the glTF datamodel.  
 
+  
+  
   
 ## VARG - Engine  
   
