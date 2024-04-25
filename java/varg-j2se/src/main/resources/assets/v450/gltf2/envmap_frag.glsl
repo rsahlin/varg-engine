@@ -35,8 +35,8 @@ vec3 getReflection(in float roughness, float intensity) {
     float gaf = GA_SMITH(roughness, brdf.NdotV);
     float lod = textureQueryLod(uEnvironmentTexture[0], reflect).x;  
     lod = lod + roughness * (uniforms.cubemaps[0].cubeMapInfo.x - lod);
-    return brdf.orma.r * (gaf * gaf) * textureLod(uEnvironmentTexture[0], vec4(reflect, 0), lod).rgb * intensity;
-//    return brdf.orma.r * (gaf * gaf) * mix(1, oneByPI, roughness) * textureLod(uEnvironmentTexture[0], vec4(reflect, 0), lod).rgb * intensity;
+    return brdf.orm.r * (gaf * gaf) * textureLod(uEnvironmentTexture[0], vec4(reflect, 0), lod).rgb * intensity;
+//    return brdf.orm.r * (gaf * gaf) * mix(1, oneByPI, roughness) * textureLod(uEnvironmentTexture[0], vec4(reflect, 0), lod).rgb * intensity;
 }
 
 vec3 getBackground(in float blur, in float intensity, in vec3 viewDirection) {

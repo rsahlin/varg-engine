@@ -35,60 +35,32 @@ void getPerPixelBRDFDirectional(in vec3 lightDirection) {
     brdf.NdotH = max(0, dot(brdf.normal, brdf.H));
     brdf.HdotL = max(0, dot(brdf.H, -lightDirection));
 }
-
-
-//From the glTF spec:
-//The base color has two different interpretations depending on the value of metalness. 
-//When the material is a metal, the base color is the specific measured reflectance value at normal incidence (F0). 
-//For a non-metal the base color represents the reflected diffuse color of the material.
-vec4 getBaseColor() {
-#ifdef BASECOLOR
-    return vBaseColor * GETTEXTURE(material.samplersData[BASECOLOR_TEXTURE_INDEX]);
- #else
-    return vBaseColor;
-#endif
-}
  
 /**
  * This is used for materials that do not have normal/metallicrough/occlusion texture maps
  */
 void setupPBRMaterial() {
-    brdf.orm = material.ormp.rgb;
+    brdf.ormp = material.ormp;
 }
 
-/**
- * cdiff = lerp(baseColor.rgb * (1 - DIELECTRICSPECULAR.r), black, metallic) 
- * F0 = lerp(DIELECTRICSPECULAR, baseColor.rgb, metallic) 
- * a = roughness ^ 2
- * F = F0 + (1 - F0) * (1.0 - V * H)^5
- */
 void setupPBRMaterial(const float occlusion) {
-    brdf.orm.r = occlusion;
-    brdf.orm.g = material.ormp.g;
-    brdf.orm.b = material.ormp.b;
+    brdf.ormp = material.ormp;
+    brdf.ormp.r = occlusion;
 }
+
+void setupPBRMaterial(const float occlusion, in vec4 rm) {
+    brdf.ormp = material.ormp;
+    brdf.ormp.r = occlusion;
+    brdf.ormp.gb = rm.gb;
+}
+
 
 void setupPBRMaterial(in vec2 rm) {
-    brdf.orm.r = 1;
-    brdf.orm.g = rm.x;
-    brdf.orm.b = rm.y;
+    brdf.ormp = material.ormp;
+    brdf.ormp.g = rm.x;
+    brdf.ormp.b = rm.y;
 }
 
-void setupPBRMaterial(in vec3 orm) {
-    brdf.orm = orm;
-}
-
-/**
- * cdiff = lerp(baseColor.rgb * (1 - DIELECTRICSPECULAR.r), black, metallic) 
- * F0 = lerp(DIELECTRICSPECULAR, baseColor.rgb, metallic) 
- * a = roughness ^ 2
- * F = F0 + (1 - F0) * (1.0 - V * H)^5
- */
-void setupPBRMaterial(in vec4 occlusion, in vec4 metallicRoughness) {
-    brdf.orm.r = occlusion.r;
-    brdf.orm.g = metallicRoughness.g;
-    brdf.orm.b = metallicRoughness.b;
-}
 
 /**
  * Takes the incoming pbr calculated pixel and applies displayencoding

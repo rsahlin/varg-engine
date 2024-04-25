@@ -53,7 +53,7 @@ struct BRDF {
     float HdotV;
     //x = ndf, y = gaf
     vec4 debug;
-    vec3 orm;
+    vec4 ormp;
     vec3[3] colors;
 };
 

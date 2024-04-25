@@ -14,5 +14,5 @@ precision highp float;
  */
 void main() {
     instance.primitive = primitives.index[gl_InstanceIndex];
-    positionLightTexture();
+    glTFVertexSetup();
 }

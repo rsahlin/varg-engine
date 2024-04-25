@@ -23,9 +23,9 @@ void setLight(in vec3 worldPos) {
 }
 
 /**
- * Calculates the position and light for pbr materials
+ * Calculates the position and light for gltf materials
  */
-void positionLightTexture() {
+void glTFVertexSetup() {
     surface.normal = normalize(NORMAL_ATTRIBUTE * mat3(matrix.uModelMatrix[instance.primitive.y]));
 #ifdef NORMAL
     createTangentLightMatrix();
@@ -34,9 +34,11 @@ void positionLightTexture() {
     gl_Position = (worldPos * uniforms.vpMatrix[0]) * uniforms.vpMatrix[1];
     setLight(worldPos.xyz);
 #ifdef COLOR_0
-    vBaseColor = COLOR_ATTRIBUTE * materials.material[instance.primitive.x].baseColor;
+    vMaterialColor[0] = COLOR_ATTRIBUTE * materials.material[instance.primitive.x].materialColor[0];
+    vMaterialColor[1] = mix(f16vec4(1), materials.material[instance.primitive.x].materialColor[1] * COLOR_ATTRIBUTE, materials.material[instance.primitive].ormp.b);
 #else
-    vBaseColor = materials.material[instance.primitive.x].baseColor;
+    vMaterialColor[0] = materials.material[instance.primitive.x].materialColor[0];
+    vMaterialColor[1] = materials.material[instance.primitive.x].materialColor[1];
 #endif
     
 #ifdef KHR_texture_transform

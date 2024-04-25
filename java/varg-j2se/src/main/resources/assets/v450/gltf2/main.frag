@@ -19,6 +19,7 @@ precision highp float;
 #include "brdf_rsahlin_frag.glsl"
 #endif
 
+
 void main() {
     // TODO - do not fetch each fragment?
     material = materials.material[instance.primitive.x];
@@ -32,19 +33,25 @@ void main() {
 #elif METALLICROUGHNESS
 #ifdef OCCLUSION
     //occlusion + mr in different textures
-    setupPBRMaterial(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]), GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX]));
+    setupPBRMaterial(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r, GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX]));
 #else
     //Metallicroughness but not occlusion
-    setupPBRMaterial(GETTEXTURE_GB(material.samplersData[MR_TEXTURE_INDEX]));
+    setupPBRMaterial(GETTEXTURE_GB(material.samplersData[MR_TEXTURE_INDEX]).gb);
 #endif
 #elif OCCLUSION
     // Occlusion but not MR
     setupPBRMaterial(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r);
 #else
     //No pbr texture channels
-    setupPBRMaterial(vec2(material.ormp.g, material.ormp.b));
+    setupPBRMaterial();
 #endif
-    vec4 pixel = brdf_main(getBaseColor());
+
+#ifdef BASECOLOR
+    f16vec4 basecolor = f16vec4(GETTEXTURE(material.samplersData[BASECOLOR_TEXTURE_INDEX]));
+    vec4 pixel = brdf_main((vMaterialColor[0] * basecolor).rgb, mix(f16vec4(1.0), vMaterialColor[1] * basecolor, float16_t(brdf.ormp.b)).rgb);
+#else
+    vec4 pixel = brdf_main(vMaterialColor[0].rgb, vMaterialColor[1].rgb);
+#endif
 
 #ifdef EMISSIVE
     outputPixel(pixel + vec4(GETTEXTURE(material.samplersData[EMISSIVE_TEXTURE_INDEX]).rgb * material.scaleFactors.rgb, 0));

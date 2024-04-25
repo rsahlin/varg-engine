@@ -28,14 +28,14 @@ layout (constant_id = 5) const int MATRIX_COUNT = 1;
 
 /**
  * This must be aligned with the data in glTF material 
- * TODO - change orm , scaleFactors and baseColor to ubyte
+ * TODO - change orm , scaleFactors and transmissionColor to ubyte
  */
 struct Material {
     //occlusion, roughness, metallic, fresnel power
     f16vec4 ormp;
     //emissive factor [RGB], normalscale
     f16vec4 scaleFactors;
-    f16vec4 baseColor;
+    f16vec4[2] materialColor;
     u8vec4[PBR_TEXTURE_COUNT] samplersData;
     u8vec4 absorbFactor; 
     //Needs padding if texture count is even
