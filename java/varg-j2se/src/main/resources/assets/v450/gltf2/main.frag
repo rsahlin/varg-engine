@@ -48,7 +48,8 @@ void main() {
 
 #ifdef BASECOLOR
     f16vec4 basecolor = f16vec4(GETTEXTURE(material.samplersData[BASECOLOR_TEXTURE_INDEX]));
-    vec4 pixel = brdf_main((vMaterialColor[0] * basecolor).rgb, mix(f16vec4(1.0), vMaterialColor[1] * basecolor, float16_t(brdf.ormp.b)).rgb);
+    float16_t metal = float16_t(brdf.ormp.b);
+    vec4 pixel = brdf_main(mix(vMaterialColor[0] * basecolor, f16vec4(0.0), metal).rgb, mix(f16vec4(1.0), vMaterialColor[1] * basecolor, metal).rgb);
 #else
     vec4 pixel = brdf_main(vMaterialColor[0].rgb, vMaterialColor[1].rgb);
 #endif
