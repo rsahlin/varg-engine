@@ -78,6 +78,9 @@ In short - physical properties that model how light interacts with the surface a
 ### Fresnel Based Light Shading  
   
 Physically correct light shading using the Media Light Property Dataset.  
+  
+**The first rule of Fresnel Based Light Shading**  
+  
 The first rule of Fresnel Based Light Shading is to start with the IOR and angle of incidence to calculate the Fresnel power function.  
 Use the media reflection color for the reflective part and the media transmission color for re-emitted transmission.  
 How much of the transmitted light that may be re-emitted is govererned by the absorption factor (for metals this value is 1).  
@@ -87,8 +90,16 @@ Transmitted light is affected by surface dispersion factor:
 Transmission intensity goes from 1 down to 1 / 2PI as dispersion goes up.  
 Irradiance Map (Spherical Harmonics) is calculated in same way as the transmissive light.  
 Environment map reflections use first rule of FBLS.  
-
   
+**The second rule of Fresnel Based Light Shading**    
+  
+The second rule of Fresnel Based Light Shading is to never, and I really mean never, bake or combine factors affecting light distribution into colors.  
+While this may seem like an optimization at first glance it prohibits proper light calculations.  
+Examples of this is how glTF handles metals - the ior cannot be set so the reflective power is baked into the material color.  
+This will give inconsistent result compared to having the metallic ior and color.   
+  
+Another example is glTF sheen extension - here there is no factor to specify amount of light that interacts with the perpendicular fibres.  
+It's baked into the sheen color - this will also give inconsistent results, the factor is needed to calculate amount of light that proceeds to interact with the base material.  
   
 # The VARG - Engine - A Fresnel Based Light Shader   
   
