@@ -114,11 +114,8 @@ public class RequestedFeatures {
      * 
      * @param features
      */
-    public void add16BitStorage(boolean storageBuffer16BitAccess, boolean uniformAndStorageBuffer16BitAccess,
-            boolean storagePushConstant16, boolean storageInputOutput16) {
-        PhysicalDevice16BitStorageFeatures storageFeatures = new PhysicalDevice16BitStorageFeatures(
-                storageBuffer16BitAccess, uniformAndStorageBuffer16BitAccess, storagePushConstant16,
-                storageInputOutput16);
+    public void add16BitStorage(boolean storageBuffer16BitAccess, boolean uniformAndStorageBuffer16BitAccess, boolean storagePushConstant16, boolean storageInputOutput16) {
+        PhysicalDevice16BitStorageFeatures storageFeatures = new PhysicalDevice16BitStorageFeatures(storageBuffer16BitAccess, uniformAndStorageBuffer16BitAccess, storagePushConstant16, storageInputOutput16);
         requestedFeatureExtensions.add16BitStorage(storageFeatures);
         if (storageBuffer16BitAccess) {
             requestedFeatures.setFeatures(Vulkan11Features.storageBuffer16BitAccess);

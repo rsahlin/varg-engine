@@ -313,8 +313,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
      * @param asset
      * @return
      */
-    protected void loadGltfAsset(String path, String asset, ModelPreparation modelPreparation,
-            GltfSettings gltfSettings) {
+    private void loadGltfAsset(String path, String asset, ModelPreparation modelPreparation, GltfSettings gltfSettings) {
         try {
             long start = System.currentTimeMillis();
             loadedAsset = Ladda.getInstance(VulkanGltf.class).loadGltf(path, asset, modelPreparation, gltfSettings);
@@ -322,8 +321,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             VulkanRenderableScene currentScene = loadedAsset.getScene(sceneIndex);
             prepareAsset(currentScene);
             createSceneControl(currentScene);
-            Logger.d(getClass(), "Load and prepare asset (" + asset + ") took " + (System.currentTimeMillis() - start)
-                    + " millis, load and mesh processing took " + (loaded - start) + " millis");
+            Logger.d(getClass(), "Load and prepare asset (" + asset + ") took " + (System.currentTimeMillis() - start) + " millis, load and mesh processing took " + (loaded - start) + " millis");
         } catch (IOException | BackendException | ClassNotFoundException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -388,8 +386,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             GltfRenderer<VulkanRenderableScene, VulkanMesh> renderer = getRenderer();
             renderer.getAssets().loadSourceImages(asset);
             TextureImages textureImages = renderer.getAssets().createTextureImages(asset);
-            shaderInfo = new Gltf2GraphicsShaderCreateInfo(asset, renderer.getVersion(), GraphicsShaderType.GLTF2,
-                    null);
+            shaderInfo = new Gltf2GraphicsShaderCreateInfo(asset, renderer.getVersion(), GraphicsShaderType.GLTF2, null);
             int vsr = Settings.getInstance().getInt(BackendIntProperties.FRAGMENTSIZE);
             if (vsr > 1) {
                 shaderInfo.setFragmentShadingRate(new PipelineFragmentShadingRateStateCreateInfoKHR(
@@ -410,12 +407,10 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             if (envMap != null) {
                 BACKGROUND bgHint = envMap.getBackgroundHint();
                 if (bgHint == BACKGROUND.CUBEMAP || bgHint == BACKGROUND.SH) {
-                    BackgroundMeshShaderCreateInfo backgroundShaderInfo = new BackgroundMeshShaderCreateInfo(
-                            asset, version, MeshShaderType.GLTF_BACKGROUND);
+                    BackgroundMeshShaderCreateInfo backgroundShaderInfo = new BackgroundMeshShaderCreateInfo(asset, version, MeshShaderType.GLTF_BACKGROUND);
                     int bvsr = Settings.getInstance().getInt(BackendIntProperties.BACKGROUND_FRAGMENTSIZE);
                     if (bvsr > 1) {
-                        backgroundShaderInfo.setFragmentShadingRate(new PipelineFragmentShadingRateStateCreateInfoKHR(
-                                bvsr, bvsr));
+                        backgroundShaderInfo.setFragmentShadingRate(new PipelineFragmentShadingRateStateCreateInfoKHR(bvsr, bvsr));
                     }
                     renderer.getAssets().createStorageBuffers(backgroundShaderInfo, backgroundShaderInfo, buffers);
                     backgroundShader = renderer.getPipelines().createMeshPipeline(backgroundShaderInfo);
@@ -529,6 +524,8 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             requestedFeatures.addExtension(Vulkan12Extension.VK_KHR_shader_float_controls);
         }
         requestedFeatures.add8BitStorage(true, true, false);
+        // Nvidia driver does not advertise storageInputOutput16 - however most usecases are supported.
+        // SPIR-V will use 16bit between shader stages
         requestedFeatures.add16BitStorage(true, true, false, false);
         requestedFeatures.addShaderFloat16Int8(true, true, true);
         requestedFeatures.setFeatures(DEFAULT_REQUESTEDFEATURES);

@@ -202,7 +202,7 @@ float getFresnelFactor(in float R0, in float NdotL) {
     return brdf.debug.r;
 }
 float getNormalDistributionFactor(in float a) {
-     vec3 NxH = cross(brdf.normal, brdf.H);
+    vec3 NxH = cross(brdf.normal, brdf.H);
     brdf.debug.g = NDF_GLTF(a, NxH);
     return brdf.debug.g;
 }
@@ -247,18 +247,19 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor) {
             //As the solid angle from lightsource decreases (the angle to the lightsource increases) the power goes down.
             //Note that there is no distinction here based on metalness since this is already given by RPower
             //Pointlights in glTF does not specify solid angle - this means we have to fudge the normal distribution function
-            //We do this by choosing a max return value greater than 1.0
-            float ndf = getNormalDistributionFactor(a);
+            float view = max(0, dot(brdf.reflectedLight, surface.V));
+            float ndf = D_SCHLICK(view , a);
             float gaf = getGeometricAttenuationFactor(a);
 #ifdef BLEND
+            //TODO - update
             //Amount that will enter into surface: (1 - RPower) - when the light exits the material (1 - RPower) will be left, of that (RPower * absorbFactor) will reflect back and exit the material
             float absorb = oneMinusRP * absorbFactor;
             float reemit = (oneMinusRP - absorb) * RPower;
             float retransmit = reemit * absorbFactor;
-            brdf.colors[TRANSMITTED_COLOR_INDEX] += (absorb + retransmit) * mix(0, oneByTwoPi, gaf) * transmissionColor * illumination;
-            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower + (reemit - retransmit)) * ndf * gaf * (reflectionColor * illumination);
+            brdf.colors[TRANSMITTED_COLOR_INDEX] += (absorb + retransmit) * mix(1, oneByTwoPi, a) * transmissionColor * illumination;
+            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower + (reemit - retransmit)) * ndf * mix(1, oneByTwoPi, a) * (reflectionColor * illumination);
 #else
-            brdf.colors[TRANSMITTED_COLOR_INDEX] += oneMinusRP * mix(0, oneByTwoPi, gaf) * transmissionColor * illumination;
+            brdf.colors[TRANSMITTED_COLOR_INDEX] += (oneMinusRP * ndf * mix(oneByTwoPi, 0, a) + oneMinusRP * mix(oneByPI, oneByTwoPi, a)) * transmissionColor * illumination;
             brdf.colors[REFLECTED_COLOR_INDEX] += RPower * ndf * gaf * (reflectionColor * illumination);
 #endif
         }
@@ -278,19 +279,20 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor) {
             //As the solid angle from lightsource decreases (the angle to the lightsource increases) the power goes down.
             //Note that there is no distinction here based on metalness since this is already given by RPower
             //Pointlights in glTF does not specify solid angle - this means we have to fudge the normal distribution function
-            //We do this by choosing a max return value greater than 1.0
-            float ndf = getNormalDistributionFactor(a);
+            float view = max(0, dot(brdf.reflectedLight, surface.V));
+            float ndf = D_SCHLICK(view , a);
             float gaf = getGeometricAttenuationFactor(a);
 #ifdef BLEND
+            //TODO -update
             //Amount that will enter into surface: (1 - RPower) - when the light exits the material (1 - RPower) will be left, of that (RPower * absorbFactor) will reflect back and exit the material
             float absorb = oneMinusRP * absorbFactor;
             float reemit = (oneMinusRP - absorb) * RPower;
             float retransmit = reemit * absorbFactor;
-            brdf.colors[TRANSMITTED_COLOR_INDEX] += (absorb + retransmit) * mix(0, oneByTwoPi, gaf) * transmissionColor * illumination;
-            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower + (reemit - retransmit)) * ndf * gaf * (reflectionColor * illumination);
+            brdf.colors[TRANSMITTED_COLOR_INDEX] += (absorb + retransmit) * mix(1, oneByTwoPi, a) *  * transmissionColor * illumination;
+            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower + (reemit - retransmit)) * mix(1, oneByTwoPi, a) * ndf * (reflectionColor * illumination);
 #else
-            brdf.colors[TRANSMITTED_COLOR_INDEX] += oneMinusRP * mix(0, oneByTwoPi, gaf) * transmissionColor * illumination;
-            brdf.colors[REFLECTED_COLOR_INDEX] += RPower * ndf * gaf * (reflectionColor * illumination);
+            brdf.colors[TRANSMITTED_COLOR_INDEX] += (oneMinusRP * ndf * mix(oneByTwoPi, 0, a) * gaf + oneMinusRP * mix(oneByPI, oneByTwoPi, a)) * transmissionColor * illumination;
+            brdf.colors[REFLECTED_COLOR_INDEX] += RPower * ndf * mix(1, oneByTwoPi, a) * gaf * (reflectionColor * illumination);
 #endif
         }
     }
@@ -303,14 +305,18 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor) {
 #ifdef CUBEMAP_SH
     float gaf = GA_SMITH(a, brdf.NdotV);
 #ifdef BLEND
-    brdf.colors[TRANSMITTED_COLOR_INDEX] += absorbFactor * brdf.ormp.r * transmissionColor *  mix(0, oneByTwoPi, gaf) * surface.irradiance.rgb;
+    brdf.colors[TRANSMITTED_COLOR_INDEX] += absorbFactor * brdf.ormp.r * transmissionColor *  mix(1, oneByTwoPi, a) * surface.irradiance.rgb;
 #else
-    brdf.colors[TRANSMITTED_COLOR_INDEX] += brdf.ormp.r * transmissionColor *  mix(0, oneByTwoPi, gaf) * surface.irradiance.rgb;
+    brdf.colors[TRANSMITTED_COLOR_INDEX] += brdf.ormp.r * transmissionColor *  mix(1, oneByTwoPi, a) * surface.irradiance.rgb;
 #endif
 #ifndef CUBEMAP
+#ifdef BLEND
+    brdf.colors[REFLECTED_COLOR_INDEX] +=  NdotVPower * reflectionColor * surface.irradiance.rgb;
+#else
     //Fallback to using sh coefficients for metal, otherwise it will end up black.
     vec3 reflect = reflect(surface.V, brdf.normal);
-    brdf.colors[REFLECTED_COLOR_INDEX] += NdotVPower * reflectionColor * irradiance(uniforms.irradianceCoefficients, reflect).rgb *  mix(0, oneByTwoPi, gaf) * brdf.ormp.r;
+    brdf.colors[REFLECTED_COLOR_INDEX] +=  NdotVPower * (brdf.ormp.b * brdf.ormp.r * mix(1, oneByTwoPi, a)) * reflectionColor * irradiance(uniforms.irradianceCoefficients, reflect).rgb;
+#endif
 #endif
 #endif
     return vec4(brdf.colors[TRANSMITTED_COLOR_INDEX] + brdf.colors[REFLECTED_COLOR_INDEX], alpha);

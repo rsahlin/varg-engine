@@ -330,19 +330,14 @@ public class VulkanAssets implements Assets {
         return cubemap;
     }
 
-    private void createDescriptors(RenderableScene asset, VulkanImageBuffer[] cubemap,
-            TextureImages textureImages) {
+    private void createDescriptors(RenderableScene asset, VulkanImageBuffer[] cubemap, TextureImages textureImages) {
         createCubemapDescriptors(cubemap, textureImages);
         createMaterialTextureDescriptors(asset, asset.getTextures(), textureImages);
-        Logger.d(getClass(), "Created " + textureImages.getDescriptorCount(
-                org.varg.assets.TextureImages.SamplerType.sampler2DArray)
-                + " material texture descriptors (samplers)");
-        Logger.d(getClass(), "Created " + textureImages.getDescriptorCount(SamplerType.samplerCubeArray)
-                + " cubemap texture descriptors (samplers)");
+        Logger.d(getClass(), "Created " + textureImages.getDescriptorCount(org.varg.assets.TextureImages.SamplerType.sampler2DArray) + " material texture descriptors (samplers)");
+        Logger.d(getClass(), "Created " + textureImages.getDescriptorCount(SamplerType.samplerCubeArray) + " cubemap texture descriptors (samplers)");
         int maxSamplers = backend.getSelectedDevice().getProperties().getLimits().getMaxPerStageDescriptorSamplers();
         if (textureImages.getDescriptorCount() > maxSamplers) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Need more samplers: "
-                    + textureImages.getDescriptorCount() + " device max is: " + maxSamplers);
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Need more samplers: " + textureImages.getDescriptorCount() + " device max is: " + maxSamplers);
         }
     }
 
@@ -399,19 +394,15 @@ public class VulkanAssets implements Assets {
         }
     }
 
-    private void createMaterialTextureDescriptors(RenderableScene asset, JSONTexture[] textures,
-            TextureImages textureImages) {
+    private void createMaterialTextureDescriptors(RenderableScene asset, JSONTexture[] textures, TextureImages textureImages) {
         if (textures != null) {
             for (JSONTexture texture : textures) {
                 TextureImageInfo info = textureImages.getTextureImage(texture.getSource().getSourceId());
                 Logger.d(getClass(), info.toString());
-                TextureSamplerInfo samplerInfo = new TextureSamplerInfo(asset.getSampler(texture),
-                        SamplerType.sampler2DArray, info);
+                TextureSamplerInfo samplerInfo = new TextureSamplerInfo(asset.getSampler(texture), SamplerType.sampler2DArray, info);
                 TextureSamplerInfo currentSampler = textureImages.getSamplerInfo(samplerInfo);
                 if (currentSampler == null) {
-                    DescriptorImageInfo descriptor = (DescriptorImageInfo) createTextureDescriptor(asset, texture,
-                            info.texture, ImageViewType.VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-                            new ComponentMapping());
+                    DescriptorImageInfo descriptor = (DescriptorImageInfo) createTextureDescriptor(asset, texture, info.texture, ImageViewType.VK_IMAGE_VIEW_TYPE_2D_ARRAY, new ComponentMapping());
                     textureImages.addTextureDescriptor(samplerInfo, descriptor);
                     textureImages.addTextureSamplerInfo(texture.getId(), samplerInfo);
                     Logger.d(getClass(), "Creating new texturedescriptor for: " + samplerInfo);

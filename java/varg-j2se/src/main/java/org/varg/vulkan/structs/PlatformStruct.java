@@ -230,8 +230,7 @@ public abstract class PlatformStruct {
                     field.setAccessible(true);
                     field.set(this, read);
                 } else {
-                    Logger.i(getClass(),
-                            "Skipping " + field.getName() + ", field is not boolean: " + field.getType());
+                    Logger.i(getClass(), "Skipping " + field.getName() + ", field is not boolean: " + field.getType());
                 }
             } catch (NoSuchMethodException | SecurityException | IllegalAccessException
                     | IllegalArgumentException | InvocationTargetException e) {

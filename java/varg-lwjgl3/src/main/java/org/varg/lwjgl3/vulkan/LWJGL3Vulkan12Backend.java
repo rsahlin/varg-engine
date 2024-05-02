@@ -259,8 +259,7 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
             readExtensions(device);
             deviceProperties = new DeviceProperties(device, extensionProperties);
             PhysicalDeviceFeatures physicalFeatures = new LWJGLPhysicalDeviceVulkan13Features(device);
-            PhysicalDeviceFeatureExtensions physicalFeatureExtensions = new LWJGLPhysicalDeviceFeatureExtensions(
-                    device);
+            PhysicalDeviceFeatureExtensions physicalFeatureExtensions = new LWJGLPhysicalDeviceFeatureExtensions(device);
             deviceFeatures = new Features(physicalFeatures, physicalFeatureExtensions, extensionProperties);
             readQueueProperties(device, surface);
         }
@@ -1813,8 +1812,7 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
         DescriptorSet descriptorSet = new DescriptorSet(lb.get(0), descriptorLayout);
         MemoryUtil.memFree(lb);
         allocateInfo.free();
-        Logger.d(getClass(),
-                "Allocated descriptorset for: " + descriptorLayout + ", set:" + descriptorSet.getDescriptorSet());
+        Logger.d(getClass(), "Allocated descriptorset for: " + descriptorLayout + ", set:" + descriptorSet.getDescriptorSet());
         return descriptorSet;
     }
 

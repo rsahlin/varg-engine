@@ -20,10 +20,8 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
      * @param features
      */
     protected void add16BitStorage(PhysicalDevice16BitStorageFeatures features) {
-        if (!available.getPhysicalDevice16BitStorageFeatures()
-                .checkBooleansTrue(features, PhysicalDevice16BitStorageFeatures.class.getDeclaredFields())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Available features does not match requested");
+        if (!available.getPhysicalDevice16BitStorageFeatures().checkBooleansTrue(features, PhysicalDevice16BitStorageFeatures.class.getDeclaredFields())) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Available features does not match requested");
         }
         storage16BitFeatures = features;
     }
@@ -34,10 +32,8 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
      * @param features
      */
     protected void add8BitStorage(PhysicalDevice8BitStorageFeatures features) {
-        if (!available.getPhysicalDevice8BitStorageFeatures()
-                .checkBooleansTrue(features, PhysicalDevice8BitStorageFeatures.class.getDeclaredFields())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Available features does not match requested");
+        if (!available.getPhysicalDevice8BitStorageFeatures().checkBooleansTrue(features, PhysicalDevice8BitStorageFeatures.class.getDeclaredFields())) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Available features does not match requested");
         }
         storage8BitFeatures = features;
     }
@@ -48,10 +44,8 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
      * @param features
      */
     protected void addShaderFloat16Int8(PhysicalDeviceShaderFloat16Int8Features features) {
-        if (!available.getPhysicalDeviceShaderFloat16Int8Features().checkBooleansTrue(features,
-                PhysicalDeviceShaderFloat16Int8Features.class.getDeclaredFields())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Available features does not match requested");
+        if (!available.getPhysicalDeviceShaderFloat16Int8Features().checkBooleansTrue(features, PhysicalDeviceShaderFloat16Int8Features.class.getDeclaredFields())) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Available features does not match requested");
         }
         shaderFloat16Features = features;
     }
@@ -62,10 +56,8 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
      * @param features
      */
     protected void addEXTMeshShader(PhysicalDeviceMeshShaderFeaturesEXT features) {
-        if (!available.getPhysicalDeviceMeshShaderFeaturesEXT()
-                .checkBooleansTrue(features, PhysicalDeviceMeshShaderFeaturesEXT.class.getDeclaredFields())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Available features does not match requested");
+        if (!available.getPhysicalDeviceMeshShaderFeaturesEXT().checkBooleansTrue(features, PhysicalDeviceMeshShaderFeaturesEXT.class.getDeclaredFields())) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Available features does not match requested");
         }
         meshShaderFeatures = features;
     }
@@ -76,10 +68,8 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
      * @param features
      */
     protected void addKHRFragmentShadingRate(PhysicalDeviceFragmentShadingRateFeaturesKHR features) {
-        if (!available.getPhysicalDeviceFragmentShadingRateFeaturesKHR().checkBooleansTrue(features,
-                PhysicalDeviceFragmentShadingRateFeaturesKHR.class.getDeclaredFields())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Available features does not match requested");
+        if (!available.getPhysicalDeviceFragmentShadingRateFeaturesKHR().checkBooleansTrue(features, PhysicalDeviceFragmentShadingRateFeaturesKHR.class.getDeclaredFields())) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Available features does not match requested");
         }
         fragmentShadingRateFeatures = features;
     }
@@ -90,10 +80,8 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
      * @param features
      */
     protected void addKHRAccelerationStructure(PhysicalDeviceAccelerationStructureFeaturesKHR features) {
-        if (!available.getPhysicalDeviceAccelerationStructureFeatures().checkBooleansTrue(features,
-                PhysicalDeviceAccelerationStructureFeaturesKHR.class.getDeclaredFields())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Available features does not match requested");
+        if (!available.getPhysicalDeviceAccelerationStructureFeatures().checkBooleansTrue(features, PhysicalDeviceAccelerationStructureFeaturesKHR.class.getDeclaredFields())) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Available features does not match requested");
         }
         accelerationStructureFeatures = features;
     }
@@ -103,8 +91,7 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
      */
     protected void enableNullDescriptor() {
         if (!available.getPhysicalDeviceRobustness2Features().nullDescriptor) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "No support for nullDescriptor (Robustness2)");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "No support for nullDescriptor (Robustness2)");
         }
         if (robustness2Features == null) {
             robustness2Features = new PhysicalDeviceRobustness2FeaturesEXT(false, false, true);

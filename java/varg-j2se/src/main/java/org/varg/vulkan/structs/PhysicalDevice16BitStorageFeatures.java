@@ -13,8 +13,7 @@ public class PhysicalDevice16BitStorageFeatures extends PlatformStruct {
     @AllowPublic
     public boolean storageInputOutput16;
 
-    public PhysicalDevice16BitStorageFeatures(boolean storageBuffer16BitAccess,
-            boolean uniformAndStorageBuffer16BitAccess, boolean storagePushConstant16, boolean storageInputOutput16) {
+    public PhysicalDevice16BitStorageFeatures(boolean storageBuffer16BitAccess, boolean uniformAndStorageBuffer16BitAccess, boolean storagePushConstant16, boolean storageInputOutput16) {
         this.storageBuffer16BitAccess = storageBuffer16BitAccess;
         this.uniformAndStorageBuffer16BitAccess = uniformAndStorageBuffer16BitAccess;
         this.storagePushConstant16 = storagePushConstant16;

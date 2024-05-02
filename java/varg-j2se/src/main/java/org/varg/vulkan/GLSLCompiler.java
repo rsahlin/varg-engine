@@ -145,11 +145,8 @@ public class GLSLCompiler {
 
     }
 
-    private static final Channel[] DISABLE_TEXTURES = new Channel[] { Channel.NORMAL,
-            Channel.METALLICROUGHNESS, Channel.OCCLUSION, Channel.EMISSIVE };
-    private static final BackendProperties[] PROPERTY = new BackendProperties[] { BackendProperties.NO_NORMALTEXTURE,
-            BackendProperties.NO_MRTEXTURE, BackendProperties.NO_OCCLUSIONTEXTURE,
-            BackendProperties.NO_EMISSIVETEXTURE };
+    private static final Channel[] DISABLE_TEXTURES = new Channel[] { Channel.NORMAL, Channel.METALLICROUGHNESS, Channel.OCCLUSION, Channel.EMISSIVE };
+    private static final BackendProperties[] PROPERTY = new BackendProperties[] { BackendProperties.NO_NORMALTEXTURE, BackendProperties.NO_MRTEXTURE, BackendProperties.NO_OCCLUSIONTEXTURE, BackendProperties.NO_EMISSIVETEXTURE };
 
     /**
      * GLSL Shader macros
@@ -514,8 +511,7 @@ public class GLSLCompiler {
             switch (p) {
                 case FB_FORMAT:
                     // Check surface format to know if shader should adjust before storing to FB
-                    String fbFormat = surface.format.isSRGB() ? TransferFunction.SRGB.name()
-                            : TransferFunction.LINEAR.name();
+                    String fbFormat = surface.format.isSRGB() ? TransferFunction.SRGB.name() : TransferFunction.LINEAR.name();
                     addMacro(MacroProperties.FB_FORMAT.prefix + fbFormat, "1", p.stages);
                     break;
                 case COLORSPACE:

@@ -139,7 +139,6 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
     @Override
     protected void init() {
         try {
-            // TODO Move creation of renderer to after loading of glTF JSON (not buffers and textures)
             createRenderer(this);
             int uniformTargets = GltfDescriptorSetTarget.getTargets(SetType.UNIFORM_TYPE).length;
             createDescriptorPool(uniformTargets + MAX_DESCRIPTORSET_SAMPLERS, uniformTargets, 1, 0);

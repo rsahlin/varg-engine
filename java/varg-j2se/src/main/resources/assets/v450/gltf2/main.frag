@@ -36,7 +36,7 @@ void main() {
     setupPBRMaterial(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r, GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX]));
 #else
     //Metallicroughness but not occlusion
-    setupPBRMaterial(GETTEXTURE_GB(material.samplersData[MR_TEXTURE_INDEX]).gb);
+    setupPBRMaterial(GETTEXTURE_GB(material.samplersData[MR_TEXTURE_INDEX]));
 #endif
 #elif OCCLUSION
     // Occlusion but not MR

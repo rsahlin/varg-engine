@@ -10,10 +10,8 @@ import org.gltfio.lib.Settings;
 import org.gltfio.lib.WindowListener;
 import org.varg.BackendException;
 import org.varg.gltf.VulkanMesh;
-import org.varg.pipeline.Pipelines.SetType;
 import org.varg.renderer.GltfRenderer;
 import org.varg.renderer.Renderers;
-import org.varg.shader.Gltf2GraphicsShader.GltfDescriptorSetTarget;
 import org.varg.shader.MeshShader.MeshDescriptorSetTarget;
 import org.varg.shader.Shader;
 import org.varg.shader.voxels.PixelsToVoxels;
@@ -35,7 +33,7 @@ import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderPropertiesEXT;
 import org.varg.vulkan.structs.RequestedFeatures;
 
-public class MeshShaderTest extends LWJGL3Application implements WindowListener, CreateDevice {
+public class MeshShaderTest extends VARGViewer implements WindowListener, CreateDevice {
 
     private VoxelMeshShader meshShader;
     private BouncySprites sprite;
@@ -61,27 +59,29 @@ public class MeshShaderTest extends LWJGL3Application implements WindowListener,
         settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:1000|color:1,1,1|position:0,10000,0000");
         settings.setProperty(LaddaProperties.CAMERA_ALIGNMENT, "BOTTOM");
 
-        MeshShaderTest meshShader =
-                new MeshShaderTest(args, Renderers.VULKAN13, "Mesh Shader test");
+        MeshShaderTest meshShader = new MeshShaderTest(args, Renderers.VULKAN13, "Mesh Shader test");
         meshShader.createApp();
         meshShader.run();
     }
 
     @Override
+    protected String getDefaultModelName() {
+        return "room1.glb";
+    }
+
+    @Override
+    protected String getResourcePath() {
+        return "assets/gltf/room1/";
+    }
+
+    @Override
     protected void init() {
         try {
-            createRenderer(this);
-            int uniformTargets = GltfDescriptorSetTarget.getTargets(SetType.UNIFORM_TYPE).length;
-            createDescriptorPool(uniformTargets + MAX_DESCRIPTORSET_SAMPLERS, uniformTargets, 1, 0);
-            loadGltfAsset("assets/gltf/room1/", "room1.glb");
+            super.init();
             createMeshShader();
-            startConsoleInput();
-            getJ2SEWindow().addKeyListener(this);
-            getJ2SEWindow().addWindowListener(this);
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
-
     }
 
     private void createMeshShader() throws URISyntaxException, IOException, BackendException {

@@ -285,9 +285,7 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     }
 
     @Override
-    public void createGraphicsPipelines(IndirectDrawing[] drawCalls, VulkanRenderableScene glTF,
-            GraphicsShaderCreateInfo info)
-            throws BackendException {
+    public void createGraphicsPipelines(IndirectDrawing[] drawCalls, VulkanRenderableScene glTF, GraphicsShaderCreateInfo info) throws BackendException {
         TextureImages textureImages = renderer.getAssets().getTextureImages(glTF);
         Subtype shaderType = info.shaderType;
         DescriptorBuffers<?> buffers = renderer.getAssets().getStorageBuffers(shaderType);
@@ -306,8 +304,7 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
                     compiler.setMacros(glTF, backend.getSurfaceFormat());
                     compiler.setMacros(dc.getAttributes(), dc.getAlphaMode(), dc.getTextureChannels());
                     compiler.setMacros(BaseShaderImplementation.ShaderProperties.values());
-                    pipelineByHash.put(dc.getPipelineHash(), createGraphicsPipeline(glTF, dc, info,
-                            specializationInfo));
+                    pipelineByHash.put(dc.getPipelineHash(), createGraphicsPipeline(glTF, dc, info, specializationInfo));
                 }
             }
             updateTextureDescriptorSets(textureImages, SamplerType.sampler2DArray);
@@ -434,15 +431,13 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
         for (DescriptorSetTarget target : targets) {
             BindBuffer buffer = buffers.getBuffer(target);
             if (buffer != null && !buffer.isDescriptorSetUpdated()) {
-                long range = buffer.getDynamicSize() > 0 ? buffer.getDynamicSize()
-                        : buffer.getBuffer().size;
+                long range = buffer.getDynamicSize() > 0 ? buffer.getDynamicSize() : buffer.getBuffer().size;
                 bufferInfos.add(new DescriptorBufferInfo(buffer.getBuffer(), 0, range));
                 descriptorSets.add(descriptors.getDescriptorSet(target));
                 buffer.setDescriptorsetUpdated(true);
             }
         }
-        backend.updateDescriptorSets(bufferInfos.toArray(new DescriptorBufferInfo[0]), descriptorSets.toArray(
-                new DescriptorSet[0]));
+        backend.updateDescriptorSets(bufferInfos.toArray(new DescriptorBufferInfo[0]), descriptorSets.toArray(new DescriptorSet[0]));
     }
 
     @Override
@@ -599,10 +594,8 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
         for (DescriptorSetTarget target : targets) {
             if ((descriptors.getDescriptorLayout(target) == null)) {
                 ShaderStageFlagBit[] stageBits = target.getStageBits();
-                DescriptorSetLayoutBinding binding = new DescriptorSetLayoutBinding(target.getBinding(), target
-                        .getDescriptorType(), buffers.getSetCount(target), stageBits, null);
-                descriptors.addDescriptorLayout(target, renderer.getBackend().createDescriptorSetLayout(
-                        new DescriptorSetLayoutCreateInfo(null, binding)));
+                DescriptorSetLayoutBinding binding = new DescriptorSetLayoutBinding(target.getBinding(), target.getDescriptorType(), buffers.getSetCount(target), stageBits, null);
+                descriptors.addDescriptorLayout(target, renderer.getBackend().createDescriptorSetLayout(new DescriptorSetLayoutCreateInfo(null, binding)));
             } else {
                 Logger.i(getClass(), "Reusing DescriptorSetLayoutBinding for target " + target);
             }
