@@ -75,9 +75,22 @@ To put this into action we need to adress the last 2 stages of the 3D Workflow -
 This is the dataset for the media properties when it comes to light calculations.  
 In short - physical properties that model how light interacts with the surface and inside the media.    
 
-### Fresnel Based Light Shading  
+## Fresnel Based Light Shading  
   
 Physically correct light shading using the Media Light Property Dataset.  
+First some basic concepts:  
+As light travels from one media to another, ie light 'hits' our surface, it is either reflected or transmitted.  
+Reflected light is, well reflected, think of it as bouncing off the surfce.  
+Transmitted light interacts with the surface and is either re-transmitted or continues into the media.  
+I will not call transmitted light diffused - simply because it does not have to be spread out.  
+Think of glossy paint - transmitted light will interact with the paint and be colored by it - and then be re-transmitted mostly in the direction of the reflection vector.  
+The term 'specular reflection' is vaguely better.  
+However, since specular means mirror, there is a risk that the reflective power (fresnel) is overlooked.  
+  
+Better to simply use the terms reflection and transmission.  
+    
+**The first rule of Fresnel Based Light Shading**  
+  
 The first rule of Fresnel Based Light Shading is to start with the IOR and angle of incidence to calculate the Fresnel power function.  
 Use the media reflection color for the reflective part and the media transmission color for re-emitted transmission.  
 How much of the transmitted light that may be re-emitted is govererned by the absorption factor (for metals this value is 1).  
@@ -87,8 +100,28 @@ Transmitted light is affected by surface dispersion factor:
 Transmission intensity goes from 1 down to 1 / 2PI as dispersion goes up.  
 Irradiance Map (Spherical Harmonics) is calculated in same way as the transmissive light.  
 Environment map reflections use first rule of FBLS.  
-
   
+**The second rule of Fresnel Based Light Shading**    
+  
+Do not rely on the Lambertian diffuse model for transmitted light.  
+This, or any other diffuse light model that I know of, is an oversimplification of how re-transmitted light behaves.  
+I understand why it has been used!  
+It's simple and fast and produces somewhat good looking results, especially in cases where there is no irradiance map.  
+[An irradiance map captures the light reflecting off the environment. It can be a texture, spherical harmonics or some other technique]  
+  
+Instead, use some algorithm that takes the directionality of smooth (glossy) and the dispersion of matte (rough) materials into account.  
+  
+  
+**The third rule of Freslel Based Light Shading**  
+  
+  
+The third rule of Fresnel Based Light Shading is to never, and I really mean never, bake or combine factors affecting light distribution into colors.  
+While this may seem like an optimization at first glance it prohibits proper light calculations.  
+Examples of this is how glTF handles metals - the ior cannot be set so the reflective power is baked into the material color.  
+This will give inconsistent result compared to having the metallic ior and color.   
+  
+Another example is glTF sheen extension - here there is no factor to specify amount of light that interacts with the perpendicular fibres.  
+It's baked into the sheen color - this will also give inconsistent results, the factor is needed to calculate amount of light that proceeds to interact with the base material.  
   
 # The VARG - Engine - A Fresnel Based Light Shader   
   
