@@ -424,8 +424,7 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
         prevFrameTime = current;
         queue.queueBegin();
 
-        int result =
-                getBackend().getKHRSwapchain().acquireNextImageKHR(presentComplete, swapBuffer.getCurrentIndexBuffer());
+        int result = getBackend().getKHRSwapchain().acquireNextImageKHR(presentComplete, swapBuffer.getCurrentIndexBuffer());
         if (result != Result.VK_SUCCESS.value) {
             Logger.d(getClass(), "Result is NO SUCCESS");
             return 0;
@@ -456,8 +455,7 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
                 PipelineStageFlagBit.getBitFlags(PipelineStageFlagBit.VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT),
                 PipelineStageFlagBit.getBitFlags(PipelineStageFlagBit.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
         queue.queueEnd();
-        queue.queueSubmit(presentComplete, drawComplete,
-                PipelineStageFlagBit.getBitFlags(PipelineStageFlagBit.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
+        queue.queueSubmit(presentComplete, drawComplete, PipelineStageFlagBit.getBitFlags(PipelineStageFlagBit.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT));
         KHRSwapchain swapChain = getBackend().getKHRSwapchain();
         if (getBackend().getSurfaceFormat().getColorSpace().isPQColorSpace()) {
             // Set hdr metadata
@@ -539,8 +537,7 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
         boundPipelineHash = Constants.NO_VALUE;
         DrawCallBundle<IndirectDrawCalls> drawBundle = scene.getDrawCallBundle();
         BindBuffer buffer = descriptorBuffers.getBuffer(GltfDescriptorSetTarget.MATRIX);
-        getPipelines().cmdBindDescriptorSets(Gltf2GraphicsShader.GraphicsShaderType.GLTF2,
-                renderQueue, buffer.getDynamicOffsets(), GltfDescriptorSetTarget.MATRIX);
+        getPipelines().cmdBindDescriptorSets(Gltf2GraphicsShader.GraphicsShaderType.GLTF2, renderQueue, buffer.getDynamicOffsets(), GltfDescriptorSetTarget.MATRIX);
         for (IndirectDrawCalls dc : drawBundle.getAllDrawCalls()) {
             int pipelineHash = dc.getPipelineHash();
             GraphicsPipeline pipeline = pipelineManager.getPipeline(pipelineHash);

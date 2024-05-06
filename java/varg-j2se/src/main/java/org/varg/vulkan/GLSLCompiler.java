@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Hashtable;
 
 import org.eclipse.jdt.annotation.NonNull;
+import org.gltfio.gltf2.JSONMaterial;
 import org.gltfio.gltf2.JSONMaterial.AlphaMode;
 import org.gltfio.gltf2.JSONNode;
 import org.gltfio.gltf2.JSONPrimitive.Attributes;
@@ -382,7 +383,6 @@ public class GLSLCompiler {
                 addMacro(ExtensionTypes.KHR_texture_transform.name(), "1", MacroProperties.TEXTURE_TRANSFORM.stages);
             }
         }
-
     }
 
     private void setEnvironmentMap(RenderableScene scene) {
@@ -415,10 +415,17 @@ public class GLSLCompiler {
      * 
      * @param vertexInputState
      */
-    public void setMacros(Attributes[] attributes, AlphaMode alphaMode, Channel[] textureChannels) {
-        setTextureChannels(textureChannels, Shader.Stage.VERTEX, Shader.Stage.FRAGMENT);
+    public void setMacros(Attributes[] attributes, AlphaMode alphaMode, JSONMaterial material) {
+        setTextureChannels(material.getTextureChannels(), Shader.Stage.VERTEX, Shader.Stage.FRAGMENT);
         setAttributes(attributes, Shader.Stage.VERTEX);
         addMacro(alphaMode.name(), "1", Stage.FRAGMENT);
+        setCoat(material, Stage.FRAGMENT);
+    }
+
+    private void setCoat(JSONMaterial material, Shader.Stage... stages) {
+        if (material.getClearcoatFactor() != null) {
+            addMacro("COAT", "1", stages);
+        }
     }
 
     private void setTextureChannels(Channel[] textureChannels, Shader.Stage... stages) {

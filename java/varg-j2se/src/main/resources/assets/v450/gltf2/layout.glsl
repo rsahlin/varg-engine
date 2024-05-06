@@ -36,9 +36,10 @@ struct Material {
     //emissive factor [RGB], normalscale
     f16vec4 scaleFactors;
     f16vec4[2] materialColor;
+    //absorbfactor, coatfactor, coatroughness, CR0
+    f16vec4 properties; 
     u8vec4[PBR_TEXTURE_COUNT] samplersData;
-    u8vec4 absorbFactor; 
-    //Needs padding if texture count is even
+    u8vec4 padding;
 } material;
 
 

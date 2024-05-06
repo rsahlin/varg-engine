@@ -84,7 +84,9 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
      * f16vec4 scaleFactors;
      * f16vec4[2] materialColor;
      * u8vec4[PBR_TEXTURE_COUNT] samplersData;
-     * u8vec4 absorbFactor;
+     * //absorbfactor, coatfactor, coatroughness, CR0
+     * f16vec6 properties;
+     * u8vec4 padding;
      * } material;
      * 
      */
@@ -97,11 +99,12 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     public static final int ORM_INDEX = 0;
     public static final int SCALE_FACTORS_INDEX = 4;
     public static final int MATERIALCOLOR_INDEX = 8;
+    public static final int PROPERTIES_INDEX = 16;
     // Samplers uses SAMPLERS_DATA.length slots
     // Must be std430 layout aligned.
-    public static final int TEXTURE_SAMPLERS_INDEX = 16;
-    public static final int MATERIAL_DATA_PADDING_BYTES = 4;
-    public static final int MATERIAL_DATA_SIZE_IN_BYTES = TEXTURE_SAMPLERS_INDEX * Short.BYTES + JSONMaterial.SAMPLERS_DATA_LENGTH + MATERIAL_DATA_PADDING_BYTES;
+    public static final int TEXTURE_SAMPLERS_INDEX = 20;
+    public static final int PADDING = 4;
+    public static final int MATERIAL_DATA_SIZE_IN_BYTES = TEXTURE_SAMPLERS_INDEX * Short.BYTES + JSONMaterial.SAMPLERS_DATA_BYTELENGTH + PADDING;
 
     public static final int MAX_CUBEMAP_COUNT = 2;
     public static final int MAX_DIRECTIONAL_LIGHTS = 8;
@@ -288,22 +291,18 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             float fresnelPower = (environmentIOR - material.getIOR()) / (environmentIOR + material.getIOR());
             fresnelPower = fresnelPower * fresnelPower;
             put(buffer, fresnelPower);
-            // buffer.position(SCALE_FACTORS_INDEX);
             Float emissiveStrength = material.getEmissiveStrength();
             float factor = emissiveStrength != null ? emissiveStrength : Settings.getInstance().getInt(BackendIntProperties.MAX_WHITE);
             put(buffer, material.getEmissive(factor, new float[3]));
             put(buffer, material.getNormalTextureInfo() != null ? material.getNormalTextureInfo().getScale() : 1.0f);
-            // buffer.position(MATERIALCOLOR_INDEX);
             put(buffer, pbr.getBaseColorFactor());
             put(buffer, pbr.getReflectiveColor(new float[4]));
+            put(buffer, material.getProperties());
             // Store texcoord data
-            destination.position((TEXTURE_SAMPLERS_INDEX * Short.BYTES) + startPos);
+            destination.position(TEXTURE_SAMPLERS_INDEX * Short.BYTES + startPos);
             ByteBuffer buf = material.getSamplersData().position(0);
             destination.put(buf);
-            byte afactor = (byte) (material.getAbsorbtion() * 255);
-            byte[] absorb = new byte[] { afactor, 1, 1, 1 };
-            destination.put(absorb);
-            // destination.position(destination.position() + MATERIAL_DATA_PADDING_BYTES);
+            destination.position(destination.position() + PADDING);
             if (destination.position() != startPos + MATERIAL_DATA_SIZE_IN_BYTES) {
                 throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Misaligned");
             }

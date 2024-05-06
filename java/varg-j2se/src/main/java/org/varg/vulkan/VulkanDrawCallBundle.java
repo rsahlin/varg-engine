@@ -33,8 +33,7 @@ public class VulkanDrawCallBundle extends DrawCallBundle<IndirectDrawCalls> {
     protected IndirectDrawCalls createDrawCalls(PrimitiveSorter primitives) {
         VertexMemory mem = vertexMap.get(primitives.getAttributeHash());
         if (mem == null) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "No vertex memory for key "
-                    + primitives.getAttributeHash());
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "No vertex memory for key " + primitives.getAttributeHash());
         }
         MemoryBuffer[] buffers = mem.getMemoryBuffers();
         MemoryBuffer[] indexBuffers = mem.getIndexMemoryBuffers();
@@ -50,12 +49,8 @@ public class VulkanDrawCallBundle extends DrawCallBundle<IndirectDrawCalls> {
 
     @Override
     protected void createMemory() {
-        vkIndirectBuffer = deviceMemory.createBuffer(commandSize * Integer.BYTES,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT.value
-                        | BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT.value);
-
-        Memory indirectMemory = deviceMemory.allocateMemory(vkIndirectBuffer.allocationSize,
-                BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        vkIndirectBuffer = deviceMemory.createBuffer(commandSize * Integer.BYTES, BufferUsageFlagBit.VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT.value | BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT.value);
+        Memory indirectMemory = deviceMemory.allocateMemory(vkIndirectBuffer.allocationSize, BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
         // Bind indirect buffers to memory
         deviceMemory.bindBufferMemory(indirectMemory, 0, vkIndirectBuffer);
         int offset = 0;
@@ -65,8 +60,7 @@ public class VulkanDrawCallBundle extends DrawCallBundle<IndirectDrawCalls> {
             offset += idc.getCommandBufferSize() * Integer.BYTES;
         }
         if (offset != vkIndirectBuffer.size) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Drawcall size does not match buffer size");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Drawcall size does not match buffer size");
         }
     }
 

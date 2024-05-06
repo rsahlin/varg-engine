@@ -1,5 +1,6 @@
 package org.varg.vulkan;
 
+import org.gltfio.gltf2.JSONMaterial;
 import org.gltfio.gltf2.JSONMaterial.AlphaMode;
 import org.gltfio.gltf2.JSONPrimitive.Attributes;
 import org.gltfio.gltf2.JSONPrimitive.DrawMode;
@@ -65,5 +66,7 @@ public interface IndirectDrawing {
     DrawMode getDrawMode();
 
     AlphaMode getAlphaMode();
+
+    JSONMaterial getMaterial();
 
 }

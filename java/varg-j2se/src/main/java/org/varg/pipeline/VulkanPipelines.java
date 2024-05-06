@@ -302,7 +302,7 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
                     compiler.clearMacros();
                     // Set the compiler macros
                     compiler.setMacros(glTF, backend.getSurfaceFormat());
-                    compiler.setMacros(dc.getAttributes(), dc.getAlphaMode(), dc.getTextureChannels());
+                    compiler.setMacros(dc.getAttributes(), dc.getAlphaMode(), dc.getMaterial());
                     compiler.setMacros(BaseShaderImplementation.ShaderProperties.values());
                     pipelineByHash.put(dc.getPipelineHash(), createGraphicsPipeline(glTF, dc, info, specializationInfo));
                 }

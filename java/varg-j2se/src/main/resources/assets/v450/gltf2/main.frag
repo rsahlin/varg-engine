@@ -49,9 +49,9 @@ void main() {
 #ifdef BASECOLOR
     f16vec4 basecolor = f16vec4(GETTEXTURE(material.samplersData[BASECOLOR_TEXTURE_INDEX]));
     float16_t metal = float16_t(brdf.ormp.b);
-    vec4 pixel = brdf_main(mix(vMaterialColor[0] * basecolor, f16vec4(0.0), metal).rgb, mix(f16vec4(1.0), vMaterialColor[1] * basecolor, metal).rgb);
+    vec4 pixel = brdf_main(mix(f16vec4(vMaterialColor[0]) * basecolor, f16vec4(0.0), metal).rgb, mix(f16vec4(1.0), f16vec4(vMaterialColor[1]) * basecolor, metal).rgb);
 #else
-    vec4 pixel = brdf_main(vMaterialColor[0].rgb, vMaterialColor[1].rgb);
+    vec4 pixel = brdf_main(f16vec3(vMaterialColor[0].rgb), f16vec3(vMaterialColor[1].rgb));
 #endif
 
 #ifdef EMISSIVE

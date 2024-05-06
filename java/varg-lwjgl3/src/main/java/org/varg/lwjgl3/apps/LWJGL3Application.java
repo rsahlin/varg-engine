@@ -194,11 +194,8 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
                 SampleCountFlagBit samples = info.attachments[0].samples;
                 org.varg.vulkan.extensions.KHRSwapchain<?> swapChain = getRenderer().getBackend().getKHRSwapchain();
                 SurfaceFormat surfaceFormat = swapChain.getCreateInfo().surfaceFormat;
-                String sampleStr =
-                        samples != SampleCountFlagBit.VK_SAMPLE_COUNT_1_BIT ? " " + samples.value + " samples"
-                                : " no MSAA";
-                getJ2SEWindow().setWindowTitle(title + " using " + surfaceFormat + sampleStr + ", Depth buffer: "
-                        + info.attachments[1].format);
+                String sampleStr = samples != SampleCountFlagBit.VK_SAMPLE_COUNT_1_BIT ? " " + samples.value + " samples" : " no MSAA";
+                getJ2SEWindow().setWindowTitle(title + " using " + surfaceFormat + sampleStr + ", Depth buffer: " + info.attachments[1].format);
             }
             switch (appSettings.windowType) {
                 case GLFW:
@@ -245,22 +242,18 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
         GltfRenderer<VulkanRenderableScene, VulkanMesh> renderer = getRenderer();
         float time = renderer.beginFrame();
         if (time > 0 && s != null && preparedAssets.contains(s.getId())) {
-            GltfStorageBuffers buffers = (GltfStorageBuffers) renderer.getAssets().getStorageBuffers(
-                    shaderInfo.shaderType);
-            renderer.getBufferFactory().uploadBuffers(renderer.getQueue(), buffers,
-                    shaderInfo.shaderType.getTargets());
+            GltfStorageBuffers buffers = (GltfStorageBuffers) renderer.getAssets().getStorageBuffers(shaderInfo.shaderType);
+            renderer.getBufferFactory().uploadBuffers(renderer.getQueue(), buffers, shaderInfo.shaderType.getTargets());
             renderer.prepareFrameData(s, buffers);
             renderer.beginRenderPass();
 
             for (MeshShader ms : meshShaders) {
                 DescriptorBuffers<?> buf = renderer.getAssets().getStorageBuffers(ms.getShaderInfo().shaderType);
-                renderer.bindDescriptorSets(ms.getShaderInfo().shaderType, buf, renderer.getQueue(),
-                        ms.getShaderInfo().shaderType.getTargets());
+                renderer.bindDescriptorSets(ms.getShaderInfo().shaderType, buf, renderer.getQueue(), ms.getShaderInfo().shaderType.getTargets());
                 renderer.drawMeshShader(ms, buf, renderer.getQueue());
             }
 
-            renderer.bindDescriptorSets(GraphicsShaderType.GLTF2, buffers, renderer.getQueue(),
-                    shaderInfo.shaderType.getTargets());
+            renderer.bindDescriptorSets(GraphicsShaderType.GLTF2, buffers, renderer.getQueue(), shaderInfo.shaderType.getTargets());
             // Render background if enabled
             // TODO - split render of opaque gltf and transparent/transmission on this level so that
             // background can be rendered after opaque gltf (but before transparent)

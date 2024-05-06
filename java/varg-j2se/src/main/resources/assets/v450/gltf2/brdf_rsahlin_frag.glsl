@@ -229,7 +229,7 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor) {
     float NdotVPower = getFresnelFactor(R0, brdf.NdotV);
 #ifdef BLEND 
     // Transmission extension is used, absorbFactor is the amount of light scattered as light passes through the material.
-    float absorbFactor = material.absorbFactor.r / 255.0;
+    float16_t absorbFactor = material.properties.r;
     float alpha = NdotVPower * (1.0 - absorbFactor) + absorbFactor;
 #else
     float alpha = 1.0;

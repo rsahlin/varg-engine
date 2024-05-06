@@ -3,10 +3,9 @@ package org.varg.renderer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-import org.gltfio.gltf2.JSONMaterial.AlphaMode;
+import org.gltfio.gltf2.JSONMaterial;
 import org.gltfio.gltf2.JSONPrimitive.Attributes;
 import org.gltfio.gltf2.JSONPrimitive.DrawMode;
-import org.gltfio.gltf2.JSONTexture.Channel;
 import org.gltfio.gltf2.stream.PrimitiveStream.IndexType;
 import org.gltfio.lib.Buffers;
 import org.gltfio.lib.ErrorMessage;
@@ -45,12 +44,12 @@ public abstract class AbstractDrawCalls {
      * Number of draw instances for indexed drawing - may be null
      */
     protected final int[] indexedInstanceCount;
+    // Todo - figure out some other way of keeping track of material properties - used for pipeline creation and shader compilation
     public final int attributeHash;
     public final Attributes[] attributes;
-    public final Channel[] textureChannels;
     public final DrawMode drawMode;
-    public final AlphaMode alphaMode;
     public final int firstInstance;
+    protected final JSONMaterial material;
 
     /**
      * Used when adding indirect calls
@@ -82,13 +81,12 @@ public abstract class AbstractDrawCalls {
      */
     public abstract int getCommandBufferSize();
 
-    public AbstractDrawCalls(int attributeHash, Attributes[] attributes, Channel[] textureChannels, DrawMode drawMode, AlphaMode alphaMode, int arrayInstanceCount, int[] indexedInstanceCount, int[] indicesCount, int firstInstance) {
+    protected AbstractDrawCalls(int attributeHash, Attributes[] attributes, JSONMaterial material, DrawMode drawMode, int arrayInstanceCount, int[] indexedInstanceCount, int[] indicesCount, int firstInstance) {
         this.firstInstance = firstInstance;
         this.attributeHash = attributeHash;
         this.attributes = attributes;
-        this.textureChannels = textureChannels;
+        this.material = material;
         this.drawMode = drawMode;
-        this.alphaMode = alphaMode;
         this.arrayInstanceCount = arrayInstanceCount;
         this.indexedInstanceCount = indexedInstanceCount;
         this.arrayMinMax = new float[6 * arrayInstanceCount];
@@ -106,8 +104,7 @@ public abstract class AbstractDrawCalls {
                 if (indirectIndexCommandBuffers == null) {
                     indirectIndexCommandBuffers = new ByteBuffer[IndexType.values().length];
                 }
-                indirectIndexCommandBuffers[type.index] = Buffers.createByteBuffer(count * getIndexedCommandSize()
-                        * Integer.BYTES);
+                indirectIndexCommandBuffers[type.index] = Buffers.createByteBuffer(count * getIndexedCommandSize() * Integer.BYTES);
             }
         }
     }

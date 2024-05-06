@@ -4,8 +4,8 @@ import java.nio.ByteBuffer;
 
 import org.gltfio.data.FlattenedScene.PrimitiveSorter;
 import org.gltfio.gltf2.AttributeSorter;
+import org.gltfio.gltf2.JSONMaterial;
 import org.gltfio.gltf2.JSONMaterial.AlphaMode;
-import org.gltfio.gltf2.JSONPrimitive;
 import org.gltfio.gltf2.JSONPrimitive.Attributes;
 import org.gltfio.gltf2.JSONPrimitive.DrawMode;
 import org.gltfio.gltf2.JSONTexture.Channel;
@@ -59,12 +59,14 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
     protected int vkArrayIndexOffset;
     protected BindVertexBuffers indexBuffers;
     protected BindVertexBuffers vertexBuffers;
+    private int pipelineHash;
 
     private static transient VertexInputAttributeDescription[] inputs;
 
     public IndirectDrawCalls(PrimitiveSorter primitives, BindVertexBuffers indexBuffers, BindVertexBuffers vertexBuffers, int firstInstance) {
-        super(primitives.attributeHash, primitives.sortedAttributes, primitives.textureChannels, primitives.mode, primitives.alphaMode, primitives.getArrayPrimitiveCount(), primitives.getIndexedPrimitiveCount(),
+        super(primitives.attributeHash, primitives.sortedAttributes, primitives.getMaterial(), primitives.mode, primitives.getArrayPrimitiveCount(), primitives.getIndexedPrimitiveCount(),
                 primitives.getIndicesCount(), firstInstance);
+        this.pipelineHash = primitives.getPipelineHash();
         this.indexBuffers = indexBuffers;
         this.vertexBuffers = vertexBuffers;
     }
@@ -161,7 +163,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
 
     @Override
     public int getPipelineHash() {
-        return JSONPrimitive.getPipelineHash(attributeHash, textureChannels, drawMode, alphaMode);
+        return pipelineHash;
     }
 
     private void copyToDevice(DeviceMemory deviceMemory, Queue queue, ByteBuffer source, MemoryBuffer destination, int offset) {
@@ -219,14 +221,12 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
     }
 
     private PipelineVertexInputState createBindings() {
-        return IndirectDrawCalls.createBindings(attributes, textureChannels);
+        return IndirectDrawCalls.createBindings(attributes, getTextureChannels());
     }
 
     public static PipelineVertexInputState createBindings(Attributes[] sortedAttributes, Channel[] textureChannels) {
-        VertexInputAttributeDescription[] vertexInputs =
-                new VertexInputAttributeDescription[sortedAttributes.length];
-        VertexInputBindingDescription[] vertexBindings =
-                new VertexInputBindingDescription[vertexInputs.length];
+        VertexInputAttributeDescription[] vertexInputs = new VertexInputAttributeDescription[sortedAttributes.length];
+        VertexInputBindingDescription[] vertexBindings = new VertexInputBindingDescription[vertexInputs.length];
         for (int i = 0; i < vertexInputs.length; i++) {
             Attributes attribute = AttributeSorter.GLTF_SORT_ORDER[i];
             if (sortedAttributes[i] != null) {
@@ -251,8 +251,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
                 }
             }
         }
-        return new PipelineVertexInputState(AttributeSorter.GLTF_SORT_ORDER,
-                vertexBindings, vertexInputs, textureChannels);
+        return new PipelineVertexInputState(AttributeSorter.GLTF_SORT_ORDER, vertexBindings, vertexInputs, textureChannels);
     }
 
     public static VertexInputAttributeDescription getInput(int binding) {
@@ -273,7 +272,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
 
     @Override
     public Channel[] getTextureChannels() {
-        return textureChannels;
+        return getMaterial().getTextureChannels();
     }
 
     /**
@@ -293,7 +292,12 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
 
     @Override
     public AlphaMode getAlphaMode() {
-        return alphaMode;
+        return getMaterial().getAlphaMode();
+    }
+
+    @Override
+    public JSONMaterial getMaterial() {
+        return material;
     }
 
 }
