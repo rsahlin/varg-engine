@@ -24,12 +24,10 @@ const float fluxRadius = sqrt(oneByPI);
 struct Surface {
     // Per vertex attributes
     vec3 normal;
-    // View direction, from world coordinate to eye - normalized
-    vec3 V;
     vec3 position;
     vec4 irradiance;
 };
-#define SURFACE_LOCATIONS 4
+#define SURFACE_LOCATIONS 3
 
 struct Instance {
     ivec4 primitive;

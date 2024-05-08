@@ -13,21 +13,21 @@ vec3 getLocalizedReflectionVector(in vec3 BBoxMin, in vec3 BBoxMax, in vec3 cube
     return normalize(intersectPositionWS - cubemapPosition);
 }
 
-vec3 localizedReflectionVector(in vec3 BBoxMin, in vec3 BBoxMax, in vec3 cubemapPosition) {
+vec3 localizedReflectionVector(in vec3 BBoxMin, in vec3 BBoxMax, in vec3 cubemapPosition, in vec3 toView) {
     // Find reflected vector in WS.
 //    vec3 viewDirWS = normalize(input.viewDirInWorld);
 //    vec3 normalWS = normalize(input.normalInWorld);
     // Working in World Coordinate System.
-    return getLocalizedReflectionVector(BBoxMin, BBoxMax, cubemapPosition, surface.position, reflect(-surface.V, brdf.normal));
+    return getLocalizedReflectionVector(BBoxMin, BBoxMax, cubemapPosition, surface.position, reflect(-toView, brdf.normal));
 }
 
 
-vec3 getReflection(in float roughness, float intensity) {
+vec3 getReflection(in float roughness, float intensity, in vec3 toView) {
 //TODO - use localized reflection if model will move - default is to move camera.  
 #ifdef CUBEMAP_BBOX
-    vec3 reflect = localizedReflectionVector(uniforms.cubemaps[0].boxMin.xyz, uniforms.cubemaps[0].boxMax.xyz, vec3(0, 0, 0));
+    vec3 reflect = localizedReflectionVector(uniforms.cubemaps[0].boxMin.xyz, uniforms.cubemaps[0].boxMax.xyz, vec3(0, 0, 0), toView);
 #else
-    vec3 reflect = reflect(-surface.V, brdf.normal) * vec3(-1, 1, 1);
+    vec3 reflect = reflect(-toView, brdf.normal) * vec3(-1, 1, 1);
 #endif
 //    vec3 Fr = max(vec3(vec3(1.0 - roughness)), F0) - F0;
 //    vec3 k_S = F0 + Fr * pow(1.0 - brdf.NdotV, 5.0); 

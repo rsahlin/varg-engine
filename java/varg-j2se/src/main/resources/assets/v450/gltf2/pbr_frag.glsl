@@ -21,17 +21,18 @@
 float GA_SMITH(in float r, in float v) {
     return v / (r - r * v + v);
 }
-
-void getPerPixelBRDF(in vec3 normal) {
+/**
+ * Call once for fragment shader - then call getPerPixelBRDFDirectional() for each lightsource.
+ */
+void getPerPixelBRDF(in vec3 normal, in vec3 toView) {
     brdf.normal = normal;
-    // Direction of incoming light to the current position
-    brdf.NdotV = max(0, dot(normal, surface.V));
+    brdf.NdotV = max(0, dot(normal, toView));
 }
 
-void getPerPixelBRDFDirectional(in vec3 lightDirection) {
+void getPerPixelBRDFDirectional(in vec3 lightDirection, in vec3 toView) {
     brdf.reflectedLight = reflect(lightDirection, brdf.normal);
-    brdf.H = normalize(-lightDirection + surface.V);
-    brdf.HdotV = max(0, dot(brdf.H, surface.V));
+    brdf.H = normalize(-lightDirection + toView);
+    brdf.HdotV = max(0, dot(brdf.H, toView));
     brdf.NdotH = max(0, dot(brdf.normal, brdf.H));
     brdf.HdotL = max(0, dot(brdf.H, -lightDirection));
 }

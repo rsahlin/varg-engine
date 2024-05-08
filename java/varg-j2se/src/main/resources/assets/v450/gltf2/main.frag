@@ -23,10 +23,12 @@ precision highp float;
 void main() {
     // TODO - do not fetch each fragment?
     material = materials.material[instance.primitive.x];
+    vec3 toView = normalize(uniforms.camera[0].xyz - surface.position);
+    
 #ifdef NORMAL
-    getPerPixelBRDF(vec3(GETNORMALTEXTURE(material.samplersData[NORMAL_TEXTURE_INDEX])) * mTangentLight);
+    getPerPixelBRDF(vec3(GETNORMALTEXTURE(material.samplersData[NORMAL_TEXTURE_INDEX])) * mTangentLight, toView);
 #else
-    getPerPixelBRDF(surface.normal);
+    getPerPixelBRDF(surface.normal, toView);
 #endif
 #ifdef ORM
     setupPBRMaterial(GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX]));
@@ -49,9 +51,9 @@ void main() {
 #ifdef BASECOLOR
     f16vec4 basecolor = f16vec4(GETTEXTURE(material.samplersData[BASECOLOR_TEXTURE_INDEX]));
     float16_t metal = float16_t(brdf.ormp.b);
-    vec4 pixel = brdf_main(mix(f16vec4(vMaterialColor[0]) * basecolor, f16vec4(0.0), metal).rgb, mix(f16vec4(1.0), f16vec4(vMaterialColor[1]) * basecolor, metal).rgb);
+    vec4 pixel = brdf_main(mix(f16vec4(vMaterialColor[0]) * basecolor, f16vec4(0.0), metal).rgb, mix(f16vec4(1.0), f16vec4(vMaterialColor[1]) * basecolor, metal).rgb, toView);
 #else
-    vec4 pixel = brdf_main(f16vec3(vMaterialColor[0].rgb), f16vec3(vMaterialColor[1].rgb));
+    vec4 pixel = brdf_main(f16vec3(vMaterialColor[0].rgb), f16vec3(vMaterialColor[1].rgb), toView);
 #endif
 
 #ifdef EMISSIVE

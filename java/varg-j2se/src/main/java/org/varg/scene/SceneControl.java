@@ -150,7 +150,7 @@ public class SceneControl implements PointerListener, KeyListener {
         switch (currentMode) {
             case CAMERA:
                 rotateInputFactors[1] = 0;
-                rotateInputFactors[0] = 1;
+                rotateInputFactors[1] = 1;
                 break;
             case SCENE:
                 rotateInputFactors[0] = 1;
@@ -271,20 +271,17 @@ public class SceneControl implements PointerListener, KeyListener {
             case X:
             case WIDTH:
                 Quaternion.setXAxisRotation(deltaTime[1], rotation[mode.index].xRotation);
-                Quaternion.mul(rotation[mode.index].currentRotation, rotation[mode.index].xRotation,
-                        rotation[mode.index].currentRotation);
+                Quaternion.mul(rotation[mode.index].currentRotation, rotation[mode.index].xRotation, rotation[mode.index].currentRotation);
                 break;
             case Y:
             case HEIGHT:
                 Quaternion.setYAxisRotation(deltaTime[0], rotation[mode.index].yRotation);
-                Quaternion.mul(rotation[mode.index].currentRotation, rotation[mode.index].yRotation,
-                        rotation[mode.index].currentRotation);
+                Quaternion.mul(rotation[mode.index].currentRotation, rotation[mode.index].yRotation, rotation[mode.index].currentRotation);
                 break;
             case Z:
             case DEPTH:
                 Quaternion.setZAxisRotation(deltaTime[0], rotation[mode.index].zRotation);
-                Quaternion.mul(rotation[mode.index].currentRotation, rotation[mode.index].zRotation,
-                        rotation[mode.index].currentRotation);
+                Quaternion.mul(rotation[mode.index].currentRotation, rotation[mode.index].zRotation, rotation[mode.index].currentRotation);
                 break;
             case XY:
                 Quaternion.setYAxisRotation(deltaTime[0], rotation[mode.index].yRotation);
@@ -294,12 +291,10 @@ public class SceneControl implements PointerListener, KeyListener {
                 switch (currentMode) {
                     case CAMERA:
                         rotation[mode.index].deltaRotation[3] = -rotation[mode.index].deltaRotation[3];
-                        Quaternion.mul(rotation[mode.index].deltaRotation, rotation[mode.index].currentRotation,
-                                rotation[mode.index].currentRotation);
+                        Quaternion.mul(rotation[mode.index].deltaRotation, rotation[mode.index].currentRotation, rotation[mode.index].currentRotation);
                         break;
                     case SCENE:
-                        Quaternion.mul(rotation[mode.index].deltaRotation, rotation[mode.index].currentRotation,
-                                rotation[mode.index].currentRotation);
+                        Quaternion.mul(rotation[mode.index].deltaRotation, rotation[mode.index].currentRotation, rotation[mode.index].currentRotation);
                         break;
                     default:
                         throw new IllegalArgumentException();

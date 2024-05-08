@@ -15,7 +15,6 @@ void createTangentLightMatrix() {
 
 
 void setLight(in vec3 worldPos) {
-    surface.V = normalize(uniforms.camera[0].xyz - worldPos);
     surface.position = worldPos;
 #ifdef CUBEMAP_SH
     surface.irradiance = max(vec4(0), irradiance(uniforms.irradianceCoefficients, surface.normal));
@@ -35,7 +34,7 @@ void glTFVertexSetup() {
     setLight(worldPos.xyz);
 #ifdef COLOR_0
     vMaterialColor[0] = COLOR_ATTRIBUTE * materials.material[instance.primitive.x].materialColor[0];
-    vMaterialColor[1] = mix(f16vec4(1), materials.material[instance.primitive.x].materialColor[1] * COLOR_ATTRIBUTE, materials.material[instance.primitive].ormp.b);
+    vMaterialColor[1] = mix(vec4(1), vec4(materials.material[instance.primitive.x].materialColor[1] * COLOR_ATTRIBUTE), float(materials.material[instance.primitive.x].ormp.b));
 #else
     vMaterialColor[0] = materials.material[instance.primitive.x].materialColor[0];
     vMaterialColor[1] = materials.material[instance.primitive.x].materialColor[1];
