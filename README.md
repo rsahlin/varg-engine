@@ -82,8 +82,8 @@ First some basic concepts:
 As light travels from one media to another, ie light 'hits' our surface, it is either reflected or transmitted.  
 Reflected light is, well reflected, think of it as bouncing off the surfce.  
 Transmitted light interacts with the surface and is either re-transmitted or continues into the media.  
-I will not call transmitted light diffused - simply because it does not have to be spread out.  
-Think of glossy paint - transmitted light will interact with the paint and be colored by it - and then be re-transmitted mostly in the direction of the reflection vector.  
+I will not call re-transmitted light diffused - I prefer to say that the light bends, similar to the effect in a prism.  
+Think of glossy paint - transmitted light will interact with the paint and be colored by it - and then be re-transmitted probably more in the direction of the reflection vector.  
 The term 'specular reflection' is vaguely better.  
 However, since specular means mirror, there is a risk that the reflective power (fresnel) is overlooked.  
   
@@ -96,10 +96,19 @@ Use the media reflection color for the reflective part and the media transmissio
 How much of the transmitted light that may be re-emitted is govererned by the absorption factor (for metals this value is 1).  
 Transmitted light is affected by surface dispersion factor:  
 -0 means no dispersion.  
--1 means fully dispersed over 2PI.  
-Transmission intensity goes from 1 down to 1 / 2PI as dispersion goes up.  
+-1 means fully dispersed over 4PI.  
+Transmission intensity goes from 1 down to 1 / 4PI as dispersion goes up.  
 Irradiance Map (Spherical Harmonics) is calculated in same way as the transmissive light.  
 Environment map reflections use first rule of FBLS.  
+
+One of the major problems with most of todays realtime PBR implementations is that they use a specular and diffuse model that produces way too much light.  
+Imagine a light hitting a media at normal incidence, going from air to an IOR of 1.5.  
+Using the Fresnel power function we get reflectance at 0 degrees - R0:
+R0 = ((IOR1 - IOR2) / (IOR1 + IOR2)) ^2 = 0.04  
+This means that of the incoming light, 4% is reflected back. The rest is transmitted. Period.  
+  
+All glTF implementations that I have seen mess this up by not limiting the NormalDistributionFunction (NDF) - instead it usually returns tenfold or more light.  
+(This has somewhat to do with using an inaccurate model for re-transmitted, or diffused, light)  
   
 **The second rule of Fresnel Based Light Shading**    
   
@@ -109,10 +118,16 @@ I understand why it has been used!
 It's simple and fast and produces somewhat good looking results, especially in cases where there is no irradiance map.  
 [An irradiance map captures the light reflecting off the environment. It can be a texture, spherical harmonics or some other technique]  
   
-Instead, use some algorithm that takes the directionality of smooth (glossy) and the dispersion of matte (rough) materials into account.  
+Instead, use some algorithm that takes absorption and the dispersion of matte (rough) materials into account.  
+  
+I would guess that all materials absorb light, for instance imagine a leaf or a green plant, it will at least attenuate most if not all of the transmitted light.    
+Afterall, how can photosynthesis work if light does not enter into the materia?  
+So how much of transmitted light is absorbed by common materials?  
+Very good question......  
   
   
-**The third rule of Freslel Based Light Shading**  
+    
+**The third rule of Fresnel Based Light Shading**  
   
   
 The third rule of Fresnel Based Light Shading is to never, and I really mean never, bake or combine factors affecting light distribution into colors.  
