@@ -367,18 +367,13 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
     @Override
     public Features getRequestedDeviceFeatures(Features availableFeatures) {
         RequestedFeatures requestedFeatures = getDefaultRequestedFeatures(availableFeatures);
-        if (ExtensionProperties.get(Extension.VK_EXT_mesh_shader.getName(), availableFeatures.getExtensions())
-                != null) {
-            requestedFeatures.addEXTMeshShader(new PhysicalDeviceMeshShaderFeaturesEXT(true, true, false, false,
-                    false));
+        if (ExtensionProperties.get(Extension.VK_EXT_mesh_shader.getName(), availableFeatures.getExtensions()) != null) {
+            requestedFeatures.addEXTMeshShader(new PhysicalDeviceMeshShaderFeaturesEXT(true, true, false, false, false));
         }
-        if (ExtensionProperties.get(Extension.VK_KHR_fragment_shading_rate.getName(), availableFeatures.getExtensions())
-                != null) {
-            requestedFeatures.addKHRFragmentShadingRate(new PhysicalDeviceFragmentShadingRateFeaturesKHR(true, false,
-                    false));
+        if (ExtensionProperties.get(Extension.VK_KHR_fragment_shading_rate.getName(), availableFeatures.getExtensions()) != null) {
+            requestedFeatures.addKHRFragmentShadingRate(new PhysicalDeviceFragmentShadingRateFeaturesKHR(true, false, false));
         }
-        PhysicalDeviceAccelerationStructureFeaturesKHR accelerationFeatures =
-                new PhysicalDeviceAccelerationStructureFeaturesKHR();
+        PhysicalDeviceAccelerationStructureFeaturesKHR accelerationFeatures = new PhysicalDeviceAccelerationStructureFeaturesKHR();
         requestedFeatures.addRayTracing(accelerationFeatures);
         return requestedFeatures.getFeatures();
     }

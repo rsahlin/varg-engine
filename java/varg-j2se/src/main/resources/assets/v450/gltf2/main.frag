@@ -35,7 +35,7 @@ void main() {
 #elif METALLICROUGHNESS
 #ifdef OCCLUSION
     //occlusion + mr in different textures
-    setupPBRMaterial(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r, GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX]));
+    setupPBRMaterial(float16_t(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r), f16vec4(GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX])));
 #else
     //Metallicroughness but not occlusion
     setupPBRMaterial(GETTEXTURE_GB(material.samplersData[MR_TEXTURE_INDEX]));

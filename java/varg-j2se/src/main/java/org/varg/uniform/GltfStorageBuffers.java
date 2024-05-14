@@ -95,6 +95,10 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     public static final int MR_TEXTURE_INDEX = 2;
     public static final int OCCLUSION_TEXTURE_INDEX = 3;
     public static final int EMISSIVE_TEXTURE_INDEX = 4;
+    public static final int TRANSMISSION_INDEX = 5;
+    public static final int COAT_FACTOR_INDEX = 6;
+    public static final int COAT_NORMAL_INDEX = 7;
+    public static final int COAT_ROUGHNESS_INDEX = 8;
 
     public static final int ORM_INDEX = 0;
     public static final int SCALE_FACTORS_INDEX = 4;
@@ -267,6 +271,14 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                 return OCCLUSION_TEXTURE_INDEX;
             case EMISSIVE:
                 return EMISSIVE_TEXTURE_INDEX;
+            case TRANSMISSION:
+                return TRANSMISSION_INDEX;
+            case COAT_FACTOR:
+                return COAT_FACTOR_INDEX;
+            case COAT_NORMAL:
+                return COAT_NORMAL_INDEX;
+            case COAT_ROUGHNESS:
+                return COAT_ROUGHNESS_INDEX;
             default:
                 throw new IllegalArgumentException(ErrorMessage.NOT_IMPLEMENTED.message);
         }

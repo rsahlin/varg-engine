@@ -1,4 +1,10 @@
 #define INCLUDED_COMMON_STRUCTS
+
+// Allows use of float16 arithmetic
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require 
+#extension GL_EXT_shader_explicit_arithmetic_types_int16 : require 
+#extension GL_EXT_shader_explicit_arithmetic_types_int8 : require 
+
 /**
  * Source for structs shared between vertex and fragment stage (possibly other stages)
  *
@@ -8,11 +14,11 @@ const float MIN_ROUGHNESS = 0.00001;
 const float MIN_METALLIC = 0.0;
 const float MAX_METALLIC = 1.0;
 const float REFLECTED_LOBE_TINT = 0.85;
-const float pi = 3.141592;
-const float sqrtTwoByPi = sqrt(2.0 / pi);
-const float oneByPI = 1.0 / pi;
-const float twoByPI = 2.0 / pi;
-const float oneByTwoPi = 1.0 / (2 * pi);
+const float16_t pi = float16_t(3.141);
+const float16_t sqrtTwoByPi = float16_t(sqrt(2.0 / pi));
+const float16_t oneByPI = float16_t(1.0 / pi);
+const float16_t twoByPI = float16_t(2.0 / pi);
+const float16_t oneByTwoPi = float16_t(1.0 / (2.0 * pi));
 const float gamma = 2.4;
 const float oneByGamma = 1.0 / gamma;
 const vec4 BLACK = vec4(0.0, 0.0, 0.0, 0.0);
@@ -51,7 +57,7 @@ struct BRDF {
     float HdotV;
     //x = ndf, y = gaf
     vec4 debug;
-    vec4 ormp;
+    f16vec4 ormp;
     vec3[3] colors;
 };
 

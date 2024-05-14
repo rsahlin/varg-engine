@@ -93,8 +93,7 @@ public class RequestedFeatures {
      */
     public void add8BitStorage(boolean storageBuffer8BitAccess, boolean uniformAndStorageBuffer8BitAccess,
             boolean storagePushConstant8) {
-        PhysicalDevice8BitStorageFeatures storageFeatures = new PhysicalDevice8BitStorageFeatures(
-                storageBuffer8BitAccess, uniformAndStorageBuffer8BitAccess, storagePushConstant8);
+        PhysicalDevice8BitStorageFeatures storageFeatures = new PhysicalDevice8BitStorageFeatures(storageBuffer8BitAccess, uniformAndStorageBuffer8BitAccess, storagePushConstant8);
         requestedFeatureExtensions.add8BitStorage(storageFeatures);
         if (storageBuffer8BitAccess) {
             requestedFeatures.setFeatures(Vulkan12Features.storageBuffer8BitAccess);

@@ -508,12 +508,10 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
         if (!Settings.getInstance().getBoolean(BackendProperties.HEADLESS)) {
             requestedFeatures.addKHRSwapChain();
         }
-        if (ExtensionProperties.get(Extension.VK_EXT_hdr_metadata.getName(), availableFeatures.getExtensions())
-                != null) {
+        if (ExtensionProperties.get(Extension.VK_EXT_hdr_metadata.getName(), availableFeatures.getExtensions()) != null) {
             requestedFeatures.addEXTHdrMetadata();
         }
-        if (ExtensionProperties.get(Vulkan12Extension.VK_KHR_shader_float_controls.getName(),
-                availableFeatures.getExtensions()) != null) {
+        if (ExtensionProperties.get(Vulkan12Extension.VK_KHR_shader_float_controls.getName(), availableFeatures.getExtensions()) != null) {
             requestedFeatures.addExtension(Vulkan12Extension.VK_KHR_shader_float_controls);
         }
         requestedFeatures.add8BitStorage(true, true, false);

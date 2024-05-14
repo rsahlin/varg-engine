@@ -44,19 +44,19 @@ void setupPBRMaterial() {
     brdf.ormp = material.ormp;
 }
 
-void setupPBRMaterial(const float occlusion) {
+void setupPBRMaterial(const float16_t occlusion) {
     brdf.ormp = material.ormp;
     brdf.ormp.r = occlusion;
 }
 
-void setupPBRMaterial(const float occlusion, in vec4 rm) {
+void setupPBRMaterial(const float16_t occlusion, in f16vec4 rm) {
     brdf.ormp = material.ormp;
     brdf.ormp.r = occlusion;
     brdf.ormp.gb = rm.gb;
 }
 
 
-void setupPBRMaterial(in vec2 rm) {
+void setupPBRMaterial(in f16vec2 rm) {
     brdf.ormp = material.ormp;
     brdf.ormp.g = rm.x;
     brdf.ormp.b = rm.y;
