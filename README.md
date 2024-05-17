@@ -82,8 +82,8 @@ First some basic concepts:
 As light travels from one media to another, ie light 'hits' our surface, it is either reflected or transmitted.  
 Reflected light is, well reflected, think of it as bouncing off the surfce.  
 Transmitted light interacts with the surface and is either re-transmitted or continues into the media.  
-I will not call transmitted light diffused - simply because it does not have to be spread out.  
-Think of glossy paint - transmitted light will interact with the paint and be colored by it - and then be re-transmitted mostly in the direction of the reflection vector.  
+I will not call re-transmitted light diffused - I prefer to say that the light bends, similar to the effect in a prism.  
+Think of glossy paint - transmitted light will interact with the paint and be colored by it - and then be re-transmitted probably more in the direction of the reflection vector.  
 The term 'specular reflection' is vaguely better.  
 However, since specular means mirror, there is a risk that the reflective power (fresnel) is overlooked.  
   
@@ -96,10 +96,19 @@ Use the media reflection color for the reflective part and the media transmissio
 How much of the transmitted light that may be re-emitted is govererned by the absorption factor (for metals this value is 1).  
 Transmitted light is affected by surface dispersion factor:  
 -0 means no dispersion.  
--1 means fully dispersed over 2PI.  
-Transmission intensity goes from 1 down to 1 / 2PI as dispersion goes up.  
+-1 means fully dispersed over 4PI.  
+Transmission intensity goes from 1 down to 1 / 4PI as dispersion goes up.  
 Irradiance Map (Spherical Harmonics) is calculated in same way as the transmissive light.  
 Environment map reflections use first rule of FBLS.  
+
+One of the major problems with most of todays realtime PBR implementations is that they use a specular and diffuse model that produces way too much light.  
+Imagine a light hitting a media at normal incidence, going from air to an IOR of 1.5.  
+Using the Fresnel power function we get reflectance at 0 degrees - R0:
+R0 = ((IOR1 - IOR2) / (IOR1 + IOR2)) ^2 = 0.04  
+This means that of the incoming light, 4% is reflected back. The rest is transmitted. Period.  
+  
+All glTF implementations that I have seen mess this up by not limiting the NormalDistributionFunction (NDF) - instead it usually returns tenfold or more light.  
+(This has somewhat to do with using an inaccurate model for re-transmitted, or diffused, light)  
   
 **The second rule of Fresnel Based Light Shading**    
   
@@ -109,10 +118,16 @@ I understand why it has been used!
 It's simple and fast and produces somewhat good looking results, especially in cases where there is no irradiance map.  
 [An irradiance map captures the light reflecting off the environment. It can be a texture, spherical harmonics or some other technique]  
   
-Instead, use some algorithm that takes the directionality of smooth (glossy) and the dispersion of matte (rough) materials into account.  
+Instead, use some algorithm that takes absorption and the dispersion of matte (rough) materials into account.  
+  
+I would guess that all materials absorb light, for instance imagine a leaf or a green plant, it will at least attenuate most if not all of the transmitted light.    
+Afterall, how can photosynthesis work if light does not enter into the materia?  
+So how much of transmitted light is absorbed by common materials?  
+Very good question......  
   
   
-**The third rule of Freslel Based Light Shading**  
+    
+**The third rule of Fresnel Based Light Shading**  
   
   
 The third rule of Fresnel Based Light Shading is to never, and I really mean never, bake or combine factors affecting light distribution into colors.  
@@ -141,11 +156,16 @@ Shaders can be pre-built if wanted.
 
 <table>
   <tr>
-    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/63367478-b1a9-44a9-bd41-d079b6cf5900"  alt="glTF Corset model" width = 360px></td>
-    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/48054c8a-2f4b-45b0-8d10-5d9cb43997cc"  alt="glTF Flight Helmet model" width = 360px></td>
-    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/b68fcafd-89e2-4207-9a88-1e74174531dd"  alt="glTF Waterbottle model " width = 360px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/b95bda17-9d3a-429c-848c-14d88cad3b16"  alt="glTF Corset model" width = 360px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/c7502b79-525e-4673-b0fb-2bcfd4960a3a"  alt="glTF Flight Helmet model" width = 360px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/7535bf72-bdc2-45f1-a9e7-84cd62c8b7b7"  alt="glTF Waterbottle model " width = 360px></td>
   </tr>
 </table>
+  
+  
+  
+
+
 
 ### Features  
   
@@ -242,4 +262,32 @@ gltf-imageio - build using 'mvn clean compile install -DskipTests'
   
 build varg-engine using 'mvn clean compile install -DskipTests'  
   
+
+# Fresnel Based Light Shading Testmodels  
+  
+This section covers render correctness and supplies some glTF models to be used when checking for physically correct rendering.  
+  
+## Light reflection correctness  
+  
+This is to test that Fresnell light reflection, not transmission, is calculated correctly.  
+Assuming light is moving from a media with an IOR of 1.0 (air) to an IOR of 1.5 - this is the default of glTF.  
+Reflected light is calculated at normal incidence:  
+R0 = ( (IOR1 - IOR2) / (IOR1 + IOR2) ) ^2 = 0.04  
+  
+To test this a model using one directional light facing directly into the screen at intensity 0.9 lumen/m2 is used.  
+This light hits a material that has roughness 0.0 and an albedo/basecolor of 0.0 - thus no light will be re-transmitted or diffused.  
+There are 6 black material quads, facing the camera, divided on the topmost two rows, background color is set to dark green so that the quads can be seen.    
+The lowest row is for comparison, they are emissive, black metal - the only light leaving will be the emissive light.  
+The emissive light is, going from left to right [0.9 * 0.04] - [0.9] - [1-0]  
+To be rendered physically correct the reflected light from the black material quads shall be the same as the leftmost emissive material.  
+
+<table>
+  <tr>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/af5a6660-54f8-4e54-87be-1654a811337b"  alt="Fresnel reflection correctness test" width = 360px></td>
+  </tr>
+</table>
+  
+
+
+
   
