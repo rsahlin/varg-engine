@@ -266,6 +266,7 @@ build varg-engine using 'mvn clean compile install -DskipTests'
 # Fresnel Based Light Shading Testmodels  
   
 This section covers render correctness and supplies some glTF models to be used when checking for physically correct rendering.  
+They are placed in the "\testmodels" folder.  
   
 ## Light reflection correctness  
   
