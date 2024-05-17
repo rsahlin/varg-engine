@@ -262,4 +262,32 @@ gltf-imageio - build using 'mvn clean compile install -DskipTests'
   
 build varg-engine using 'mvn clean compile install -DskipTests'  
   
+
+# Fresnel Based Light Shading Testmodels  
+  
+This section covers render correctness and supplies some glTF models to be used when checking for physically correct rendering.  
+  
+## Light reflection correctness  
+  
+This is to test that Fresnell light reflection, not transmission, is calculated correctly.  
+Assuming light is moving from a media with an IOR of 1.0 (air) to an IOR of 1.5 - this is the default of glTF.  
+Reflected light is calculated at normal incidence:  
+R0 = ( (IOR1 - IOR2) / (IOR1 + IOR2) ) ^2 = 0.04  
+  
+To test this a model using one directional light facing directly into the screen at intensity 0.9 lumen/m2 is used.  
+This light hits a material that has roughness 0.0 and an albedo/basecolor of 0.0 - thus no light will be re-transmitted or diffused.  
+There are 6 black material quads, facing the camera, divided on the topmost two rows, background color is set to dark green so that the quads can be seen.    
+The lowest row is for comparison, they are emissive, black metal - the only light leaving will be the emissive light.  
+The emissive light is, going from left to right [0.9 * 0.04] - [0.9] - [1-0]  
+To be rendered physically correct the reflected light from the black material quads shall be the same as the leftmost emissive material.  
+
+<table>
+  <tr>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/af5a6660-54f8-4e54-87be-1654a811337b"  alt="Fresnel reflection correctness test" width = 360px></td>
+  </tr>
+</table>
+  
+
+
+
   
