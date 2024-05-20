@@ -266,7 +266,7 @@ build varg-engine using 'mvn clean compile install -DskipTests'
 # Fresnel Based Light Shading Testmodels  
   
 This section covers render correctness and supplies some glTF models to be used when checking for physically correct rendering.  
-They are placed in the "\testmodels" folder.  
+They are placed in the "\testmodels\fresnelreflectiontest" folder.  
   
 ## Light reflection correctness  
   
@@ -277,16 +277,24 @@ R0 = ( (IOR1 - IOR2) / (IOR1 + IOR2) ) ^2 = 0.04
   
 To test this a model using one directional light facing directly into the screen at intensity 0.9 lumen/m2 is used.  
 This light hits a material that has roughness 0.0 and an albedo/basecolor of 0.0 - thus no light will be re-transmitted or diffused.  
-There are 6 black material quads, facing the camera, divided on the topmost two rows, background color is set to dark green so that the quads can be seen.    
+There are 6 black material quads, facing the camera, divided on the topmost two rows, background color is set to dark green so that the quads can be seen.  
+Assuming an SNORM framebuffer [0.0 - 1.0] and no exposure, or 1.0, since the camera in glTF does not have aperture, shutter, ISO - it's simply a viewport.  
+  
 The lowest row is for comparison, they are emissive, black metal - the only light leaving will be the emissive light.  
 The emissive light is, going from left to right [0.9 * 0.04] - [0.9] - [1-0]  
-To be rendered physically correct the reflected light from the black material quads shall be the same as the leftmost emissive material.  
+To be rendered physically correct the reflected light from the black material quads shall be the same as the leftmost emissive material (sRGB 0x353535).  
+  
+The second model is the same but with a higher intensity light (20 lumen/m2) which will give 80% of max light at normal incidence (sRGB 0xE7E7E7)    
+  
 
 <table>
   <tr>
-    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/af5a6660-54f8-4e54-87be-1654a811337b"  alt="Fresnel reflection correctness test" width = 360px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/39d25007-2b87-41d0-9b1d-32480aaa6975"  alt="Fresnel reflection correctness test" width = 360px></td>
+    <td> <img src="https://github.com/rsahlin/varg-engine/assets/3063192/6a975c8b-d5a5-4241-a026-870a610d3d06"  alt="Fresnel reflection correctness test" width = 360px></td>
   </tr>
 </table>
+
+
   
 
 
