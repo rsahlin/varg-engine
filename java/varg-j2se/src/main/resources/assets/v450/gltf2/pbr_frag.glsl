@@ -41,25 +41,35 @@ void getPerPixelBRDFDirectional(in vec3 lightDirection, in vec3 toView) {
  * This is used for materials that do not have normal/metallicrough/occlusion texture maps
  */
 void setupPBRMaterial() {
-    brdf.ormp = material.ormp;
+    brdf.orma.rgb = material.ormp.rgb;
+    brdf.orma.a = material.properties.r;
 }
 
+void setupPBRMaterial(in f16vec3 orm) {
+    brdf.orma.rgb = orm;
+    brdf.orma.a = mix(material.properties.r, METAL_ABSORPTION, orm.b);
+}
+
+
 void setupPBRMaterial(const float16_t occlusion) {
-    brdf.ormp = material.ormp;
-    brdf.ormp.r = occlusion;
+    brdf.orma.rgb = material.ormp.rgb;
+    brdf.orma.r = occlusion;
+    brdf.orma.a = material.properties.r;
 }
 
 void setupPBRMaterial(const float16_t occlusion, in f16vec4 rm) {
-    brdf.ormp = material.ormp;
-    brdf.ormp.r = occlusion;
-    brdf.ormp.gb = rm.gb;
+    brdf.orma.r = occlusion;
+    brdf.orma.gb = rm.gb;
+    brdf.orma.a = mix(material.properties.r, METAL_ABSORPTION, rm.b);
 }
 
 
 void setupPBRMaterial(in f16vec2 rm) {
-    brdf.ormp = material.ormp;
-    brdf.ormp.g = rm.x;
-    brdf.ormp.b = rm.y;
+    brdf.orma = material.ormp;
+    brdf.orma.g = rm.x;
+    brdf.orma.b = rm.y;
+    brdf.orma.a = mix(material.properties.r, METAL_ABSORPTION, rm.y);
+    
 }
 
 

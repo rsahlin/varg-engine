@@ -152,6 +152,7 @@ public class VulkanScene extends JSONScene implements VulkanRenderableScene {
                 return Vulkan10.Format.VK_FORMAT_R32G32B32_SFLOAT;
             case TEXCOORD_0:
             case TEXCOORD_1:
+            case TEXCOORD_2:
                 return Vulkan10.Format.VK_FORMAT_R32G32_SFLOAT;
             default:
                 throw new IllegalArgumentException(ErrorMessage.NOT_IMPLEMENTED.message + attribute);

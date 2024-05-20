@@ -241,6 +241,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
                     case NORMAL:
                     case TEXCOORD_0:
                     case TEXCOORD_1:
+                    case TEXCOORD_2:
                     case POSITION:
                     case COLOR_0:
                         vertexInputs[i] = null;

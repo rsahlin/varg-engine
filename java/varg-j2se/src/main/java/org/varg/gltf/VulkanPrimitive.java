@@ -148,20 +148,18 @@ public class VulkanPrimitive extends JSONPrimitive {
                     case POSITION:
                     case NORMAL:
                     case COLOR_0:
-                        bindings[i] = new VertexInputBindingDescription(i, 12,
-                                VertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX);
+                        bindings[i] = new VertexInputBindingDescription(i, 12, VertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX);
                         break;
                     case TANGENT:
-                        bindings[i] = new VertexInputBindingDescription(i, 16,
-                                VertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX);
+                        bindings[i] = new VertexInputBindingDescription(i, 16, VertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX);
                         break;
                     case TEXCOORD_0:
                     case TEXCOORD_1:
-                        bindings[i] = new VertexInputBindingDescription(i, 8,
-                                VertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX);
+                    case TEXCOORD_2:
+                        bindings[i] = new VertexInputBindingDescription(i, 8, VertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX);
                         break;
                     default:
-                        throw new IllegalArgumentException();
+                        throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Invalid attribute " + AttributeSorter.GLTF_SORT_ORDER[i]);
                 }
             }
         }

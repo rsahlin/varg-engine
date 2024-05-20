@@ -94,6 +94,10 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     public static final int NORMAL_TEXTURE_INDEX = 1;
     public static final int MR_TEXTURE_INDEX = 2;
     public static final int OCCLUSION_TEXTURE_INDEX = 3;
+    /**
+     * Is used when both occlusion and metallicroughness textures are present and exactly the same.
+     */
+    public static final int ORM_TEXTURE_INDEX = 2;
     public static final int EMISSIVE_TEXTURE_INDEX = 4;
     public static final int TRANSMISSION_INDEX = 5;
     public static final int COAT_FACTOR_INDEX = 6;
@@ -279,6 +283,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                 return COAT_NORMAL_INDEX;
             case COAT_ROUGHNESS:
                 return COAT_ROUGHNESS_INDEX;
+            case ORM:
+                return ORM_TEXTURE_INDEX;
             default:
                 throw new IllegalArgumentException(ErrorMessage.NOT_IMPLEMENTED.message);
         }
@@ -377,8 +383,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
         }
         setLights(root, buffer, lights);
         // Todo - move to static - displayencoding does not change dynamically
-        KHRdisplayencoding dm = (KHRdisplayencoding) (root.getRoot()
-                .getExtension(ExtensionTypes.KHR_displayencoding));
+        KHRdisplayencoding dm = (KHRdisplayencoding) (root.getRoot().getExtension(ExtensionTypes.KHR_displayencoding));
         short[] shortvalues = new short[4];
         FP16Convert convert = new FP16Convert(shortvalues);
         if (dm == null) {

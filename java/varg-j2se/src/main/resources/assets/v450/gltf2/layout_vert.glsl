@@ -17,7 +17,7 @@ layout(location = TEXCOORD_LOCATION_OUT) out vec2 vTexCoord[MAX_TEXTURE_COORDINA
 layout(location = SURFACE_LOCATION_OUT) out Surface surface;
 layout(location = PRIMITIVE_LOCATION_OUT) flat out Instance instance;
 layout(location = TANGENTLIGHT_LOCATION_OUT) out mat3 mTangentLight;
-layout(location = BASECOLOR_LOCATION_OUT) flat out vec4[2] vMaterialColor;
+layout(location = BASECOLOR_LOCATION_OUT) out vec4[2] vMaterialColor;
 #ifdef DIRECTIONAL
   layout(location = DIRECTIONAL_LOCATION_OUT) out  vec4 vDirectionalLight[DIRECTIONAL];
 #endif

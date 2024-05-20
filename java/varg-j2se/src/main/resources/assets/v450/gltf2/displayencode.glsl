@@ -57,7 +57,7 @@ vec3 BT_2100_OETF(in vec3 color) {
 }
 
 vec3 SRGB(in vec3 color) {
-    return  pow(vec3(color * 1.055), vec3(ONE_BY_GAMMA)) - vec3(0.055);
+    return  vec3(1.055) * pow(color, vec3(ONE_BY_GAMMA)) - vec3(0.055);
 }
 
 vec3 BRDF_SCALE(in vec3 color, in float maxComponent) {

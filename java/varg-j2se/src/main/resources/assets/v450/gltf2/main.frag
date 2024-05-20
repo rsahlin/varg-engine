@@ -31,18 +31,18 @@ void main() {
     getPerPixelBRDF(surface.normal, toView);
 #endif
 #ifdef ORM
-    setupPBRMaterial(GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX]));
+    setupPBRMaterial(f16vec3(GETTEXTURE(material.samplersData[ORM_TEXTURE_INDEX]).rgb));
 #elif METALLICROUGHNESS
 #ifdef OCCLUSION
     //occlusion + mr in different textures
     setupPBRMaterial(float16_t(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r), f16vec4(GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX])));
 #else
     //Metallicroughness but not occlusion
-    setupPBRMaterial(GETTEXTURE_GB(material.samplersData[MR_TEXTURE_INDEX]));
+    setupPBRMaterial(f16vec2(GETTEXTURE_GB(material.samplersData[MR_TEXTURE_INDEX])));
 #endif
 #elif OCCLUSION
     // Occlusion but not MR
-    setupPBRMaterial(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r);
+    setupPBRMaterial(float16_t(GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r));
 #else
     //No pbr texture channels
     setupPBRMaterial();
@@ -50,7 +50,7 @@ void main() {
 
 #ifdef BASECOLOR
     f16vec4 basecolor = f16vec4(GETTEXTURE(material.samplersData[BASECOLOR_TEXTURE_INDEX]));
-    float16_t metal = float16_t(brdf.ormp.b);
+    float16_t metal = float16_t(brdf.orma.b);
     vec4 pixel = brdf_main(mix(f16vec4(vMaterialColor[0]) * basecolor, f16vec4(0.0), metal).rgb, mix(f16vec4(1.0), f16vec4(vMaterialColor[1]) * basecolor, metal).rgb, toView);
 #else
     vec4 pixel = brdf_main(f16vec3(vMaterialColor[0].rgb), f16vec3(vMaterialColor[1].rgb), toView);

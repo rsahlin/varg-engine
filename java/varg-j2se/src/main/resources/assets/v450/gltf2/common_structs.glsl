@@ -19,6 +19,9 @@ const float16_t sqrtTwoByPi = float16_t(sqrt(2.0 / pi));
 const float16_t oneByPI = float16_t(1.0 / pi);
 const float16_t twoByPI = float16_t(2.0 / pi);
 const float16_t oneByTwoPi = float16_t(1.0 / (2.0 * pi));
+const float16_t oneByFourPi = float16_t(1.0 / (4.0 * pi));
+const float16_t DEFAULT_ABSORPTION = float16_t(0.9);
+const float16_t METAL_ABSORPTION = float16_t(1.0);
 const float gamma = 2.4;
 const float oneByGamma = 1.0 / gamma;
 const vec4 BLACK = vec4(0.0, 0.0, 0.0, 0.0);
@@ -57,7 +60,8 @@ struct BRDF {
     float HdotV;
     //x = ndf, y = gaf
     vec4 debug;
-    f16vec4 ormp;
+    //occlusion, roughness, metallic, absorbfactor
+    f16vec4 orma;
     vec3[3] colors;
 };
 

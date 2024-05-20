@@ -144,9 +144,7 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
      * @return The created graphics pipeline.
      * @throws BackendException If there is an error creating the pipeline.
      */
-    private GraphicsPipeline createGraphicsPipeline(VulkanRenderableScene glTF,
-            IndirectDrawing dc, GraphicsShaderCreateInfo info, SpecializationInfo specializationInfo)
-            throws BackendException {
+    private GraphicsPipeline createGraphicsPipeline(VulkanRenderableScene glTF, IndirectDrawing dc, GraphicsShaderCreateInfo info, SpecializationInfo specializationInfo) throws BackendException {
         long start = System.currentTimeMillis();
         PrimitiveVertexInputState inputState = dc.getInputState();
         GraphicsShader graphicsShader = info.getInstance(inputState.getInputState());
@@ -164,33 +162,23 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
             }
             PipelineLayout layout = getPipelineLayout(info.graphicsShaderType);
             if (layout == null) {
-                PipelineLayoutCreateInfo layoutInfo = new PipelineLayoutCreateInfo(descriptors.getDescriptorLayouts(
-                        GltfDescriptorSetTarget.values()), null);
+                PipelineLayoutCreateInfo layoutInfo = new PipelineLayoutCreateInfo(descriptors.getDescriptorLayouts(GltfDescriptorSetTarget.values()), null);
                 layout = renderer.getBackend().createPipelineLayout(layoutInfo);
                 putPipelineLayout(graphicsShader.getShaderInfo(), layout);
             }
-            GraphicsPipelineCreateInfo pipelineCreateInfo = createGraphicsPipelineInfo(layout,
-                    graphicsShader.getPipelineVertexInputState().getPipelineVertexInputStateCreateInfo(),
-                    info.graphicsShaderType, inputState.getDrawMode(), dc.getAlphaMode(),
-                    swapChain.getExtent(), stageInfo);
+            GraphicsPipelineCreateInfo pipelineCreateInfo = createGraphicsPipelineInfo(layout, graphicsShader.getPipelineVertexInputState().getPipelineVertexInputStateCreateInfo(), info.graphicsShaderType, inputState.getDrawMode(),
+                    dc.getAlphaMode(), swapChain.getExtent(), stageInfo);
             pipelineCreateInfo.setFragmentShadingRateCreateInfo(vsr);
-            GraphicsPipeline graphicsPipeline = renderer.getBackend().createGraphicsPipeline(pipelineCreateInfo,
-                    renderer.getRenderPass(), graphicsShader);
-
-            Logger.d(getClass(),
-                    "Created GraphicsPipeline for " + info.graphicsShaderType + ", DrawMode "
-                            + inputState.getDrawMode() + " : " + graphicsShader.toString() + " in "
-                            + (System.currentTimeMillis() - start) + " millis");
-
+            GraphicsPipeline graphicsPipeline = renderer.getBackend().createGraphicsPipeline(pipelineCreateInfo, renderer.getRenderPass(), graphicsShader);
+            Logger.d(getClass(), "Created GraphicsPipeline for " + info.graphicsShaderType + ", DrawMode " + inputState.getDrawMode() + " : " + graphicsShader.toString() + " in " + (System.currentTimeMillis() - start) + " millis");
             return graphicsPipeline;
         } catch (IOException e) {
             throw new BackendException(e);
         }
     }
 
-    private GraphicsPipelineCreateInfo createGraphicsPipelineInfo(PipelineLayout layout,
-            PipelineVertexInputStateCreateInfo pipelineInputs, GraphicsSubtype shaderType, DrawMode drawMode,
-            AlphaMode alphaMode, Extent2D swapChainDimension, PipelineShaderStageCreateInfo[] stageInfo) {
+    private GraphicsPipelineCreateInfo createGraphicsPipelineInfo(PipelineLayout layout, PipelineVertexInputStateCreateInfo pipelineInputs, GraphicsSubtype shaderType, DrawMode drawMode, AlphaMode alphaMode, Extent2D swapChainDimension,
+            PipelineShaderStageCreateInfo[] stageInfo) {
 
         // Mesh shader does not use vertex input state - VkPipelineVertexInputStateCreateInfo and
         // VkPipelineInputAssemblyStateCreateInfo
@@ -198,14 +186,12 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
         if (pipelineInputs == null) {
             // Make sure mesh shader
             if (!shaderType.hasStage(Stage.MESH)) {
-                throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                        + "Vertex input state is null but no Mesh shader stage");
+                throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Vertex input state is null but no Mesh shader stage");
             }
         } else {
             assemblyInfo = new PipelineInputAssemblyStateCreateInfo(GltfUtils.getFromGltfMode(drawMode), false);
         }
-        Viewport[] viewports = new Viewport[] {
-                new Viewport(0, 0, swapChainDimension.width, swapChainDimension.height, 0, 1) };
+        Viewport[] viewports = new Viewport[] { new Viewport(0, 0, swapChainDimension.width, swapChainDimension.height, 0, 1) };
         PipelineViewportStateCreateInfo viewportInfo = new PipelineViewportStateCreateInfo(viewports, null);
         CullModeFlagBit cullMode = Settings.getInstance().getBoolean(BackendProperties.NO_BACKFACE_CULLING)
                 ? CullModeFlagBit.VK_CULL_MODE_NONE
@@ -213,15 +199,11 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
         CompareOp compareOp = Settings.getInstance().getBoolean(BackendProperties.NO_DEPTHTEST)
                 ? CompareOp.VK_COMPARE_OP_ALWAYS
                 : CompareOp.VK_COMPARE_OP_LESS_OR_EQUAL;
-        PipelineRasterizationStateCreateInfo rasterizationInfo = new PipelineRasterizationStateCreateInfo(
-                shaderType.getPolygonMode(), cullMode, FrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE, 1.0f);
+        PipelineRasterizationStateCreateInfo rasterizationInfo = new PipelineRasterizationStateCreateInfo(shaderType.getPolygonMode(), cullMode, FrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE, 1.0f);
         PipelineMultisampleStateCreateInfo multisampleInfo = createMultisampleState();
         PipelineDepthStencilStateCreateInfo depthStencilInfo = new PipelineDepthStencilStateCreateInfo(compareOp);
-        PipelineColorBlendStateCreateInfo colorBlendInfo =
-                new PipelineColorBlendStateCreateInfo(alphaMode != AlphaMode.OPAQUE);
-        return new GraphicsPipelineCreateInfo(stageInfo,
-                pipelineInputs, assemblyInfo, viewportInfo, rasterizationInfo, multisampleInfo, depthStencilInfo,
-                colorBlendInfo, layout);
+        PipelineColorBlendStateCreateInfo colorBlendInfo = new PipelineColorBlendStateCreateInfo(alphaMode != AlphaMode.OPAQUE);
+        return new GraphicsPipelineCreateInfo(stageInfo, pipelineInputs, assemblyInfo, viewportInfo, rasterizationInfo, multisampleInfo, depthStencilInfo, colorBlendInfo, layout);
     }
 
     private PipelineMultisampleStateCreateInfo createMultisampleState() {
@@ -370,8 +352,7 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
 
         GraphicsPipeline pipeline = createMeshPipeline(meshShader, null, shaderInfo.getFragmentShadingRate());
         if (graphicsPipelineMap.containsKey(shaderType.getName())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message
-                    + "Already added graphics pipeline for id " + shaderType.getName());
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Already added graphics pipeline for id " + shaderType.getName());
         }
         graphicsPipelineMap.put(shaderType.getName(), pipeline);
         return meshShader;
@@ -398,12 +379,9 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
                 Logger.d(getClass(), "Using existing layout for hash: " + shaderType.getDescriptorSetLayoutHash());
             }
             KHRSwapchain swapChain = renderer.getBackend().getKHRSwapchain();
-            GraphicsPipelineCreateInfo pipelineCreateInfo = createGraphicsPipelineInfo(layout, null,
-                    meshShader.getShaderInfo().meshShaderType, null, AlphaMode.OPAQUE, swapChain.getExtent(),
-                    stageInfo);
+            GraphicsPipelineCreateInfo pipelineCreateInfo = createGraphicsPipelineInfo(layout, null, meshShader.getShaderInfo().meshShaderType, null, AlphaMode.OPAQUE, swapChain.getExtent(), stageInfo);
             pipelineCreateInfo.setFragmentShadingRateCreateInfo(fragmentShadingRate);
-            return renderer.getBackend().createGraphicsPipeline(
-                    pipelineCreateInfo, renderer.getRenderPass(), meshShader);
+            return renderer.getBackend().createGraphicsPipeline(pipelineCreateInfo, renderer.getRenderPass(), meshShader);
         } catch (IOException e) {
             throw new BackendException(e);
         }
