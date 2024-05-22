@@ -164,9 +164,7 @@ public abstract class ShaderBinary {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Shader binary already present");
         }
         try {
-            String binaryName = getSourcePath(shaderInfo.shaderType) + COMPILED_DIRECTORY
-                    + getSourceName(shaderInfo.shaderType) + stage.name + hash
-                    + GLSLCompiler.SPIRV_EXTENSION;
+            String binaryName = getSourcePath(shaderInfo.shaderType) + COMPILED_DIRECTORY + getSourceName(shaderInfo.shaderType) + stage.name + hash + GLSLCompiler.SPIRV_EXTENSION;
             String folder = GLSLCompiler.getCompileFolderPath(path);
             String fullName = folder + binaryName;
             int length = (int) FileUtils.getInstance().getFileSize(fullName);

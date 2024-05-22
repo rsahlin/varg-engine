@@ -270,7 +270,7 @@ public class FrameGrabber extends LWJGL3Application implements CreateDevice {
         if (folders.size() == 0) {
             folders.add("");
         }
-        ArrayList<String> filenames = FileUtils.getInstance().listFiles(path, folders, extensions);
+        ArrayList<String> filenames = FileUtils.getInstance().listFiles(path, folders, extensions, 3);
         Logger.d(getClass(), "Found " + filenames.size() + " files");
         return filenames;
 

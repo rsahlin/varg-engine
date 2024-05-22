@@ -7,10 +7,10 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.gltfio.VanillaCreatorCallback;
 import org.gltfio.VanillaGltfCreator;
-import org.gltfio.deserialize.LaddaFloatProperties;
 import org.gltfio.deserialize.LaddaProperties;
 import org.gltfio.glb2.Glb2Reader.Glb2Streamer;
 import org.gltfio.gltf2.AssetBaseObject.FileType;
@@ -37,6 +37,7 @@ import org.varg.vulkan.Vulkan10.Extension;
 import org.varg.vulkan.Vulkan10.SurfaceFormat;
 import org.varg.vulkan.Vulkan10Backend.CreateDevice;
 import org.varg.vulkan.VulkanBackend.BackendIntProperties;
+import org.varg.vulkan.VulkanBackend.BackendProperties;
 import org.varg.vulkan.VulkanBackend.BackendStringProperties;
 import org.varg.vulkan.VulkanBackend.IntArrayProperties;
 import org.varg.vulkan.VulkanRenderableScene;
@@ -91,18 +92,21 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
 
     public static void main(String[] args) {
         Settings settings = Settings.getInstance();
-        settings.setProperty(BackendIntProperties.SURFACE_WIDTH, 1400);
+        settings.setProperty(BackendProperties.RECOMPILE_SPIRV, false);
+        settings.setProperty(VARGViewer.VargViewerBooleanProperties.LIST_GLTF_FILES, true);
+        settings.setProperty(BackendProperties.VALIDATE, false);
+        settings.setProperty(BackendProperties.DEBUG, false);
+        settings.setProperty(BackendIntProperties.SURFACE_WIDTH, 1920);
         settings.setProperty(BackendIntProperties.SURFACE_HEIGHT, 1080);
-        settings.setProperty(BackendIntProperties.BACKGROUND_FRAGMENTSIZE, 4);
+        settings.setProperty(BackendIntProperties.BACKGROUND_FRAGMENTSIZE, 1);
         settings.setProperty(BackendIntProperties.FRAGMENTSIZE, 1);
         settings.setProperty(BackendIntProperties.SAMPLE_COUNT, 8);
         settings.setProperty(BackendStringProperties.COLORSPACE, "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
-        settings.setProperty(BackendIntProperties.MAX_WHITE, 5000);
+        settings.setProperty(BackendIntProperties.MAX_WHITE, 1500);
         settings.setProperty(IntArrayProperties.CLEAR_COLOR, null);
-        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:4000|irmap:CATHEDRAL");
+        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:200|irmap:STUDIO_5");
         settings.setProperty(LaddaProperties.ENVMAP_BACKGROUND, "SH");
-        settings.setProperty(LaddaFloatProperties.CAMERA_NEAR, 10);
-        // settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:17000|color:1,1,1|position:0,10000,1000");
+        settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:5000|color:1,1,1|position:0,10000,1000");
 
         VARGViewer varg = new VARGViewer(args, Renderers.VULKAN13, "VARG Model Viewer");
         DisplayMode mode = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
@@ -118,7 +122,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
      * @return
      */
     protected String getDefaultModelName() {
-        return "asteroids/asteroids.glb";
+        return "FlightHelmet.gltf";
     }
 
     /**
@@ -127,7 +131,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
      * @return
      */
     protected String getResourcePath() {
-        return "assets/gltf/";
+        return "C:/source/glTF-Sample-Assets/Models/";
     }
 
     public static final float schlickFrenesnel(float u, float n) {
@@ -158,8 +162,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
             setModelName(modelName);
         } else {
             Logger.e(getClass(), "Could not find model " + getDefaultModelName());
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "No model named "
-                    + getDefaultModelName());
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "No model named " + getDefaultModelName());
         }
     }
 
@@ -262,16 +265,53 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
      * @throws URISyntaxException
      */
     protected void fetchGltfFilenames() throws IOException, URISyntaxException {
+        long start = System.currentTimeMillis();
         if (folders == null) {
             folders = FileUtils.getInstance().listResourceFolders(getResourcePath());
         }
         if (folders.size() == 0) {
             folders.add("");
         }
-        gltfFilenames = FileUtils.getInstance().listFiles(getResourcePath(), folders,
-                new String[] { "." + FileType.GLTF.extension, "." + FileType.GLB.extension,
-                        "." + FileType.GLXF.extension });
-        Logger.d(getClass(), "Found " + gltfFilenames.size() + " glTF/glb files");
+        FileUtils f = FileUtils.getInstance();
+        gltfFilenames = FileUtils.getInstance().listFiles(getResourcePath(), folders, new String[] { "." + FileType.GLTF.extension, "." + FileType.GLB.extension }, 3);
+        // Remove all folders with Draco in the name and trim duplicates for gltf/glb
+        ArrayList<String> glbList = new ArrayList<String>();
+        ArrayList<String> gltfList = new ArrayList<String>();
+        HashSet<String> modelnames = new HashSet<String>();
+        for (String name : gltfFilenames) {
+            if (!name.contains("Draco")) {
+                if (name.endsWith(FileType.GLB.extension)) {
+                    String modelname = name.substring(f.getFolder(name).length() + 1, name.length() - 4);
+                    if (modelnames.contains(modelname)) {
+                        remove(gltfList, modelname);
+                    } else {
+                        modelnames.add(modelname);
+                    }
+                    glbList.add(name);
+                } else if (name.endsWith(FileType.GLTF.extension)) {
+                    String modelname = name.substring(f.getFolder(name).length() + 1, name.length() - 5);
+                    if (modelnames.contains(modelname)) {
+                        // Do nothing - contains.glb
+                    } else {
+                        modelnames.add(modelname);
+                        gltfList.add(name);
+                    }
+                }
+            }
+        }
+        gltfFilenames.clear();
+        gltfFilenames.addAll(glbList);
+        gltfFilenames.addAll(gltfList);
+        Logger.d(getClass(), "Found " + gltfFilenames.size() + " glTF/glb files - took " + (System.currentTimeMillis() - start) + ", millis");
+    }
+
+    private void remove(ArrayList<String> names, String modelname) {
+        for (int i = 0; i < names.size(); i++) {
+            if (names.get(i).contains(modelname)) {
+                names.remove(i);
+                break;
+            }
+        }
     }
 
     @Override
