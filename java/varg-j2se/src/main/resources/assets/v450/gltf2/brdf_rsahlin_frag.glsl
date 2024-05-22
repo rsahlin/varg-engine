@@ -16,7 +16,7 @@ float sqr(float val) {
  * m is roughness factor 
  */
 float D_SCHLICK(in float t, in float m) {
-    m = max(0.0005, m); //This creates the reflection lobe
+    m = max(MIN_ROUGHNESS, m); //This creates the reflection lobe
     float x = t + m - 1.0;
     float x2 = x*x;
     float m2 = m*m;
@@ -29,12 +29,24 @@ float D_SCHLICK(in float t, in float m) {
  * m = roughness
  */
 float ND_SCHLICK(in float t, in float m) {
-    m = max(0.005, m); //This creates the reflection lobe
+    m = max(MIN_ROUGHNESS, m); //This creates the reflection lobe
     float x = t + m - 1.0;
     float x2 = x * x;
     float m2 = m * m;
-    return clamp(((m*m*m*m)*x) / (t * pow(m * x2 - x2 + m2, 2) ), 0.0, 1.0);
+    return clamp(((m*m*m)*x) / (t * pow(m * x2 - x2 + m2, 2.15) ), 0.0, 1.0);
 }
+
+/**
+ * dot = NdotV, NdotL
+ * m = roughness
+ */
+float GA_SCHLICK(in float m, in float dot) {
+    m = max(MIN_ROUGHNESS, m);
+    float k = sqrt((m * m) * 2 / pi);
+    return dot / (dot - k * dot + k);
+}
+
+
 /** 
  * t = HdotN
  * r = roughness
@@ -154,11 +166,6 @@ float F_SCHLICK(in float u, in float n) {
     return n + (1 - n) * m2*m2*m; // pow(m,5)
 }
 
-float GA_SCHLICK(in float m, in float v) {
-    //k should be precomputed
-    float k = sqrt(2 * m * m / pi);
-    return v / (v - k * v + k);
-}
 
 float NDF_GLTF(in float a, in vec3 NxH) {
     float a2 = a * a;
@@ -197,21 +204,11 @@ float getFresnelCookTorrance(in float ior) {
 }
 
 float getFresnelFactor(in float R0, in float NdotL) {
-    brdf.debug.r = F_SCHLICK(max(0, NdotL), R0);
-    return brdf.debug.r;
+    return F_SCHLICK(max(0, NdotL), R0);
 }
 float getNormalDistributionFactor(in float a) {
     vec3 NxH = cross(brdf.normal, brdf.H);
-    brdf.debug.g = NDF_GLTF(a, NxH);
-    return brdf.debug.g;
-}
-
-float getGeometricAttenuationFactor(in float a, in float dot) {
-    return GA_SMITH(a, dot);
-}
-float getGeometricAttenuationFactor(in float a) {
-    brdf.debug.b = GA_SMITH(a, brdf.NdotL) * GA_SMITH(a, brdf.NdotV);
-    return brdf.debug.b;
+    return NDF_GLTF(a, NxH);
 }
 
 const float NDFFactor = 1.0;
@@ -225,8 +222,10 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
     // Light that is not reflected is transmitted (into the surface of the material, in most cases directly re-emitted)
     float R0 = material.ormp.a;
     float16_t absorbFactor = brdf.orma.a;
+    float16_t emitFactor = float16_t(1.0) - absorbFactor;
     float16_t a = brdf.orma.g * brdf.orma.g;
     float16_t roughSquared = sqrt(brdf.orma.g);
+    float16_t gafView = float16_t(GA_SMITH(brdf.NdotV, brdf.orma.g));
     brdf.colors[REFLECTED_COLOR_INDEX] = vec3(0);
     brdf.colors[TRANSMITTED_COLOR_INDEX] = vec3(0);
     float NdotVPower = getFresnelFactor(R0, brdf.NdotV);
@@ -236,7 +235,7 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
     
 #ifdef BLEND 
     // Transmission extension is used, absorbFactor is the amount of light scattered as light passes through the material.
-    float alpha = NdotVPower * (1.0 - absorbFactor) + absorbFactor;
+    float alpha = NdotVPower * emitFactor + absorbFactor;
 #else
     float alpha = 1.0;
 #endif
@@ -259,12 +258,14 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
             float coatndf = D_SCHLICK(coatView , material.properties.b * material.properties.b);
             brdf.colors[REFLECTED_COLOR_INDEX] += CRPower * (coatndf * NDFFactor) * intensity * lightColor;
             intensity = intensity * (1.0 - CRPower);
+            //Fresnel power now comes from the coat layer.
+            RPower = material.properties.a;
 #else
             brdf.colors[REFLECTED_COLOR_INDEX] += RPower * (ndf * NDFFactor) * intensity * (f16vec3(1.0) * lightColor);
             intensity = intensity * oneMinusRP;
 #endif
 #endif
-//        if (brdf.NdotL >= 0) {
+        if (brdf.NdotL >= 0) {
             getPerPixelBRDFDirectional(uniforms.directionallight[lightNumber].direction.xyz, toView);
             //Here we assume transmitted light enters the material and exits over the hemisphere based on roughness, in the transmissionColor of the material
             //As the solid angle from lightsource decreases (the angle to the lightsource increases) the power goes down.
@@ -277,15 +278,15 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
             float absorb = oneMinusRP * absorbFactor;
             float reemit = (oneMinusRP - absorb) * RPower;
             float retransmit = reemit * absorbFactor;
-            brdf.colors[TRANSMITTED_COLOR_INDEX] += (absorb + retransmit) * mix(oneByPI, oneByTwoPi, roughSquared) * intensity * (transmissionColor * lightColor);
-            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower + (reemit - retransmit)) * (ndf * NDFFactor) * mix(float16_t(1.0), float16_t(0.0), roughSquared) * intensity * (reflectionColor * lightColor);
+            brdf.colors[TRANSMITTED_COLOR_INDEX] += gafView * (absorb + retransmit) * mix(oneByPI, oneByFourPi, roughSquared) * intensity * (transmissionColor * lightColor);
+            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower * gafView + (reemit - retransmit)) * (ndf * NDFFactor) * mix(float16_t(1.0), float16_t(0.0), roughSquared) * intensity * (reflectionColor * lightColor);
 #else
-            brdf.colors[TRANSMITTED_COLOR_INDEX] +=  ((float16_t(1.0) - absorbFactor) *(oneMinusRP * mix(oneByPI, oneByTwoPi, roughSquared)) * intensity * (transmissionColor * lightColor));
+            brdf.colors[TRANSMITTED_COLOR_INDEX] +=  gafView * emitFactor * (oneMinusRP * mix(oneByPI, oneByFourPi, roughSquared)) * intensity * (transmissionColor * lightColor);
             //The ndf will disperse the normal using some made up factor, to be correct the intensity shall be reduced by the increase in reflected area.
             //This is not known so use an inverse if the roughness and mix from 1.0 to zero - currently best guess.
-            brdf.colors[REFLECTED_COLOR_INDEX] += RPower * (ndf * NDFFactor) * mix(float16_t(1.0), float16_t(0.0),roughSquared) * intensity * (reflectionColor * lightColor);
+            brdf.colors[REFLECTED_COLOR_INDEX] += RPower * gafView * (ndf * NDFFactor) * mix(float16_t(1.0), float16_t(0.0), roughSquared) * intensity * (reflectionColor * lightColor);
 #endif
-//        }
+        }
     }
 #endif
 
@@ -312,13 +313,13 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
             float absorb = oneMinusRP * absorbFactor;
             float reemit = (oneMinusRP - absorb) * RPower;
             float retransmit = reemit * absorbFactor;
-            brdf.colors[TRANSMITTED_COLOR_INDEX] += (absorb + retransmit) * mix(oneByPI, oneByTwoPi, a) *  * transmissionColor * illumination;
-            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower + (reemit - retransmit)) * mix(1, oneByTwoPi, a) * ndf * (reflectionColor * illumination);
+            brdf.colors[TRANSMITTED_COLOR_INDEX] += gafView * (absorb + retransmit) * mix(oneByPI, oneByFourPi, roughSquared) * intensity * (transmissionColor * lightColor);
+            brdf.colors[REFLECTED_COLOR_INDEX] += (RPower * gafView + (reemit - retransmit)) * (ndf * NDFFactor) * mix(float16_t(1.0), float16_t(0.0), roughSquared) * intensity * (reflectionColor * lightColor);
 #else
-            brdf.colors[TRANSMITTED_COLOR_INDEX] +=  ((float16_t(1.0) - absorbFactor) *(oneMinusRP * mix(oneByPI, oneByTwoPi, a)) * intensity * (transmissionColor * lightColor));
+            brdf.colors[TRANSMITTED_COLOR_INDEX] +=  gafView * emitFactor * (oneMinusRP * mix(oneByPI, oneByFourPi, roughSquared)) * intensity * (transmissionColor * lightColor);
             //The ndf will disperse the normal using some made up factor, to be correct the intensity shall be reduced by the increase in reflected area.
             //This is not known so use an inverse if the roughness and mix from 1.0 to zero - currently best guess.
-            brdf.colors[REFLECTED_COLOR_INDEX] += RPower * (ndf * NDFFactor) * mix(float16_t(1.0), float16_t(0.0), sqrt(brdf.orma.g)) * intensity * (reflectionColor * lightColor);
+            brdf.colors[REFLECTED_COLOR_INDEX] += RPower * gafView * (ndf * NDFFactor) * mix(float16_t(1.0), float16_t(0.0), roughSquared) * intensity * (reflectionColor * lightColor);
 #endif
         }
     }
@@ -329,22 +330,40 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
     brdf.colors[REFLECTED_COLOR_INDEX] += NdotVPower * reflectionColor * reflection;
 #endif
 #ifdef CUBEMAP_SH
-    float gaf = GA_SMITH(a, brdf.NdotV);
 #ifdef BLEND
-    brdf.colors[TRANSMITTED_COLOR_INDEX] += absorbFactor * brdf.orma.r * transmissionColor *  mix(float16_t(1.0), oneByTwoPi, a) * surface.irradiance.rgb;
+    brdf.colors[TRANSMITTED_COLOR_INDEX] += (1 - NdotVPower) * gafView * emitFactor * brdf.orma.r * transmissionColor *  mix(oneByPI, oneByFourPi, roughSquared) * surface.irradiance.rgb;
 #else
-    brdf.colors[TRANSMITTED_COLOR_INDEX] += brdf.orma.r * transmissionColor *  mix(float16_t(1.0), oneByTwoPi, a) * surface.irradiance.rgb;
+    brdf.colors[TRANSMITTED_COLOR_INDEX] += (1 - NdotVPower) * gafView * emitFactor * brdf.orma.r * transmissionColor *  mix(oneByPI, oneByFourPi, roughSquared) * surface.irradiance.rgb;
 #endif
 #ifndef CUBEMAP
 #ifdef BLEND
-    brdf.colors[REFLECTED_COLOR_INDEX] +=  NdotVPower * reflectionColor * surface.irradiance.rgb;
+    brdf.colors[REFLECTED_COLOR_INDEX] +=  NdotVPower * gafView * brdf.orma.r * reflectionColor * surface.irradiance.rgb;
 #else
-    //Fallback to using sh coefficients for metal, otherwise it will end up black.
+    //Fallback to using sh coefficients for metal, otherwise it will end up black - todo - shall NdotVPower be used? 
+    //The light is irradiance coming from all directions, but - at grazing angles more will be reflected....
     vec3 reflect = reflect(toView, brdf.normal);
-    brdf.colors[REFLECTED_COLOR_INDEX] +=  NdotVPower * (brdf.orma.b * brdf.orma.r * mix(float16_t(1.0), oneByTwoPi, a)) * reflectionColor * irradiance(uniforms.irradianceCoefficients, reflect).rgb;
+    brdf.colors[REFLECTED_COLOR_INDEX] +=  NdotVPower * gafView * (brdf.orma.b * brdf.orma.r * mix(float16_t(1.0), oneByPI, roughSquared)) * reflectionColor * irradiance(uniforms.irradianceCoefficients, reflect).rgb;
 #endif
 #endif
 #endif
+
+/**
+ * 
+ * Debug options
+ *
+ */
+#ifdef RAW_GAF
+     //geometric attenuation factor
+    return vec4(0, 0, gafView, 1);
+#endif
+
+/**
+ *
+ * End debug options
+ */
+ 
+ 
+ 
     return vec4(brdf.colors[TRANSMITTED_COLOR_INDEX] + brdf.colors[REFLECTED_COLOR_INDEX], alpha);
 }
 

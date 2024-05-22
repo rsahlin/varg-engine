@@ -20,14 +20,13 @@
 #endif
 
 void main() {
+    vec3 view = normalize(surface.normal);
 #ifdef BACK_CUBEMAP
-//    vec3 view = vec3(surface.normal.xy, sqrt(1.0 - (surface.normal.x * surface.normal.x + surface.normal.y * surface.normal.y)));
-    vec3 view = surface.normal;
     vec3 background = getBackground(0.0, uniforms.cubemaps[0].cubeMapInfo.y, view);
 #elif BACK_SH
-    vec3 background = max(vec3(0), irradiance(uniforms.irradianceCoefficients, normalize(surface.normal)).rgb);
+    vec3 background = max(vec3(0), oneByTwoPi * irradiance(uniforms.irradianceCoefficients, view).rgb);
 #else
-    vec3 background = uniforms.directionallight[0].color.rgb * uniforms.directionallight[0].a;
+    vec3 background = uniforms.directionallight[0].a* uniforms.directionallight[0].color.rgb;
 #endif
     fragColor = vec4(displayencode(background, uniforms.displayEncoding.a), 1);
 

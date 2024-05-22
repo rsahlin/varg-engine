@@ -17,7 +17,7 @@ void createTangentLightMatrix() {
 void setLight(in vec3 worldPos) {
     surface.position = worldPos;
 #ifdef CUBEMAP_SH
-    surface.irradiance = max(vec4(0), irradiance(uniforms.irradianceCoefficients, surface.normal));
+    surface.irradiance = max(vec4(0), irradiance(uniforms.irradianceCoefficients, normalize(surface.normal)));
 #endif
 }
 
@@ -25,7 +25,7 @@ void setLight(in vec3 worldPos) {
  * Calculates the position and light for gltf materials
  */
 void glTFVertexSetup() {
-    surface.normal = normalize(NORMAL_ATTRIBUTE * mat3(matrix.uModelMatrix[instance.primitive.y]));
+    surface.normal = NORMAL_ATTRIBUTE * mat3(matrix.uModelMatrix[instance.primitive.y]);
 #ifdef NORMAL
     createTangentLightMatrix();
 #endif

@@ -123,13 +123,11 @@ public abstract class Vulkan10Backend<T> extends VulkanBackend implements Vulkan
         if (selectedDevice == null) {
             throw new IllegalArgumentException("No suitable Vulkan physical device");
         }
-        Logger.d(getClass(),
-                "Selected device: " + selectedDevice.getProperties().getDeviceName());
+        Logger.d(getClass(), "Selected device: " + selectedDevice.getProperties().getDeviceName());
         queueFamily = selectQueueInstance(selectedDevice, window);
         memoryProperties = createMemoryProperties(selectedDevice);
         Features requestedFeatures = callback.getRequestedDeviceFeatures(selectedDevice.getFeatures());
-        logicalDevice =
-                createLogicalDevice(selectedDevice, queueFamily, requestedFeatures);
+        logicalDevice = createLogicalDevice(selectedDevice, queueFamily, requestedFeatures);
         if (window.handle != WindowHandle.HEADLESS) {
             surfaceFormat = surfaceFormatChooser.selectSurfaceFormat(getSurfaceFormats(selectedDevice));
             Logger.d(getClass(), "Selected surface format:" + surfaceFormat);

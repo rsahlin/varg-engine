@@ -10,7 +10,8 @@
  *
  */
  
-const float MIN_ROUGHNESS = 0.00001;
+const float MIN_ROUGHNESS = 0.0005;
+const float16_t MIN_ROUGHNESS16 = float16_t(MIN_ROUGHNESS);
 const float MIN_METALLIC = 0.0;
 const float MAX_METALLIC = 1.0;
 const float REFLECTED_LOBE_TINT = 0.85;
@@ -58,8 +59,6 @@ struct BRDF {
     float NdotV;
     float HdotL;
     float HdotV;
-    //x = ndf, y = gaf
-    vec4 debug;
     //occlusion, roughness, metallic, absorbfactor
     f16vec4 orma;
     vec3[3] colors;

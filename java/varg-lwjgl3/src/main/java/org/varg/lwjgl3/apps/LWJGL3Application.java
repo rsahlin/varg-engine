@@ -397,7 +397,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
                 dc.copyToDevice(renderer.getBufferFactory(), renderer.getQueue());
             }
             KHREnvironmentMapReference envMap = asset.getEnvironmentExtension();
-            if (envMap != null) {
+            if (envMap != null && backgroundShader == null) {
                 BACKGROUND bgHint = envMap.getBackgroundHint();
                 if (bgHint == BACKGROUND.CUBEMAP || bgHint == BACKGROUND.SH) {
                     BackgroundMeshShaderCreateInfo backgroundShaderInfo = new BackgroundMeshShaderCreateInfo(asset, version, MeshShaderType.GLTF_BACKGROUND);

@@ -32,7 +32,7 @@ vec3 getReflection(in float roughness, float intensity, in vec3 toView) {
 //    vec3 Fr = max(vec3(vec3(1.0 - roughness)), F0) - F0;
 //    vec3 k_S = F0 + Fr * pow(1.0 - brdf.NdotV, 5.0); 
 //    brdf.colors[CUBEMAP_COLOR_INDEX] = texture(uEnvironmentTexture[0], vec4(reflect, 0), lod).rgb * brdf.fresnel;
-    float gaf = GA_SMITH(roughness, brdf.NdotV);
+    float gaf = GA_SMITH(brdf.NdotV, roughness);
     float lod = textureQueryLod(uEnvironmentTexture[0], reflect).x;  
     lod = lod + roughness * (uniforms.cubemaps[0].cubeMapInfo.x - lod);
     return brdf.orm.r * (gaf * gaf) * textureLod(uEnvironmentTexture[0], vec4(reflect, 0), lod).rgb * intensity;

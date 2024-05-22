@@ -300,6 +300,11 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                 Logger.e(getClass(), "Normal texture has scale < 1.0 : " + material.getNormalTextureInfo().getScale() + " index " + material.getNormalTextureInfo().getIndex());
             }
             JSONPBRMetallicRoughness pbr = material.getPbrMetallicRoughness();
+            if (material.getExtension(ExtensionTypes.KHR_materials_unlit) != null) {
+                material.setEmissiveFactor(pbr.getBaseColorFactor());
+                pbr.setMetallicFactor(1.0f);
+                pbr.setBasecolorFactor(new float[] { 0, 0, 0, 1 });
+            }
             int startPos = destination.position();
             ShortBuffer buffer = destination.asShortBuffer();
             buffer.position(ORM_INDEX);

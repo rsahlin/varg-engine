@@ -28,7 +28,7 @@ void main() {
 #ifdef NORMAL
     getPerPixelBRDF(vec3(GETNORMALTEXTURE(material.samplersData[NORMAL_TEXTURE_INDEX])) * mTangentLight, toView);
 #else
-    getPerPixelBRDF(surface.normal, toView);
+    getPerPixelBRDF(normalize(surface.normal), toView);
 #endif
 #ifdef ORM
     setupPBRMaterial(f16vec3(GETTEXTURE(material.samplersData[ORM_TEXTURE_INDEX]).rgb));
@@ -48,12 +48,12 @@ void main() {
     setupPBRMaterial();
 #endif
 
+    float16_t metal = float16_t(brdf.orma.b);
 #ifdef BASECOLOR
     f16vec4 basecolor = f16vec4(GETTEXTURE(material.samplersData[BASECOLOR_TEXTURE_INDEX]));
-    float16_t metal = float16_t(brdf.orma.b);
-    vec4 pixel = brdf_main(mix(f16vec4(vMaterialColor[0]) * basecolor, f16vec4(0.0), metal).rgb, mix(f16vec4(1.0), f16vec4(vMaterialColor[1]) * basecolor, metal).rgb, toView);
+    vec4 pixel = brdf_main(mix(f16vec4(vMaterialColor[0]) * basecolor, f16vec4(0.0), metal).rgb, f16vec4(vMaterialColor[1]).rgb, toView);
 #else
-    vec4 pixel = brdf_main(f16vec3(vMaterialColor[0].rgb), f16vec3(vMaterialColor[1].rgb), toView);
+    vec4 pixel = brdf_main(mix(f16vec4(vMaterialColor[0]),f16vec4(0.0), metal).rgb, f16vec4(vMaterialColor[1]).rgb, toView);
 #endif
 
 #ifdef EMISSIVE

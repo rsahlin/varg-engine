@@ -15,10 +15,10 @@
 
 /** 
  * Geometric attenuation factor
- * r = roughness
  * v = dot product (cos angle)
+ * r = roughness
  */
-float GA_SMITH(in float r, in float v) {
+float GA_SMITH( in float v, in float r) {
     return v / (r - r * v + v);
 }
 /**
@@ -97,9 +97,6 @@ void outputPixel(vec4 pbr) {
 #elif RAW_NDF
     //normal distribution factor
     fragColor = vec4(vec3(0, brdf.debug.g, 0), 1);
-#elif RAW_GAF
-     //geometric attenuation factor
-    fragColor = vec4(vec3(0, 0, brdf.debug.b), 1);
 #elif RAW_HSL
     vec3 hsl = rgb2hsl(displayencode(pbr.rgb, uniforms.displayEncoding.a));
     fragColor = vec4(hsl, pbr.a);

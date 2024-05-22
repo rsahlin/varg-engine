@@ -418,8 +418,7 @@ public class VulkanAssets implements Assets {
     public void deleteTextureImages(RenderableScene asset) {
         TextureImages textureImages = textureImagesMap.get(asset.getId());
         if (textureImages == null) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + "No textureimages for glTF with id: " + asset.getId());
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "No textureimages for glTF with id: " + asset.getId());
         }
         TextureMemory[] textureMemory = textureImages.getTextureMemory();
         for (TextureMemory memory : textureMemory) {
@@ -859,8 +858,7 @@ public class VulkanAssets implements Assets {
     }
 
     @Override
-    public void createStorageBuffers(ShaderCreateInfo info, StorageBufferConsumer<?> consumer,
-            DescriptorBuffers<?> buffers) {
+    public void createStorageBuffers(ShaderCreateInfo info, StorageBufferConsumer<?> consumer, DescriptorBuffers<?> buffers) {
         DescriptorSetTarget[] targets = info.shaderType.getTargets();
         int[] bufferSizes = consumer.getBufferSizes(targets);
         int[] dynamicOffsets = consumer.getDynamicOffsets(targets);
@@ -934,8 +932,7 @@ public class VulkanAssets implements Assets {
 
     private DescriptorBuffers<?> addStorageBuffers(Subtype type, DescriptorBuffers<?> buffers) {
         if (storageBuffersMap.containsKey(type.getName())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message
-                    + "Already added storagebuffers for " + type.getName() + "(" + type + ")");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Already added storagebuffers for " + type.getName() + "(" + type + ")");
         }
         storageBuffersMap.put(type.getName(), buffers);
         return buffers;
