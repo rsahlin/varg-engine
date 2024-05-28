@@ -103,10 +103,7 @@
         <profile>
             <id>lwjgl-natives-windows-amd64</id>
             <activation>
-                <os>
-                    <family>windows</family>
-                    <arch>amd64</arch>
-                </os>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
                 <lwjgl.natives>natives-windows</lwjgl.natives>
