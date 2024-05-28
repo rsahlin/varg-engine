@@ -1863,10 +1863,8 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
     public org.varg.vulkan.extensions.EXTMeshShader<?> getEXTMeshShader() {
         if (extMeshShader == null) {
             assertExtensionEnabled(Vulkan10.Extension.VK_EXT_mesh_shader);
-            extMeshShader = new LWJGL3EXTMeshShader(logicalDevice.getFeatures().getPhysicalDeviceFeatureExtensions()
-                    .getPhysicalDeviceMeshShaderFeaturesEXT(),
-                    (PhysicalDeviceMeshShaderPropertiesEXT) selectedDevice.getProperties()
-                            .getProperties(Vulkan10.Extension.VK_EXT_mesh_shader));
+            extMeshShader = new LWJGL3EXTMeshShader(logicalDevice.getFeatures().getPhysicalDeviceFeatureExtensions().getPhysicalDeviceMeshShaderFeaturesEXT(),
+                    (PhysicalDeviceMeshShaderPropertiesEXT) selectedDevice.getProperties().getProperties(Vulkan10.Extension.VK_EXT_mesh_shader));
         }
         return extMeshShader;
     }

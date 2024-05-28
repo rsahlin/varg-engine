@@ -66,6 +66,7 @@ import org.varg.vulkan.descriptor.DescriptorSetLayoutCreateInfo;
 import org.varg.vulkan.descriptor.Descriptors;
 import org.varg.vulkan.extensions.KHRFragmentShadingRate.PipelineFragmentShadingRateStateCreateInfoKHR;
 import org.varg.vulkan.extensions.KHRSwapchain;
+import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
 import org.varg.vulkan.memory.MemoryBuffer;
 import org.varg.vulkan.pipeline.ComputePipeline;
 import org.varg.vulkan.pipeline.ComputePipelineCreateInfo;
@@ -338,49 +339,56 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
         // When using a mesh shader the vertex input state is not used in the pipeline:
         long start = System.currentTimeMillis();
         Subtype shaderType = shaderInfo.shaderType;
-        DescriptorBuffers<?> buffers = renderer.getAssets().getStorageBuffers(shaderType);
-
-        if (buffers != null) {
-            createDescriptorSetLayouts(buffers, shaderType.getTargets());
-            createDescriptorSets(shaderType.getTargets());
-            updateDescriptorSets(buffers, shaderType.getTargets());
-        }
         MeshShader meshShader = shaderInfo.getInstance();
         GLSLCompiler compiler = GLSLCompiler.getInstance(shaderInfo.version);
         compiler.clearMacros();
         shaderInfo.setMacros(compiler);
 
         GraphicsPipeline pipeline = createMeshPipeline(meshShader, null, shaderInfo.getFragmentShadingRate());
-        if (graphicsPipelineMap.containsKey(shaderType.getName())) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Already added graphics pipeline for id " + shaderType.getName());
+        if (pipeline != null) {
+            if (graphicsPipelineMap.containsKey(shaderType.getName())) {
+                throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Already added graphics pipeline for id " + shaderType.getName());
+            }
+            graphicsPipelineMap.put(shaderType.getName(), pipeline);
+
+            DescriptorBuffers<?> buffers = renderer.getAssets().getStorageBuffers(shaderType);
+            if (buffers != null) {
+                createDescriptorSetLayouts(buffers, shaderType.getTargets());
+                createDescriptorSets(shaderType.getTargets());
+                updateDescriptorSets(buffers, shaderType.getTargets());
+            }
+            return meshShader;
         }
-        graphicsPipelineMap.put(shaderType.getName(), pipeline);
-        return meshShader;
+        return null;
     }
 
     private GraphicsPipeline createMeshPipeline(MeshShader<?> meshShader, SpecializationInfo specializationInfo, PipelineFragmentShadingRateStateCreateInfoKHR fragmentShadingRate) throws BackendException {
-        try {
-            meshShader.loadModules(renderer.getBackend(), meshShader.getShaderInfo().shaderType.getDescriptorSetLayoutHash());
-            PipelineShaderStageCreateInfo[] stageInfo = meshShader.createShaderStageInfos(specializationInfo);
-            this.shaderStageInfo.put(meshShader.getShaderInfo().shaderType, stageInfo);
-            PipelineLayout layout = getPipelineLayout(meshShader.getShaderInfo().shaderType);
-            Subtype shaderType = meshShader.getShaderInfo().shaderType;
-            if (layout == null) {
-                PipelineLayoutCreateInfo layoutInfo = new PipelineLayoutCreateInfo(descriptors.getDescriptorLayouts(
-                        shaderType.getTargets()), null);
-                layout = renderer.getBackend().createPipelineLayout(layoutInfo);
-                putPipelineLayout(meshShader.getShaderInfo(), layout);
-            } else {
-                // Todo - how do we now that this is a compatible layout?
-                Logger.d(getClass(), "Using existing layout for hash: " + shaderType.getDescriptorSetLayoutHash());
+        PhysicalDeviceMeshShaderFeaturesEXT meshFeatures = backend.getSelectedDevice().getFeatures().getPhysicalDeviceFeatureExtensions().getPhysicalDeviceMeshShaderFeaturesEXT();
+        if (meshFeatures != null && meshFeatures.meshShader) {
+            try {
+                meshShader.loadModules(renderer.getBackend(), meshShader.getShaderInfo().shaderType.getDescriptorSetLayoutHash());
+                PipelineShaderStageCreateInfo[] stageInfo = meshShader.createShaderStageInfos(specializationInfo);
+                this.shaderStageInfo.put(meshShader.getShaderInfo().shaderType, stageInfo);
+                PipelineLayout layout = getPipelineLayout(meshShader.getShaderInfo().shaderType);
+                Subtype shaderType = meshShader.getShaderInfo().shaderType;
+                if (layout == null) {
+                    PipelineLayoutCreateInfo layoutInfo = new PipelineLayoutCreateInfo(descriptors.getDescriptorLayouts(
+                            shaderType.getTargets()), null);
+                    layout = renderer.getBackend().createPipelineLayout(layoutInfo);
+                    putPipelineLayout(meshShader.getShaderInfo(), layout);
+                } else {
+                    // Todo - how do we now that this is a compatible layout?
+                    Logger.d(getClass(), "Using existing layout for hash: " + shaderType.getDescriptorSetLayoutHash());
+                }
+                KHRSwapchain swapChain = renderer.getBackend().getKHRSwapchain();
+                GraphicsPipelineCreateInfo pipelineCreateInfo = createGraphicsPipelineInfo(layout, null, meshShader.getShaderInfo().meshShaderType, null, AlphaMode.OPAQUE, swapChain.getExtent(), stageInfo);
+                pipelineCreateInfo.setFragmentShadingRateCreateInfo(fragmentShadingRate);
+                return renderer.getBackend().createGraphicsPipeline(pipelineCreateInfo, renderer.getRenderPass(), meshShader);
+            } catch (IOException e) {
+                throw new BackendException(e);
             }
-            KHRSwapchain swapChain = renderer.getBackend().getKHRSwapchain();
-            GraphicsPipelineCreateInfo pipelineCreateInfo = createGraphicsPipelineInfo(layout, null, meshShader.getShaderInfo().meshShaderType, null, AlphaMode.OPAQUE, swapChain.getExtent(), stageInfo);
-            pipelineCreateInfo.setFragmentShadingRateCreateInfo(fragmentShadingRate);
-            return renderer.getBackend().createGraphicsPipeline(pipelineCreateInfo, renderer.getRenderPass(), meshShader);
-        } catch (IOException e) {
-            throw new BackendException(e);
         }
+        return null;
     }
 
     @Override

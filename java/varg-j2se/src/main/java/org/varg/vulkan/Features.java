@@ -16,8 +16,7 @@ public class Features {
     private final PhysicalDeviceFeatureExtensions deviceFeatureExtensions;
     private final ExtensionProperties[] extensions;
 
-    public Features(@NonNull PhysicalDeviceFeatures deviceFeatures,
-            @NonNull PhysicalDeviceFeatureExtensions deviceFeatureExtensions, ExtensionProperties[] extensions) {
+    public Features(@NonNull PhysicalDeviceFeatures deviceFeatures, @NonNull PhysicalDeviceFeatureExtensions deviceFeatureExtensions, ExtensionProperties[] extensions) {
         this.deviceFeatures = deviceFeatures;
         this.deviceFeatureExtensions = deviceFeatureExtensions;
         this.extensions = extensions;
