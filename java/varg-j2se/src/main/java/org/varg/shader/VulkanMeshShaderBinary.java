@@ -16,9 +16,8 @@ public class VulkanMeshShaderBinary extends ShaderBinary {
         if (data != null) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Shader binary already present");
         }
-        SpirvBinary binary = GLSLCompiler.getInstance(shaderInfo.version).compileStage(getSourcePath(
-                shaderInfo.shaderType), getSourceName(shaderInfo.shaderType), getStage(),
-                getSourcePath(shaderInfo.shaderType) + COMPILED_DIRECTORY, outputHash);
+        SpirvBinary binary =
+                GLSLCompiler.getInstance(shaderInfo.version).compileStage(getSourcePath(shaderInfo.shaderType), getSourceName(shaderInfo.shaderType), getStage(), getSourcePath(shaderInfo.shaderType) + COMPILED_DIRECTORY, outputHash);
         if (binary != null) {
             data = binary.spirv;
         } else {

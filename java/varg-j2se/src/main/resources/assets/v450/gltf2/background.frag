@@ -22,9 +22,9 @@
 void main() {
     vec3 view = normalize(surface.normal);
 #ifdef BACK_CUBEMAP
-    vec3 background = getBackground(0.0, uniforms.cubemaps[0].cubeMapInfo.y, view);
+    vec3 background =  uniforms.cubemaps[0].cubeMapInfo.z * getBackground(0.0, uniforms.cubemaps[0].cubeMapInfo.y, view);
 #elif BACK_SH
-    vec3 background = max(vec3(0), oneByTwoPi * irradiance(uniforms.irradianceCoefficients, view).rgb);
+    vec3 background = max(vec3(0), uniforms.cubemaps[0].cubeMapInfo.z * irradiance(uniforms.irradianceCoefficients, view).rgb);
 #else
     vec3 background = uniforms.directionallight[0].a* uniforms.directionallight[0].color.rgb;
 #endif

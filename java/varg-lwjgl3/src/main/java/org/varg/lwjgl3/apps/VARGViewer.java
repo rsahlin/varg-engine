@@ -11,7 +11,8 @@ import java.util.HashSet;
 
 import org.gltfio.VanillaCreatorCallback;
 import org.gltfio.VanillaGltfCreator;
-import org.gltfio.deserialize.LaddaProperties;
+import org.gltfio.deserialize.Ladda.LaddaFloatProperties;
+import org.gltfio.deserialize.Ladda.LaddaProperties;
 import org.gltfio.glb2.Glb2Reader.Glb2Streamer;
 import org.gltfio.gltf2.AssetBaseObject.FileType;
 import org.gltfio.gltf2.MinMax;
@@ -22,12 +23,15 @@ import org.gltfio.lib.FileUtils;
 import org.gltfio.lib.Logger;
 import org.gltfio.lib.Settings;
 import org.gltfio.lib.Settings.BooleanProperty;
+import org.gltfio.lib.Settings.ModuleProperties;
+import org.gltfio.lib.Settings.StringProperty;
 import org.gltfio.lib.WindowListener;
 import org.gltfio.prepare.GltfSettings.Alignment;
 import org.gltfio.serialize.Writer;
 import org.varg.BackendException;
 import org.varg.gltf.VulkanStreamingScene;
 import org.varg.pipeline.Pipelines.SetType;
+import org.varg.renderer.BRDF.BRDFFloatProperties;
 import org.varg.renderer.Renderers;
 import org.varg.shader.Gltf2GraphicsShader.GltfDescriptorSetTarget;
 import org.varg.shader.Gltf2GraphicsShader.GraphicsShaderType;
@@ -45,9 +49,13 @@ import org.varg.vulkan.extensions.PhysicalDeviceAccelerationStructureFeaturesKHR
 import org.varg.vulkan.extensions.PhysicalDeviceFragmentShadingRateFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
 import org.varg.vulkan.structs.ExtensionProperties;
+import org.varg.vulkan.structs.Extent2D;
 import org.varg.vulkan.structs.RequestedFeatures;
 
 public class VARGViewer extends LWJGL3Application implements Glb2Streamer<VulkanStreamingScene>, WindowListener, CreateDevice {
+
+    // Default included models to show if path is not set.
+    String[] defaultModelNames = new String[] { "gltf/Duck.glb", "gltf/Fox.glb", "gltf/OrientationTest.glb", "gltf/BoxTexturedNonPowerOfTwo.glb" };
 
     public enum VargViewerBooleanProperties implements BooleanProperty {
         LIST_GLTF_FILES("varg.viewer.listfiles", false);
@@ -76,6 +84,34 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
         }
     }
 
+    public enum VargViewerStringProperties implements StringProperty {
+        RESOURCE_PATH("varg.viewer.resources", null);
+
+        public final String key;
+        public final String defaultValue;
+
+        VargViewerStringProperties(String key, String defaultValue) {
+            this.key = key;
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        public String getName() {
+            return name();
+        }
+
+        @Override
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String getDefault() {
+            return defaultValue;
+        }
+
+    }
+
     // ***********************************
     // Model loading fields
     // ***********************************
@@ -92,8 +128,8 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
 
     public static void main(String[] args) {
         Settings settings = Settings.getInstance();
+        settings.setProperty(ModuleProperties.NAME, "vargj2se");
         settings.setProperty(BackendProperties.RECOMPILE_SPIRV, false);
-        settings.setProperty(VARGViewer.VargViewerBooleanProperties.LIST_GLTF_FILES, true);
         settings.setProperty(BackendProperties.VALIDATE, false);
         settings.setProperty(BackendProperties.DEBUG, false);
         settings.setProperty(BackendIntProperties.SURFACE_WIDTH, 1920);
@@ -102,11 +138,15 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
         settings.setProperty(BackendIntProperties.FRAGMENTSIZE, 1);
         settings.setProperty(BackendIntProperties.SAMPLE_COUNT, 8);
         settings.setProperty(BackendStringProperties.COLORSPACE, "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
-        settings.setProperty(BackendIntProperties.MAX_WHITE, 1500);
+        settings.setProperty(BackendIntProperties.MAX_WHITE, 1000);
         settings.setProperty(IntArrayProperties.CLEAR_COLOR, null);
-        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:200|irmap:STUDIO_5");
+        settings.setProperty(LaddaFloatProperties.MATERIAL_ABSORPTION, 0.0f);
+        settings.setProperty(BRDFFloatProperties.NDF_FACTOR, 5.0f);
+        settings.setProperty(BRDFFloatProperties.SOLIDANGLE_FUDGE, 0.05f);
+        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:700|irmap:STUDIO_5");
         settings.setProperty(LaddaProperties.ENVMAP_BACKGROUND, "SH");
-        settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:5000|color:1,1,1|position:0,10000,1000");
+        settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:2000|color:1,1,1|position:0,1000,10000");
+        settings.setProperty(LaddaFloatProperties.BACKGROUND_INTENSITY_SCALE, 0.55f);
 
         VARGViewer varg = new VARGViewer(args, Renderers.VULKAN13, "VARG Model Viewer");
         DisplayMode mode = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
@@ -122,7 +162,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
      * @return
      */
     protected String getDefaultModelName() {
-        return "FlightHelmet.gltf";
+        return null;
     }
 
     /**
@@ -131,7 +171,11 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
      * @return
      */
     protected String getResourcePath() {
-        return "C:/source/glTF-Sample-Assets/Models/";
+        String folder = Settings.getInstance().getProperty(VargViewerStringProperties.RESOURCE_PATH);
+        if (folder != null) {
+            return folder;
+        }
+        return "assets/";
     }
 
     public static final float schlickFrenesnel(float u, float n) {
@@ -176,6 +220,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
             if (!prepareAsset(scene)) {
                 getRenderer().getAssets().updateVertexBuffers(scene);
                 DescriptorBuffers<?> buffers = getRenderer().getAssets().getStorageBuffers(GraphicsShaderType.GLTF2);
+                Extent2D displaySize = getRenderer().getBackend().getKHRSwapchain().getExtent();
                 buffers.setStaticStorage(scene, getRenderer());
             }
             scene.addIndirectDrawCalls();
@@ -226,7 +271,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
     protected void loadDefaultModel() throws URISyntaxException, IOException {
         String modelName = getDefaultModelName();
         String foldername = getResourcePath();
-        if (modelName.startsWith("CREATOR:")) {
+        if (modelName != null && modelName.startsWith("CREATOR:")) {
             modelName = modelName.substring("CREATOR:".length());
             VanillaCreatorCallback callback = new VanillaCreatorCallback();
             VanillaGltfCreator creator = new VanillaGltfCreator(callback.getCopyRight(), callback
@@ -237,9 +282,18 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
             if (Settings.getInstance().getBoolean(VargViewerBooleanProperties.LIST_GLTF_FILES)) {
                 fetchGltfFilenames();
                 modelIndex = findModelIndex(modelName);
+                if (modelIndex == -1) {
+                    modelIndex = 0;
+                }
                 loadGltfAsset(modelIndex);
-            } else {
+            } else if (modelName != null) {
                 loadGltfAsset(foldername, modelName);
+            } else {
+                gltfFilenames = new ArrayList<String>();
+                for (String n : defaultModelNames) {
+                    gltfFilenames.add(n);
+                }
+                loadGltfAsset(modelIndex);
             }
         }
     }
@@ -266,7 +320,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
      */
     protected void fetchGltfFilenames() throws IOException, URISyntaxException {
         long start = System.currentTimeMillis();
-        if (folders == null) {
+        if (folders == null && getResourcePath() != null) {
             folders = FileUtils.getInstance().listResourceFolders(getResourcePath());
         }
         if (folders.size() == 0) {

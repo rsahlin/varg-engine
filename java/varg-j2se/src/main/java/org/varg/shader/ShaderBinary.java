@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import org.gltfio.lib.Buffers;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.FileUtils;
+import org.gltfio.lib.Logger;
 import org.gltfio.lib.StreamUtils;
 import org.varg.renderer.Renderers;
 import org.varg.shader.Shader.Stage;
@@ -166,14 +167,14 @@ public abstract class ShaderBinary {
         try {
             String binaryName = getSourcePath(shaderInfo.shaderType) + COMPILED_DIRECTORY + getSourceName(shaderInfo.shaderType) + stage.name + hash + GLSLCompiler.SPIRV_EXTENSION;
             String folder = GLSLCompiler.getCompileFolderPath(path);
-            String fullName = folder + binaryName;
-            int length = (int) FileUtils.getInstance().getFileSize(fullName);
+            Logger.d(getClass(), "Loading shader binary: " + binaryName + ", from folder: " + folder);
+            int length = (int) FileUtils.getInstance().getFileSize(folder, binaryName);
             if (length == -1) {
-                throw new IllegalArgumentException("Could not find " + fullName + " Shader sources not compiled?");
+                throw new IllegalArgumentException("Could not find " + binaryName + " Shader sources not compiled?");
             }
+            Logger.d(getClass(), "Length is: " + length);
             if (length == 0) {
-                InputStream is = getClass()
-                        .getResourceAsStream(FileUtils.getInstance().addStartingDirectorySeparator(binaryName));
+                InputStream is = getClass().getResourceAsStream(FileUtils.getInstance().addStartingDirectorySeparator(binaryName));
                 if (is == null) {
                     throw new IllegalArgumentException(binaryName);
                 }
@@ -181,7 +182,7 @@ public abstract class ShaderBinary {
                 data = Buffers.createByteBuffer(readBuffer);
             } else {
                 data = Buffers.createByteBuffer(length);
-                int read = StreamUtils.readFromName(fullName, data);
+                int read = StreamUtils.readFromName(folder + binaryName, data);
                 if (read != length) {
                     throw new IllegalArgumentException("Could not read all spirv, read " + read + ", length " + length);
                 }

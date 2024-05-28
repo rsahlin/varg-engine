@@ -6,6 +6,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
+import org.gltfio.deserialize.Ladda.LaddaFloatProperties;
 import org.gltfio.gltf2.JSONCamera;
 import org.gltfio.gltf2.JSONMaterial;
 import org.gltfio.gltf2.JSONMesh;
@@ -20,7 +21,6 @@ import org.gltfio.gltf2.extensions.GltfExtensions.ExtensionTypes;
 import org.gltfio.gltf2.extensions.KHREnvironmentMap.KHREnvironmentMapReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.KHRLightsPunctualReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.Light;
-import org.gltfio.gltf2.extensions.KHRdisplayencoding;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.Logger;
 import org.gltfio.lib.Matrix;
@@ -37,6 +37,7 @@ import org.varg.assets.TextureImages.TextureSamplerInfo;
 import org.varg.gltf.VulkanMesh;
 import org.varg.gltf.VulkanScene;
 import org.varg.pipeline.Pipelines.DescriptorSetTarget;
+import org.varg.renderer.BRDF.BRDFFloatProperties;
 import org.varg.renderer.DrawCallBundle;
 import org.varg.renderer.GltfRenderer;
 import org.varg.renderer.MVPMatrices;
@@ -109,8 +110,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     public static final int MATERIALCOLOR_INDEX = 8;
     public static final int PROPERTIES_INDEX = 16;
     // Samplers uses SAMPLERS_DATA.length slots
-    // Must be std430 layout aligned.
-    public static final int TEXTURE_SAMPLERS_INDEX = 20;
+    public static final int TEXTURE_SAMPLERS_INDEX = 24;
     public static final int PADDING = 4;
     public static final int MATERIAL_DATA_SIZE_IN_BYTES = TEXTURE_SAMPLERS_INDEX * Short.BYTES + JSONMaterial.SAMPLERS_DATA_BYTELENGTH + PADDING;
 
@@ -128,18 +128,29 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     public static final int IRRADIANCE_SIZE = F16VEC4_SIZE_IN_BYTES * 9;
     public static final int DIRECTIONAL_LIGHT_SIZE = VEC4_SIZE_IN_BYTES * 2;
     public static final int POINT_LIGHT_SIZE = VEC4_SIZE_IN_BYTES * 2;
-    public static final int DIRECTIONAL_LIGHTS_TOTLSIZE = DIRECTIONAL_LIGHT_SIZE * MAX_DIRECTIONAL_LIGHTS;
+    public static final int DIRECTIONAL_LIGHTS_TOTALSIZE = DIRECTIONAL_LIGHT_SIZE * MAX_DIRECTIONAL_LIGHTS;
     public static final int POINT_LIGHTS_TOTALSIZE = POINT_LIGHT_SIZE * MAX_POINT_LIGHTS;
 
+    /**
+     * mat4[2] vpMatrix; //0 = view, 1 = projection
+     * vec4[2] camera; //0 = camera position, 1 = viewvectors for reflection map background
+     * Environment[MAX_CUBEMAPS] cubemaps;
+     * DirectionalLight[MAX_D_LIGHTS] directionallight;
+     * PointLight[MAX_P_LIGHTS] pointlight;
+     * f16vec4 displayEncoding; //Color primaries Ry,Gy,By + max white
+     * f16vec4 brdfProperties; //ndf factor
+     * f16vec4[9] irradianceCoefficients;
+     * 
+     */
     public static final int VP_MATRIX_OFFSET = 0;
     public static final int CAMERA_OFFSET = VP_MATRIX_OFFSET + MAT4_SIZE_IN_BYTES * 2;
-    public static final int DISPLAYENCODING_OFFSET = CAMERA_OFFSET + VEC4_SIZE_IN_BYTES * 2;
-    public static final int IRRADIANCE_OFFSET = DISPLAYENCODING_OFFSET + F16VEC4_SIZE_IN_BYTES;
-    public static final int ENVIRONMENT_OFFSET = IRRADIANCE_OFFSET + IRRADIANCE_SIZE;
+    public static final int ENVIRONMENT_OFFSET = CAMERA_OFFSET + VEC4_SIZE_IN_BYTES * 2;
     public static final int DIRECTIONAL_LIGHT_OFFSET = ENVIRONMENT_OFFSET + ENVIRONMENT_SIZE * MAX_CUBEMAP_COUNT;
-    public static final int POINT_LIGHT_OFFSET = DIRECTIONAL_LIGHT_OFFSET + DIRECTIONAL_LIGHTS_TOTLSIZE;
-
-    public static final int GLOBAL_UNIFORMS_SIZE = POINT_LIGHT_OFFSET + POINT_LIGHTS_TOTALSIZE;
+    public static final int POINT_LIGHT_OFFSET = DIRECTIONAL_LIGHT_OFFSET + DIRECTIONAL_LIGHTS_TOTALSIZE;
+    public static final int DISPLAYENCODING_OFFSET = POINT_LIGHT_OFFSET + POINT_LIGHTS_TOTALSIZE;
+    public static final int BRDF_PROPERTIES_OFFSET = DISPLAYENCODING_OFFSET + F16VEC4_SIZE_IN_BYTES;
+    public static final int IRRADIANCE_OFFSET = BRDF_PROPERTIES_OFFSET + F16VEC4_SIZE_IN_BYTES;
+    public static final int GLOBAL_UNIFORMS_SIZE = IRRADIANCE_OFFSET + IRRADIANCE_SIZE;
 
     private final TextureImages textureImages;
 
@@ -210,6 +221,30 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             float[] transformData = glTF.getRoot().getGltfExtensions().createTextureTransformBuffer();
             storeFloatData(GltfDescriptorSetTarget.TEXTURE_TRANSFORM, 0, transformData);
         }
+        BindBuffer buffer = getBuffer(GltfDescriptorSetTarget.GLOBAL_RENDERPASS);
+        KHREnvironmentMapReference environmentMapExtension = glTF.getEnvironmentExtension();
+        if (environmentMapExtension != null) {
+            EnvironmentMap environmentMap = environmentMapExtension.getEnvironmentMap();
+            setEnvironment(buffer, environmentMapExtension);
+            IrradianceMap irradiance = environmentMap.getIrradianceMap();
+            if (irradiance != null) {
+                setIrradianceMap(buffer, environmentMap);
+            }
+        }
+        short[] shortvalues = new short[4];
+        FP16Convert convert = new FP16Convert(shortvalues);
+        float[] val = new float[] { 1, 1, 1, Settings.getInstance().getInt(BackendIntProperties.MAX_WHITE) };
+        convert.convert(val);
+        setDisplayEncodingParameters(buffer, shortvalues);
+        setBRDFParameters(buffer);
+        buffer.setState(BufferState.updated);
+    }
+
+    private void setBRDFParameters(BindBuffer uniforms) {
+        ShortBuffer shortBuffer = uniforms.getBackingBuffer(BRDF_PROPERTIES_OFFSET, F16VEC4_SIZE_IN_BYTES).asShortBuffer();
+        float[] values = new float[4];
+        values[0] = Settings.getInstance().getFloat(BRDFFloatProperties.NDF_FACTOR);
+        put(shortBuffer, values);
     }
 
     private void setTextureChannels(RenderableScene glTF, Assets assets) {
@@ -350,11 +385,9 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
         JSONMaterial[] materials = glTF.getMaterials();
         ByteBuffer byteBuffer = buffer.getBackingBuffer();
         KHREnvironmentMapReference environmentMapExtension = glTF.getEnvironmentExtension();
-        float environmentIOR =
-                environmentMapExtension != null ? environmentMapExtension.getEnvironmentMap().getIOR() : 1.0f;
+        float environmentIOR = environmentMapExtension != null ? environmentMapExtension.getEnvironmentMap().getIOR() : 1.0f;
         if (environmentIOR < 1.0f) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "IOR in environment too small: "
-                    + environmentIOR);
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "IOR in environment too small: " + environmentIOR);
         }
         for (JSONMaterial material : materials) {
             storeMaterialData(material, byteBuffer, environmentIOR);
@@ -376,32 +409,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     public void setDynamicStorage(RenderableScene root, JSONCamera camera) {
         BindBuffer buffer = getBuffer(GltfDescriptorSetTarget.GLOBAL_RENDERPASS);
         setCamera(root, buffer, camera);
-        KHREnvironmentMapReference environmentMapExtension = root.getEnvironmentExtension();
         JSONNode[] lights = root.getLightNodes();
-        if (environmentMapExtension != null) {
-            EnvironmentMap environmentMap = environmentMapExtension.getEnvironmentMap();
-            setEnvironment(buffer, camera, environmentMapExtension);
-            IrradianceMap irradiance = environmentMap.getIrradianceMap();
-            if (irradiance != null) {
-                setIrradianceMap(buffer, environmentMap);
-            }
-        }
         setLights(root, buffer, lights);
-        // Todo - move to static - displayencoding does not change dynamically
-        KHRdisplayencoding dm = (KHRdisplayencoding) (root.getRoot().getExtension(ExtensionTypes.KHR_displayencoding));
-        short[] shortvalues = new short[4];
-        FP16Convert convert = new FP16Convert(shortvalues);
-        if (dm == null) {
-            float[] val = new float[] { 1, 1, 1, Settings.getInstance().getInt(BackendIntProperties.MAX_WHITE) };
-            convert.convert(val);
-            setDisplayEncodingParameters(buffer, shortvalues);
-        } else {
-            float maxLight = Settings.getInstance().getInt(BackendIntProperties.HDR_MAX_CONTENT_LIGHTLEVEL);
-            // setDisplayEncodingParameters(buffer, maxLight / 10000, 10000);
-            float[] hdrValues = new float[] { 1, 1, 1, maxLight };
-            convert.convert(hdrValues);
-            setDisplayEncodingParameters(buffer, shortvalues);
-        }
         buffer.setState(BufferState.updated);
         BindBuffer matrixBuffer = getBuffer(GltfDescriptorSetTarget.MATRIX);
         setNodeModelMatrices(root, matrixBuffer);
@@ -470,7 +479,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
         }
     }
 
-    private void setEnvironment(BindBuffer buffer, JSONCamera camera, KHREnvironmentMapReference... envMapReference) {
+    private void setEnvironment(BindBuffer buffer, KHREnvironmentMapReference... envMapReference) {
         FloatBuffer destination = buffer.getBackingBuffer().position(ENVIRONMENT_OFFSET).asFloatBuffer();
         float[] vec4 = new float[4];
         if (envMapReference.length > MAX_CUBEMAP_COUNT) {
@@ -482,7 +491,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             int mipLevels = map.getMipLevels();
             vec4[0] = mipLevels > 1 ? mipLevels - 1 : 1;
             vec4[1] = envMapReference[i].getCubemap() != null ? envMapReference[i].getCubemap().getIntensity() : 0;
-            vec4[2] = envMapReference[i].getTexelPerPixelRatio(camera.getScreenSize());
+            vec4[2] = Settings.getInstance().getFloat(LaddaFloatProperties.BACKGROUND_INTENSITY_SCALE);
+            // vec4[3] = envMapReference[i].getTexelPerPixelRatio(screenSize);
             destination.put(vec4);
             if (boundingBox != null) {
                 // Min boundingbox
@@ -509,8 +519,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             float[] matrix = MatrixUtils.createMatrix();
             int directionalIndex = 0;
             int pointIndex = 0;
-            FloatBuffer destination = buffer.getBackingBuffer().position(0).asFloatBuffer();
-            float[] transformedPosition = new float[4];
+            ByteBuffer destination = buffer.getBackingBuffer().position(0);
+            float[] transformedPosition = new float[3];
             for (int i = 0; i < lights.length; i++) {
                 if (lights[i] != null) {
                     if (directionalIndex >= MAX_DIRECTIONAL_LIGHTS || pointIndex >= MAX_POINT_LIGHTS) {
@@ -619,10 +629,14 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
      * @param light
      * @param direction Normalized light direction
      */
-    private void setDirectionalLight(FloatBuffer buffer, int lightIndex, Light light, float[] direction) {
-        buffer.position((DIRECTIONAL_LIGHT_OFFSET + (lightIndex * DIRECTIONAL_LIGHT_SIZE)) >> 2);
-        buffer.put(light.getColorIntensity());
-        buffer.put(direction);
+    private void setDirectionalLight(ByteBuffer buffer, int lightIndex, Light light, float[] direction) {
+        buffer.position((DIRECTIONAL_LIGHT_OFFSET + (lightIndex * DIRECTIONAL_LIGHT_SIZE)));
+        FloatBuffer floatBuffer = buffer.asFloatBuffer();
+        floatBuffer.put(light.getColorIntensity());
+        floatBuffer.put(direction);
+        float[] properties = new float[2];
+        properties[0] = Settings.getInstance().getFloat(BRDFFloatProperties.SOLIDANGLE_FUDGE);
+        put(buffer.position(buffer.position() + (4 + 3) * Float.BYTES).asShortBuffer(), properties);
     }
 
     /**
@@ -630,10 +644,14 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
      * 
      * @param position
      */
-    private void setPointLight(FloatBuffer buffer, int lightIndex, Light light, float[] position) {
-        buffer.position((POINT_LIGHT_OFFSET + (lightIndex * POINT_LIGHT_SIZE)) >> 2);
-        buffer.put(light.getColorIntensity());
-        buffer.put(position);
+    private void setPointLight(ByteBuffer buffer, int lightIndex, Light light, float[] position) {
+        buffer.position((POINT_LIGHT_OFFSET + (lightIndex * POINT_LIGHT_SIZE)));
+        FloatBuffer floatBuffer = buffer.asFloatBuffer();
+        floatBuffer.put(light.getColorIntensity());
+        floatBuffer.put(position);
+        float[] properties = new float[2];
+        properties[0] = Settings.getInstance().getFloat(BRDFFloatProperties.SOLIDANGLE_FUDGE);
+        put(buffer.position(buffer.position() + (4 + 3) * Float.BYTES).asShortBuffer(), properties);
     }
 
 }

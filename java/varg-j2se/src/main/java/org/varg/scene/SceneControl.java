@@ -1,6 +1,7 @@
 package org.varg.scene;
 
 import java.awt.event.KeyEvent;
+import java.util.Arrays;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.gltfio.gltf2.JSONCamera;
@@ -12,6 +13,7 @@ import org.gltfio.lib.KeyListener;
 import org.gltfio.lib.Logger;
 import org.gltfio.lib.PointerListener;
 import org.gltfio.lib.Quaternion;
+import org.gltfio.lib.Transform;
 import org.varg.vulkan.VulkanRenderableScene;
 import org.varg.vulkan.structs.Extent2D;
 
@@ -176,8 +178,7 @@ public class SceneControl implements PointerListener, KeyListener {
      */
     public void autoRotate() {
         if (!mouseDown) {
-            Quaternion.mul(rotation[currentMode.index].deltaRotation, rotation[currentMode.index].currentRotation,
-                    rotation[currentMode.index].currentRotation);
+            Quaternion.mul(rotation[currentMode.index].deltaRotation, rotation[currentMode.index].currentRotation, rotation[currentMode.index].currentRotation);
             updateRotation(currentMode);
         }
     }
@@ -303,6 +304,15 @@ public class SceneControl implements PointerListener, KeyListener {
             default:
                 throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", " + axis);
         }
+    }
+
+    /**
+     * Rotates the scene
+     * 
+     * @param rotate
+     */
+    public void rotateScene(float... rotate) {
+        Quaternion.mul(rotate, this.rotation[MODE.SCENE.index].currentRotation, this.rotation[MODE.SCENE.index].currentRotation);
     }
 
     private void translate(float... delta) {
@@ -434,6 +444,14 @@ public class SceneControl implements PointerListener, KeyListener {
                 break;
             case KeyEvent.VK_Z:
                 setAxis(Axis.Z);
+                break;
+            case KeyEvent.VK_T:
+                // Print the screen Transform
+                Transform t = scene.getSceneTransform();
+                System.out.println("Scene Transform - [translate], [rotate], [scale]");
+                System.out.println(Arrays.toString(t.getTranslate()));
+                System.out.println(Arrays.toString(t.getRotation()));
+                System.out.println(Arrays.toString(t.getScale()));
                 break;
             default:
                 // Do nothing

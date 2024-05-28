@@ -48,8 +48,7 @@ public abstract class DescriptorBuffers<S extends Shader<?>> {
      * @param glTF
      * @param renderer
      */
-    public abstract void setStaticStorage(VulkanRenderableScene glTF,
-            GltfRenderer<VulkanRenderableScene, VulkanMesh> renderer);
+    public abstract void setStaticStorage(VulkanRenderableScene glTF, GltfRenderer<VulkanRenderableScene, VulkanMesh> renderer);
 
     /**
      * Returns the setcount for the specified target, this is used when descriptorset layout bindings are created

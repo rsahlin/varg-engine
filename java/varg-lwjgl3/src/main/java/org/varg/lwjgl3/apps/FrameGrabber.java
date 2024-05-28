@@ -15,8 +15,8 @@ import java.util.concurrent.Semaphore;
 
 import javax.imageio.ImageIO;
 
-import org.gltfio.deserialize.LaddaFloatProperties;
-import org.gltfio.deserialize.LaddaProperties;
+import org.gltfio.deserialize.Ladda.LaddaFloatProperties;
+import org.gltfio.deserialize.Ladda.LaddaProperties;
 import org.gltfio.lib.Buffers;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.FileUtils;

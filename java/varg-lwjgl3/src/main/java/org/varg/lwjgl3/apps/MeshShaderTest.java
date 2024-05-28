@@ -3,7 +3,7 @@ package org.varg.lwjgl3.apps;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import org.gltfio.deserialize.LaddaProperties;
+import org.gltfio.deserialize.Ladda.LaddaProperties;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.Logger;
 import org.gltfio.lib.Settings;

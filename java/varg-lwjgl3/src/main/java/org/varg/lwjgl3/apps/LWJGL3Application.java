@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.gltfio.deserialize.Ladda;
-import org.gltfio.deserialize.LaddaProperties;
+import org.gltfio.deserialize.Ladda.LaddaProperties;
 import org.gltfio.gltf2.AssetBaseObject;
 import org.gltfio.gltf2.J2SEModelPreparation;
 import org.gltfio.gltf2.JSONGltf;
@@ -327,12 +327,12 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
         if (sceneControl == null) {
             Extent2D extent = getRenderer().getBackend().getKHRSwapchain().getExtent();
             sceneControl = new GltfSceneControl(loadedAsset.getCameraInstance(), currentScene, extent);
-            getRenderer().setCamera(sceneControl.getCamera());
             getJ2SEWindow().addPointerListener(sceneControl);
             getJ2SEWindow().addKeyListener(sceneControl);
         } else {
             sceneControl.setScene(currentScene, loadedAsset.getCameraInstance());
         }
+        getRenderer().setCamera(sceneControl.getCamera());
     }
 
     /**
@@ -387,6 +387,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             }
             GltfStorageBuffers buffers = new GltfStorageBuffers(textureImages);
             renderer.getAssets().createStorageBuffers(shaderInfo, shaderInfo, buffers);
+            Extent2D displaySize = getRenderer().getBackend().getKHRSwapchain().getExtent();
             buffers.setStaticStorage(asset, renderer);
             DrawCallBundle<IndirectDrawCalls> drawBundle = asset.getDrawCallBundle();
             IndirectDrawCalls[] dcs = drawBundle.getAllDrawCalls();

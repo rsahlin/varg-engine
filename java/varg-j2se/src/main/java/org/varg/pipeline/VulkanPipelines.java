@@ -358,13 +358,9 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
         return meshShader;
     }
 
-    private GraphicsPipeline createMeshPipeline(MeshShader<?> meshShader,
-            SpecializationInfo specializationInfo,
-            PipelineFragmentShadingRateStateCreateInfoKHR fragmentShadingRate)
-            throws BackendException {
+    private GraphicsPipeline createMeshPipeline(MeshShader<?> meshShader, SpecializationInfo specializationInfo, PipelineFragmentShadingRateStateCreateInfoKHR fragmentShadingRate) throws BackendException {
         try {
-            meshShader.loadModules(renderer.getBackend(), meshShader.getShaderInfo().shaderType
-                    .getDescriptorSetLayoutHash());
+            meshShader.loadModules(renderer.getBackend(), meshShader.getShaderInfo().shaderType.getDescriptorSetLayoutHash());
             PipelineShaderStageCreateInfo[] stageInfo = meshShader.createShaderStageInfos(specializationInfo);
             this.shaderStageInfo.put(meshShader.getShaderInfo().shaderType, stageInfo);
             PipelineLayout layout = getPipelineLayout(meshShader.getShaderInfo().shaderType);

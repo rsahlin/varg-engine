@@ -10,22 +10,15 @@
  *
  */
  
-const float MIN_ROUGHNESS = 0.0005;
-const float16_t MIN_ROUGHNESS16 = float16_t(MIN_ROUGHNESS);
-const float MIN_METALLIC = 0.0;
-const float MAX_METALLIC = 1.0;
-const float REFLECTED_LOBE_TINT = 0.85;
 const float16_t pi = float16_t(3.141);
 const float16_t sqrtTwoByPi = float16_t(sqrt(2.0 / pi));
 const float16_t oneByPI = float16_t(1.0 / pi);
 const float16_t twoByPI = float16_t(2.0 / pi);
 const float16_t oneByTwoPi = float16_t(1.0 / (2.0 * pi));
 const float16_t oneByFourPi = float16_t(1.0 / (4.0 * pi));
-const float16_t DEFAULT_ABSORPTION = float16_t(0.9);
 const float16_t METAL_ABSORPTION = float16_t(1.0);
 const float gamma = 2.4;
 const float oneByGamma = 1.0 / gamma;
-const vec4 BLACK = vec4(0.0, 0.0, 0.0, 0.0);
 const float fluxRadius = sqrt(oneByPI);
 
 /**

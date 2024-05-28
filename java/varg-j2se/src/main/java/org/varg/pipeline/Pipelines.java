@@ -87,7 +87,9 @@ public interface Pipelines<A extends RenderableScene> {
             final int prime = 31;
             int result = 1;
             for (DescriptorSetTarget t : targets) {
-                result += prime * t.hashCode();
+                if (t != null) {
+                    result += prime * t.getName().hashCode();
+                }
             }
             return result;
         }

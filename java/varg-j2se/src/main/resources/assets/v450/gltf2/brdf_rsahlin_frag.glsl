@@ -11,38 +11,23 @@ float sqr(float val) {
 }
 
 /**
- * t = NdotH
- * H = bisector of incoming and outcoming light
- * m is roughness factor 
- */
-float D_SCHLICK(in float t, in float m) {
-    m = max(MIN_ROUGHNESS, m); //This creates the reflection lobe
-    float x = t + m - 1.0;
-    float x2 = x*x;
-    float m2 = m*m;
-    float m3 = m*m*m;
-    return clamp(((m3) * x ) / (t * pow(m * x2 - x2 + m2, 2) ), 0.0, 1.0);
-}
-
-/**
  * t = HdotN
- * m = roughness
+ * m = roughness - adjust for min roughness (specular lobe fudge) before
  */
-float ND_SCHLICK(in float t, in float m) {
-    m = max(MIN_ROUGHNESS, m); //This creates the reflection lobe
-    float x = t + m - 1.0;
+float ND_SCHLICK(in float t, in float16_t m) {
+    float x = (t + m) - 1.0;
     float x2 = x * x;
     float m2 = m * m;
-    return clamp(((m*m*m)*x) / (t * pow(m * x2 - x2 + m2, 2.15) ), 0.0, 1.0);
+    float m3 = m2 + m;
+    return clamp((m3*x) / (t * pow(m * x2 - x2 + m2, 2.15) ), 0.0, 1.0);
 }
 
 /**
  * dot = NdotV, NdotL
  * m = roughness
  */
-float GA_SCHLICK(in float m, in float dot) {
-    m = max(MIN_ROUGHNESS, m);
-    float k = sqrt((m * m) * 2 / pi);
+float GA_SCHLICK(in float dot, in float16_t m) {
+    float k = sqrt((m * m) * float16_t(2.0) / pi);
     return dot / (dot - k * dot + k);
 }
 
@@ -211,7 +196,6 @@ float getNormalDistributionFactor(in float a) {
     return NDF_GLTF(a, NxH);
 }
 
-const float NDFFactor = 1.0;
 
 /**
  * materialColor[0] = transmittedcolor
@@ -223,9 +207,10 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
     float R0 = material.ormp.a;
     float16_t absorbFactor = brdf.orma.a;
     float16_t emitFactor = float16_t(1.0) - absorbFactor;
+    float16_t NDFFactor = uniforms.brdfProperties.x;
     float16_t a = brdf.orma.g * brdf.orma.g;
     float16_t roughSquared = sqrt(brdf.orma.g);
-    float16_t gafView = float16_t(GA_SMITH(brdf.NdotV, brdf.orma.g));
+    float16_t gafView = float16_t(GA_SMITH(brdf.NdotV, a));
     brdf.colors[REFLECTED_COLOR_INDEX] = vec3(0);
     brdf.colors[TRANSMITTED_COLOR_INDEX] = vec3(0);
     float NdotVPower = getFresnelFactor(R0, brdf.NdotV);
@@ -255,11 +240,11 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
             float CRPower = getFresnelFactor(R0, ndotl);
             vec3 coatReflectedLight = reflect(uniforms.directionallight[lightNumber].direction.xyz, coatNormal);
             float coatView = max(0.0, dot(coatReflectedLight, toView));
-            float coatndf = D_SCHLICK(coatView , material.properties.b * material.properties.b);
+            float coatndf = ND_SCHLICK(coatView , material.properties[0].b * material.properties[0].b);
             brdf.colors[REFLECTED_COLOR_INDEX] += CRPower * (coatndf * NDFFactor) * intensity * lightColor;
             intensity = intensity * (1.0 - CRPower);
             //Fresnel power now comes from the coat layer.
-            RPower = material.properties.a;
+            RPower = material.properties[0].a;
 #else
             brdf.colors[REFLECTED_COLOR_INDEX] += RPower * (ndf * NDFFactor) * intensity * (f16vec3(1.0) * lightColor);
             intensity = intensity * oneMinusRP;
@@ -272,7 +257,7 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
             //Note that there is no distinction here based on metalness since this is already given by RPower and absorbtion
             //Pointlights in glTF does not specify solid angle - this means we have to fudge the normal distribution function using the NDFFactor set to a value greater than 1.0
             float view = max(0.0, dot(brdf.reflectedLight, toView));
-            float ndf = ND_SCHLICK(view , a);
+            float ndf = ND_SCHLICK(view , max(a, uniforms.directionallight[lightNumber].property.x));
 #ifdef BLEND
             //Amount that will enter into surface: (1 - RPower) - when the light exits the material (1 - RPower) will be left, of that (RPower * absorbFactor) will reflect back and exit the material
             float absorb = oneMinusRP * absorbFactor;
@@ -298,15 +283,13 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
         if (brdf.NdotL >= 0) {
             getPerPixelBRDFDirectional(vPointLight[lightNumber].xyz, toView);
             float intensity = uniforms.pointlight[lightNumber].color.a / pow(vPointLight[lightNumber].w,2);
-            vec3 lightColor = uniforms.directionallight[lightNumber].color.rgb;
-//            vec3 illumination = vec3(uniforms.pointlight[lightNumber].color.rgb * intensity);
+            vec3 lightColor = uniforms.pointlight[lightNumber].color.rgb;
             //Here we assume transmitted light enters the material and exits evenly over the hemisphere (/ PI), in the transmissionColor of the material
             //As the solid angle from lightsource decreases (the angle to the lightsource increases) the power goes down.
             //Note that there is no distinction here based on metalness since this is already given by RPower
             //Pointlights in glTF does not specify solid angle - this means we have to fudge the normal distribution function
             float view = max(0, dot(brdf.reflectedLight, toView));
-            float ndf = D_SCHLICK(view , a);
-            float gaf = getGeometricAttenuationFactor(a);
+            float ndf = ND_SCHLICK(view , a);
 #ifdef BLEND
             //TODO -update
             //Amount that will enter into surface: (1 - RPower) - when the light exits the material (1 - RPower) will be left, of that (RPower * absorbFactor) will reflect back and exit the material
