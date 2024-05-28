@@ -139,7 +139,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
         settings.setProperty(BackendIntProperties.SAMPLE_COUNT, 8);
         settings.setProperty(BackendStringProperties.COLORSPACE, "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
         settings.setProperty(BackendIntProperties.MAX_WHITE, 1000);
-        settings.setProperty(IntArrayProperties.CLEAR_COLOR, null);
+        settings.setProperty(IntArrayProperties.CLEAR_COLOR, 100, 100, 100, 255);
         settings.setProperty(LaddaFloatProperties.MATERIAL_ABSORPTION, 0.0f);
         settings.setProperty(BRDFFloatProperties.NDF_FACTOR, 5.0f);
         settings.setProperty(BRDFFloatProperties.SOLIDANGLE_FUDGE, 0.05f);
