@@ -18,8 +18,11 @@ Use the left/right arrow keys to switch model.
 Working on an option to specify local folder for glb/gltf files.  
   
   
-In your command line prompt, navigate to the 'executable' folder and type:
->java -jar vargviewer:0.3.jar  
+In your command line prompt, navigate to the 'executable' folder and run the jar file for your platform.  
+  
+For windows:  
+  
+>java -jar vargviewer_winx64_0.3.jar  
   
 Please report crashes by opening an issue and attach the output in the command prompt.  
   
