@@ -406,8 +406,10 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
                     if (bvsr > 1) {
                         backgroundShaderInfo.setFragmentShadingRate(new PipelineFragmentShadingRateStateCreateInfoKHR(bvsr, bvsr));
                     }
-                    renderer.getAssets().createStorageBuffers(backgroundShaderInfo, backgroundShaderInfo, buffers);
                     backgroundShader = renderer.getPipelines().createMeshPipeline(backgroundShaderInfo);
+                    if (backgroundShader != null) {
+                        renderer.getAssets().createStorageBuffers(backgroundShaderInfo, backgroundShaderInfo, buffers);
+                    }
                 }
             }
             // This will delete the Java side of source images.
