@@ -140,13 +140,13 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
         settings.setProperty(BackendStringProperties.COLORSPACE, "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
         settings.setProperty(BackendIntProperties.MAX_WHITE, 1000);
         settings.setProperty(IntArrayProperties.CLEAR_COLOR, 100, 100, 100, 255);
-        settings.setProperty(LaddaFloatProperties.MATERIAL_ABSORPTION, 0.0f);
-        settings.setProperty(BRDFFloatProperties.NDF_FACTOR, 5.0f);
-        settings.setProperty(BRDFFloatProperties.SOLIDANGLE_FUDGE, 0.05f);
-        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:700|irmap:STUDIO_5");
+        settings.setProperty(LaddaFloatProperties.MATERIAL_ABSORPTION, 0.6f);
+        settings.setProperty(BRDFFloatProperties.NDF_FACTOR, 4.0f);
+        settings.setProperty(BRDFFloatProperties.SOLIDANGLE_FUDGE, 0.001f);
+        settings.setProperty(LaddaProperties.IRRADIANCEMAP, "intensity:1000|irmap:STUDIO_5");
         settings.setProperty(LaddaProperties.ENVMAP_BACKGROUND, "SH");
-        settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:2000|color:1,1,1|position:0,1000,10000");
-        settings.setProperty(LaddaFloatProperties.BACKGROUND_INTENSITY_SCALE, 0.55f);
+        settings.setProperty(LaddaProperties.DIRECTIONAL_LIGHT, "intensity:4000|color:1,1,1|position:0,1000,10000");
+        settings.setProperty(LaddaFloatProperties.BACKGROUND_INTENSITY_SCALE, 0.45f);
 
         VARGViewer varg = new VARGViewer(args, Renderers.VULKAN13, "VARG Model Viewer");
         DisplayMode mode = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
