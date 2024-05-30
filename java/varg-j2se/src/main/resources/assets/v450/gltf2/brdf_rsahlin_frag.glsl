@@ -145,10 +145,14 @@ float GTR1(float NdotH, float a) {
     return (a2-1) / (log(a2)*t);
 }
 
-float F_SCHLICK(in float u, in float n) {
-    float m = 1 - u;
-    float m2 = m * m;
-    return n + (1 - n) * m2*m2*m; // pow(m,5)
+/**
+ * u = dot
+ * n = R0
+ */
+float16_t F_SCHLICK(in float16_t u, in float16_t n) {
+    float16_t m = F16_ONE - u;
+    float16_t m2 = m * m;
+    return n + (F16_ONE - n) * m2*m2*m; // pow(m,5)
 }
 
 
@@ -167,17 +171,6 @@ vec3 fresnelNdotL(in vec3 F0, in vec3 F90, in float NdotL) {
 }
 
 
-float getFresnelReflection() {
-//    float R0 = pow(1 - 1.5 / 1 + 1.5, 2);
-//    float schlickReflect = R0 + (1 - R0) * pow(1 - brdf.NdotV, 5);
-    float n1 = 1;
-    float n2 = 1.5;
-    float n1sin = (n1 / n2) * (1 - brdf.NdotL);
-    float pn1 = n1 * sqrt(1 - n1sin * n1sin);
-    float n2cos = n2 * brdf.NdotL;
-    float fresnelReflection = pn1 - n2cos / pn1 + n2cos;
-    return fresnelReflection * fresnelReflection;
-}
 
 float getFresnelCookTorrance(in float ior) {
     float c2 = brdf.HdotV * brdf.HdotV;
@@ -188,8 +181,8 @@ float getFresnelCookTorrance(in float ior) {
     * (1 + (pow(brdf.HdotV * (g + brdf.HdotV) - 1, 2) / pow(brdf.HdotV * (g - brdf.HdotV), 2)));
 }
 
-float getFresnelFactor(in float R0, in float NdotL) {
-    return F_SCHLICK(max(0, NdotL), R0);
+float16_t getFresnelFactor(in float16_t R0, in float16_t NdotL) {
+    return F_SCHLICK(max(F16_ZERO, NdotL), R0);
 }
 float getNormalDistributionFactor(in float a) {
     vec3 NxH = cross(brdf.normal, brdf.H);
@@ -204,7 +197,7 @@ float getNormalDistributionFactor(in float a) {
 vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3 toView) {
     // Use power reflectance at normal incidence R0, where R0 = ((n1 - n2) / (n1 + n2))^2 
     // Light that is not reflected is transmitted (into the surface of the material, in most cases directly re-emitted)
-    float R0 = material.ormp.a;
+    float16_t R0 = material.ormp.a;
     float16_t absorbFactor = brdf.orma.a;
     float16_t emitFactor = float16_t(1.0) - absorbFactor;
     float16_t NDFFactor = uniforms.brdfProperties.x;
@@ -229,28 +222,31 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
     for (int lightNumber = 0; lightNumber < DIRECTIONAL_LIGHT_COUNT; lightNumber++) {
         float intensity = uniforms.directionallight[lightNumber].color.a;
         vec3 lightColor = uniforms.directionallight[lightNumber].color.rgb;
-        brdf.NdotL = dot(brdf.normal, -uniforms.directionallight[lightNumber].direction.xyz);
-        float RPower = getFresnelFactor(R0, brdf.NdotL);
-        float oneMinusRP = 1.0 - RPower;
+        brdf.NdotL = float16_t(dot(brdf.normal, -uniforms.directionallight[lightNumber].direction.xyz));
+        //Will be minor diff at normal incidence, can be fixed by upscaling the specularFactor in material
+        float16_t tempf = getFresnelFactor(R0, brdf.NdotL);
+        float16_t oneMinusRP = F16_ONE - tempf;
+        float16_t RPower = mix(material.properties[1].z, F16_ONE, tempf) * tempf; 
 #ifdef COAT
             //Clearcoat max roughness means fully dispersed - no attenuation or matte effect
 #ifdef COAT_NORMAL
             vec3 coatNormal = normalize(vec3(GETNORMALTEXTURE(material.samplersData[COAT_NORMAL_INDEX]))) * mTangentLight;
-            float ndotl = dot(coatNormal, -uniforms.directionallight[lightNumber].direction.xyz);
-            float CRPower = getFresnelFactor(R0, ndotl);
+            float16_t ndotl = float16_t(dot(coatNormal, -uniforms.directionallight[lightNumber].direction.xyz));
+            tempf = getFresnelFactor(R0, ndotl);
+            float16_t CRPower = mix(material.properties[1].z, F16_ONE, tempf) * tempf; 
             vec3 coatReflectedLight = reflect(uniforms.directionallight[lightNumber].direction.xyz, coatNormal);
             float coatView = max(0.0, dot(coatReflectedLight, toView));
             float coatndf = ND_SCHLICK(coatView , material.properties[0].b * material.properties[0].b);
             brdf.colors[REFLECTED_COLOR_INDEX] += CRPower * (coatndf * NDFFactor) * intensity * lightColor;
             intensity = intensity * (1.0 - CRPower);
-            //Fresnel power now comes from the coat layer.
-            RPower = material.properties[0].a;
 #else
             brdf.colors[REFLECTED_COLOR_INDEX] += RPower * (ndf * NDFFactor) * intensity * (f16vec3(1.0) * lightColor);
             intensity = intensity * oneMinusRP;
 #endif
+            //Fresnel power now comes from the coat layer.
+            RPower = material.properties[0].a;
 #endif
-        if (brdf.NdotL >= 0) {
+        if (brdf.NdotL >= F16_ZERO) {
             getPerPixelBRDFDirectional(uniforms.directionallight[lightNumber].direction.xyz, toView);
             //Here we assume transmitted light enters the material and exits over the hemisphere based on roughness, in the transmissionColor of the material
             //As the solid angle from lightsource decreases (the angle to the lightsource increases) the power goes down.
@@ -277,10 +273,10 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
 
 #ifdef POINT
     for (int lightNumber = 0; lightNumber < POINT_LIGHT_COUNT; lightNumber++) {
-        brdf.NdotL = dot(brdf.normal, -vPointLight[lightNumber].xyz);
-        float RPower = getFresnelFactor(R0, brdf.NdotL);
+        brdf.NdotL = float16_t(dot(brdf.normal, -vPointLight[lightNumber].xyz));
+        float16_t RPower = getFresnelFactor(R0, brdf.NdotL);
         float oneMinusRP = 1.0 - RPower;
-        if (brdf.NdotL >= 0) {
+        if (brdf.NdotL >= F16_ZERO) {
             getPerPixelBRDFDirectional(vPointLight[lightNumber].xyz, toView);
             float intensity = uniforms.pointlight[lightNumber].color.a / pow(vPointLight[lightNumber].w,2);
             vec3 lightColor = uniforms.pointlight[lightNumber].color.rgb;
@@ -326,6 +322,7 @@ vec4 brdf_main(in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3
     //The light is irradiance coming from all directions, but - at grazing angles more will be reflected....
     vec3 reflect = reflect(toView, brdf.normal);
     brdf.colors[REFLECTED_COLOR_INDEX] +=  NdotVPower * gafView * (brdf.orma.b * brdf.orma.r * mix(float16_t(1.0), oneByPI, roughSquared)) * reflectionColor * irradiance(uniforms.irradianceCoefficients, reflect).rgb;
+
 #endif
 #endif
 #endif

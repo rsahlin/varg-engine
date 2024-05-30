@@ -69,42 +69,6 @@ public class GLSLCompiler {
     public static class MacroSet {
         private Hashtable<String, String> keyValues = new Hashtable<>();
 
-        private void put(Property key, String value) {
-            if (keyValues.containsKey(key.getName())) {
-                throw new IllegalArgumentException(
-                        ErrorMessage.INVALID_STATE.message + " already added key for: " + key);
-            }
-            checkValue(value);
-            keyValues.put(key.getName(), value);
-        }
-
-        private void put(Channel key, String value) {
-            if (keyValues.containsKey(key.name())) {
-                throw new IllegalArgumentException(
-                        ErrorMessage.INVALID_STATE.message + " already added key for: " + key);
-            }
-            checkValue(value);
-            keyValues.put(key.name(), value);
-        }
-
-        private void put(ExtensionTypes key, String value) {
-            if (keyValues.containsKey(key.name())) {
-                throw new IllegalArgumentException(
-                        ErrorMessage.INVALID_STATE.message + " already added key for: " + key);
-            }
-            checkValue(value);
-            keyValues.put(key.name(), value);
-        }
-
-        private void put(ExtensionSetting key, String value) {
-            if (keyValues.containsKey(key.getMacroName())) {
-                throw new IllegalArgumentException(
-                        ErrorMessage.INVALID_STATE.message + " already added key for: " + key);
-            }
-            checkValue(value);
-            keyValues.put(key.getMacroName(), value);
-        }
-
         private void put(String key, String value) {
             if (keyValues.containsKey(key)) {
                 throw new IllegalArgumentException(
@@ -410,8 +374,7 @@ public class GLSLCompiler {
     }
 
     /**
-     * Sets the macros for the vertex inputstate, call this once for each pipeline using this
-     * vertexinputstate
+     * Sets the macros for the vertex attributes, texturechannels and extensions, call this once for each pipeline using this vertexinputstate
      * 
      * @param vertexInputState
      */
@@ -422,6 +385,12 @@ public class GLSLCompiler {
         setCoat(material, Stage.FRAGMENT);
     }
 
+    /**
+     * Compiler macros must match how the JSONPrimitive calculates the hash
+     * 
+     * @param material
+     * @param stages
+     */
     private void setCoat(JSONMaterial material, Shader.Stage... stages) {
         if (material.getClearcoatFactor() != null) {
             addMacro("COAT", "1", stages);
@@ -585,8 +554,7 @@ public class GLSLCompiler {
      * @throws IOException
      * @throws IllegalArgumentException If macros has not been set before calling this method.
      */
-    public synchronized SpirvBinary compileStage(String sourcePath, String sourceName, Stage stage,
-            String destinationPath, String outputHash)
+    public synchronized SpirvBinary compileStage(String sourcePath, String sourceName, Stage stage, String destinationPath, String outputHash)
             throws IOException {
         String sourceInput = sourcePath + sourceName + "." + stage.stage;
         buffer.clear();

@@ -17,6 +17,8 @@ const float16_t twoByPI = float16_t(2.0 / pi);
 const float16_t oneByTwoPi = float16_t(1.0 / (2.0 * pi));
 const float16_t oneByFourPi = float16_t(1.0 / (4.0 * pi));
 const float16_t METAL_ABSORPTION = float16_t(1.0);
+const float16_t F16_ZERO = float16_t(0.0);
+const float16_t F16_ONE = float16_t(1.0);
 const float gamma = 2.4;
 const float oneByGamma = 1.0 / gamma;
 const float fluxRadius = sqrt(oneByPI);
@@ -44,17 +46,17 @@ struct Instance {
  * Normally calculated per fragment
  */
 struct BRDF {
+    vec3[3] colors;
     vec3 normal;
     vec3 reflectedLight;
     vec3 H;
     float NdotH;
-    float NdotL;
-    float NdotV;
     float HdotL;
     float HdotV;
     //occlusion, roughness, metallic, absorbfactor
     f16vec4 orma;
-    vec3[3] colors;
+    float16_t NdotV;
+    float16_t NdotL;
 };
 
 #define TRANSMITTED_COLOR_INDEX 0

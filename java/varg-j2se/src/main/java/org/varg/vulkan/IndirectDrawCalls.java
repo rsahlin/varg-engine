@@ -64,8 +64,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
     private static transient VertexInputAttributeDescription[] inputs;
 
     public IndirectDrawCalls(PrimitiveSorter primitives, BindVertexBuffers indexBuffers, BindVertexBuffers vertexBuffers, int firstInstance) {
-        super(primitives.attributeHash, primitives.sortedAttributes, primitives.getMaterial(), primitives.mode, primitives.getArrayPrimitiveCount(), primitives.getIndexedPrimitiveCount(),
-                primitives.getIndicesCount(), firstInstance);
+        super(primitives.attributeHash, primitives.sortedAttributes, primitives.getMaterial(), primitives.mode, primitives.getArrayPrimitiveCount(), primitives.getIndexedPrimitiveCount(), primitives.getIndicesCount(), firstInstance);
         this.pipelineHash = primitives.getPipelineHash();
         this.indexBuffers = indexBuffers;
         this.vertexBuffers = vertexBuffers;

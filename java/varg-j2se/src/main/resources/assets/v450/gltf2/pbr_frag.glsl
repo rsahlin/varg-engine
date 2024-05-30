@@ -18,7 +18,8 @@
  * v = dot product (cos angle)
  * r = roughness
  */
-float GA_SMITH( in float v, in float r) {
+float GA_SMITH( in float16_t v, in float16_t r) {
+    v = max(float16_t(0.01), v);
     return v / (r - r * v + v);
 }
 /**
@@ -26,7 +27,7 @@ float GA_SMITH( in float v, in float r) {
  */
 void getPerPixelBRDF(in vec3 normal, in vec3 toView) {
     brdf.normal = normal;
-    brdf.NdotV = max(0, dot(normal, toView));
+    brdf.NdotV = float16_t(max(0, dot(normal, toView)));
 }
 
 void getPerPixelBRDFDirectional(in vec3 lightDirection, in vec3 toView) {

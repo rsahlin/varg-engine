@@ -56,7 +56,7 @@ void glTFVertexSetup() {
 #endif
 #ifdef POINT
     for (int lightNumber = 0; lightNumber < POINT; lightNumber++) {
-        vec4 lightVec = worldPos - (uniforms.pointlight[lightNumber].position * matrix.uModelMatrix[instance.primitive.y]);
+        vec4 lightVec = worldPos - (vec4(uniforms.pointlight[lightNumber].position, 1.0) * matrix.uModelMatrix[instance.primitive.y]);
         vPointLight[lightNumber].xyz = normalize(lightVec.xyz);
         vPointLight[lightNumber].w = length(lightVec);
     }
