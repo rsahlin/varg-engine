@@ -18,25 +18,26 @@ Use the left/right arrow keys to switch model.
 Working on an option to specify local folder for glb/gltf files.  
   
   
-In your command line prompt, navigate to the 'executable' folder and run the jar file for your platform.  
-  
+In your command line prompt, navigate to the 'executable' folder and run the jar file for your platform by starting a command line shell and executing one of the commands below.  
+    
 ### For Windows:  
   
->java -jar vargviewer_winx64_0.3.jar  
+->java -jar vargviewer_winx64_0.3.jar  
   
 ### For Mac  
   
->java -jar vargviewer_macx64_0.3.jar  
+->java -jar vargviewer_macx64_0.3.jar  
   
 ### For Linux  
   
 Intel/Amd architecture:  
->java -jar vargviewer_linuxx64_0.3.jar  
+->java -jar vargviewer_linuxx64_0.3.jar  
   
 Arm 64 bit  
->java -jar vargviewer_linuxaarch64_0.3.jar  
+->java -jar vargviewer_linuxaarch64_0.3.jar  
   
 
-Please report crashes by opening an issue and attach the output in the command prompt.  
+Please report crashes by opening an issue and attach the output from the command prompt, please include all of the text not just the crash exception.  
+  
   
 
