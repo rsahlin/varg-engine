@@ -251,10 +251,15 @@ Vulkan rendering (varg-engine) - this takes care of Vulkan rendering
 Engine is likely to be continously work in progress with more features and cool shaders implemented in the future.  
   
 ### Build instructions  
-Platform dependencies to Vulkan validation layers and glslc  
+Platform dependencies to Vulkan validation layers and glslc:  
+Download the Vulkan SDK from https://vulkan.lunarg.com/sdk/home  
+Add the 'bin' folder to path, check by opening a command line prompt and type: "glslc --version"  
   
 This project uses maven to build.  
 In order to build, some project dependencies needs to be cloned and built beforehand.  
+`gltf-io`  
+`gltf-imageio` 
+  
 To be sure of project dependencies - check the pom.  
   
 gltf-io - build using 'mvn clean compile install -DskipTests'  
