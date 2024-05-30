@@ -18,7 +18,8 @@ Use the left/right arrow keys to switch model.
 Working on an option to specify local folder for glb/gltf files.  
   
   
-In your command line prompt, navigate to the 'executable' folder and run the jar file for your platform by starting a command line shell and executing one of the commands below.  
+In your command line prompt, navigate to the 'executable' folder and run the jar file for your platform by starting a command line shell.  
+Navigate to the 'executable' folder (or where you have the .jar file) and execute the command for your platform:   
     
 ### For Windows:  
   
