@@ -7,6 +7,13 @@ This project is a continuation of:
 https://github.com/rsahlin/graphics-by-opengl  
 https://github.com/rsahlin/gltf-viewer  
 
+## Just looking for prebuilt binaries?
+  
+If you just want to test the engine out by running prebuilt binaries,  
+head over to:  
+[executables](executable/README.md)  
+  
+
 # PBR and Physically Correct Shading  
   
   
