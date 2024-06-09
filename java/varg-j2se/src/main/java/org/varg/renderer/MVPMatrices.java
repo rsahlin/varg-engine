@@ -3,7 +3,9 @@ package org.varg.renderer;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.gltfio.gltf2.JSONCamera;
-
+import org.gltfio.gltf2.JSONMesh;
+import org.gltfio.gltf2.JSONNode;
+import org.gltfio.gltf2.JSONPrimitive;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.Matrix;
 import org.gltfio.lib.Matrix.MatrixStack;
@@ -14,6 +16,10 @@ import org.gltfio.lib.MatrixUtils;
  *
  */
 public class MVPMatrices {
+
+    public interface ConcatModelCallback {
+        void concatModelMatrix(JSONNode<JSONMesh<JSONPrimitive>> node, float[] matrix);
+    }
 
     /**
      * 3 matrices, one each for mode, view and projection
@@ -178,6 +184,29 @@ public class MVPMatrices {
 
     public final float[][] getMatrices() {
         return matrices;
+    }
+
+    /**
+     * 
+     * @param nodes
+     */
+    public void concatModelMatrices(JSONNode<JSONMesh<JSONPrimitive>>[] nodes, ConcatModelCallback callback) {
+        for (int i = 0; i < nodes.length; i++) {
+            concatModelMatrix(nodes[i], callback);
+        }
+
+    }
+
+    private void concatModelMatrix(JSONNode node, ConcatModelCallback callback) {
+        if (node != null && (node.getChildCount() > 0 || node.getMeshIndex() >= 0)) {
+            push(Matrices.MODEL);
+            concatModelMatrix(node.getTransform().updateMatrix());
+            if (callback != null) {
+                callback.concatModelMatrix(node, matrices[Matrices.MODEL.index]);
+            }
+            concatModelMatrices(node.getChildNodes(), callback);
+            pop(Matrices.MODEL);
+        }
     }
 
 }

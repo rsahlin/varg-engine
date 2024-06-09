@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.eclipse.jdt.annotation.NonNull;
-import org.gltfio.gltf2.JSONTexture;
 import org.gltfio.gltf2.JSONSampler;
+import org.gltfio.gltf2.JSONTexture;
 import org.gltfio.lib.ErrorMessage;
 import org.varg.shader.Gltf2GraphicsShader.GltfDescriptorSetTarget;
 import org.varg.vulkan.memory.ImageMemory;
@@ -64,11 +64,10 @@ public class TextureImages {
         final SamplerType type;
         private byte descriptorIndex = -1;
 
-        public TextureSamplerInfo(@NonNull JSONSampler samp, @NonNull SamplerType sampType,
-                @NonNull TextureImageInfo texInfo) {
+        public TextureSamplerInfo(@NonNull JSONSampler sampler, @NonNull SamplerType type, @NonNull TextureImageInfo texInfo) {
             super(texInfo.texture, texInfo.layer);
-            sampler = samp;
-            type = sampType;
+            this.sampler = sampler;
+            this.type = type;
         }
 
         /**
@@ -96,8 +95,7 @@ public class TextureImages {
 
         @Override
         public String toString() {
-            return "Descriptorindex " + descriptorIndex + ", " + super.toString() + ", Sampler: " + sampler.getWrapS()
-                    + ", " + sampler.getWrapT();
+            return "Descriptorindex " + descriptorIndex + ", " + super.toString() + ", Sampler: " + sampler.getWrapS() + ", " + sampler.getWrapT();
         }
 
     }
@@ -106,12 +104,10 @@ public class TextureImages {
      * Lookup for textureimageinfo from source image id
      */
     private HashMap<String, TextureImageInfo> textureImages = new HashMap<String, TextureImages.TextureImageInfo>();
-    private HashMap<SamplerType, List<TextureDescriptor>> textureDescriptorMap =
-            new HashMap<SamplerType, List<TextureDescriptor>>();
+    private HashMap<SamplerType, List<TextureDescriptor>> textureDescriptorMap = new HashMap<SamplerType, List<TextureDescriptor>>();
     private HashMap<Long, TextureMemory> textureMemoryMap = new HashMap<Long, TextureMemory>();
     private HashMap<Integer, TextureSamplerInfo> samplerMap = new HashMap<Integer, TextureImages.TextureSamplerInfo>();
-    private HashMap<Integer, TextureSamplerInfo> samplerHashMap =
-            new HashMap<Integer, TextureImages.TextureSamplerInfo>();
+    private HashMap<Integer, TextureSamplerInfo> samplerHashMap = new HashMap<Integer, TextureImages.TextureSamplerInfo>();
 
     /**
      * Registers the texture memory
@@ -121,8 +117,7 @@ public class TextureImages {
      */
     protected void addTextureMemory(TextureMemory memory) {
         if (textureMemoryMap.containsKey(memory.getMemoryPointer())) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_VALUE.message + "Already added memory " + memory.getMemoryPointer());
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Already added memory " + memory.getMemoryPointer());
         }
         textureMemoryMap.put(memory.getMemoryPointer(), memory);
     }
@@ -148,8 +143,7 @@ public class TextureImages {
      */
     protected void addTextureImage(String sourceId, ImageMemory texture, byte layer) {
         if (textureImages.containsKey(sourceId)) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + " Already contains texture for source image id " + sourceId);
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + " Already contains texture for source image id " + sourceId);
         } else if (!textureMemoryMap.containsKey(texture.getMemoryPointer())) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + ", TextureMemory not registered");
         }
@@ -183,8 +177,7 @@ public class TextureImages {
     protected void addTextureDescriptor(TextureSamplerInfo samplerInfo, TextureDescriptor descriptor) {
         int hash = samplerInfo.getTextureHash();
         if (samplerHashMap.containsKey(hash)) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message
-                    + ", already contains TextureDescriptor for sampler hash " + hash);
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + ", already contains TextureDescriptor for sampler hash " + hash);
         }
         List<TextureDescriptor> textureDescriptors = textureDescriptorMap.get(samplerInfo.type);
         if (textureDescriptors == null) {
@@ -227,8 +220,7 @@ public class TextureImages {
             samplerInfo.descriptorIndex = descriptorIndex;
         }
         if (samplerInfo.descriptorIndex != descriptorIndex || descriptorIndex < 0) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", descriptorIndexes do not match "
-                    + samplerInfo.descriptorIndex + " vs " + descriptorIndex);
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", descriptorIndexes do not match " + samplerInfo.descriptorIndex + " vs " + descriptorIndex);
         }
         samplerMap.put(id, samplerInfo);
     }

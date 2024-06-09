@@ -48,6 +48,7 @@ struct Instance {
 struct BRDF {
     vec3[3] colors;
     vec3 normal;
+    vec3 coatNormal;
     vec3 reflectedLight;
     vec3 H;
     float NdotH;

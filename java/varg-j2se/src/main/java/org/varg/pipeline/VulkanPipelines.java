@@ -50,7 +50,6 @@ import org.varg.vulkan.PrimitiveVertexInputState;
 import org.varg.vulkan.Queue;
 import org.varg.vulkan.Vulkan10.CompareOp;
 import org.varg.vulkan.Vulkan10.CullModeFlagBit;
-import org.varg.vulkan.Vulkan10.DescriptorType;
 import org.varg.vulkan.Vulkan10.FrontFace;
 import org.varg.vulkan.Vulkan10.PipelineBindPoint;
 import org.varg.vulkan.Vulkan10.SampleCountFlagBit;
@@ -553,25 +552,6 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     }
 
     @Override
-    public void createPipelineTextureLayout(TextureImages textureImages, int firstBinding) {
-        if (descriptors.getDescriptorLayout(GltfDescriptorSetTarget.MATERIAL_TEXTURE) != null) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + ", contains layout for target "
-                            + GltfDescriptorSetTarget.MATERIAL_TEXTURE);
-        }
-        // Must create layout with at least 1 descriptor.
-        // TODO - remove texture usage if layout is untextured.
-        int textureDescriptors = textureImages.getDescriptorCount(SamplerType.sampler2DArray);
-        descriptors.addDescriptorLayout(GltfDescriptorSetTarget.MATERIAL_TEXTURE,
-                createTextureLayout(textureDescriptors > 0 ? textureDescriptors : 1, firstBinding));
-        int cubemapDescriptors = textureImages.getDescriptorCount(SamplerType.samplerCubeArray);
-        if (cubemapDescriptors > 0) {
-            descriptors.addDescriptorLayout(GltfDescriptorSetTarget.CUBEMAP_TEXTURE,
-                    createTextureLayout(cubemapDescriptors, firstBinding));
-        }
-    }
-
-    @Override
     public void createDescriptorSetLayouts(DescriptorBuffers<?> buffers, DescriptorSetTarget... targets) {
         for (DescriptorSetTarget target : targets) {
             if ((descriptors.getDescriptorLayout(target) == null)) {
@@ -582,15 +562,6 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
                 Logger.i(getClass(), "Reusing DescriptorSetLayoutBinding for target " + target);
             }
         }
-    }
-
-    @Override
-    public DescriptorSetLayout createTextureLayout(int count, int firstBinding) {
-        DescriptorSetLayoutBinding binding = new DescriptorSetLayoutBinding(firstBinding,
-                DescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, count,
-                ShaderStageFlagBit.getBitFlags(ShaderStageFlagBit.VK_SHADER_STAGE_FRAGMENT_BIT), null);
-        return renderer.getBackend().createDescriptorSetLayout(
-                new DescriptorSetLayoutCreateInfo(null, binding));
     }
 
     @Override

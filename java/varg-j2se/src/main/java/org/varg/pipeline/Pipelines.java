@@ -28,7 +28,6 @@ import org.varg.vulkan.Queue;
 import org.varg.vulkan.Vulkan10.BufferUsageFlagBit;
 import org.varg.vulkan.Vulkan10.DescriptorType;
 import org.varg.vulkan.Vulkan10.ShaderStageFlagBit;
-import org.varg.vulkan.descriptor.DescriptorSetLayout;
 import org.varg.vulkan.pipeline.ComputePipeline;
 import org.varg.vulkan.pipeline.GraphicsPipeline;
 import org.varg.vulkan.pipeline.PipelineShaderStageCreateInfo.SpecializationInfo;
@@ -111,8 +110,7 @@ public interface Pipelines<A extends RenderableScene> {
          * @param storageBuffers
          * @return
          */
-        SpecializationInfo createSpecializationInfo(RenderableScene glTF,
-                DescriptorBuffers<?> storageBuffers);
+        SpecializationInfo createSpecializationInfo(RenderableScene glTF, DescriptorBuffers<?> storageBuffers);
 
         /**
          * Creates the pushconstants and adds to buffers
@@ -124,8 +122,7 @@ public interface Pipelines<A extends RenderableScene> {
          * @return
          * @throws IllegalArgumentException If pushconstants already have been created.
          */
-        void createPushConstants(DescriptorBuffers<?> buffers, RenderPasses pass, int offset, int size,
-                ShaderStageFlagBit... stageBits);
+        void createPushConstants(DescriptorBuffers<?> buffers, RenderPasses pass, int offset, int size, ShaderStageFlagBit... stageBits);
 
         /**
          * Allocate the descriptorsets needed for a specific target (frequency) - this is normally on a global,
@@ -150,23 +147,6 @@ public interface Pipelines<A extends RenderableScene> {
         void createDescriptorSetLayouts(@NonNull DescriptorBuffers<?> buffers, DescriptorSetTarget... targets);
 
         /**
-         * Creates the pipeline texture layout - this layout will be used by all pipelines created
-         * 
-         * @param textureImages Texture images to create layouts for
-         * @throws IllegalArgumentException If pipelinelayouts already have been created
-         */
-        void createPipelineTextureLayout(@NonNull TextureImages textureImages, int firstBinding);
-
-        /**
-         * Creates the descriptorsetlayout for the textures
-         * 
-         * @param number of descriptorsets to create
-         * @param first binding
-         * @return
-         */
-        DescriptorSetLayout createTextureLayout(int count, int firstBinding);
-
-        /**
          * Deletes the descriptorsetlayout for the specified target.
          * 
          * @param target
@@ -182,8 +162,7 @@ public interface Pipelines<A extends RenderableScene> {
      * @return The created compute shader
      * @throws BackendException
      */
-    ComputeShader createComputePipelines(ComputeShaderCreateInfo shaderInfo, StorageBuffers buffers)
-            throws BackendException;
+    ComputeShader createComputePipelines(ComputeShaderCreateInfo shaderInfo, StorageBuffers buffers) throws BackendException;
 
     /**
      * Creates the graphics pipelines for the scene - this will load and compile the pipelines needed
@@ -201,8 +180,7 @@ public interface Pipelines<A extends RenderableScene> {
      * @throws BackendException If pipeline could not be loaded and linked
      * 
      */
-    void createGraphicsPipelines(IndirectDrawing[] drawCalls, @NonNull A glTF, @NonNull GraphicsShaderCreateInfo info)
-            throws BackendException;
+    void createGraphicsPipelines(IndirectDrawing[] drawCalls, @NonNull A glTF, @NonNull GraphicsShaderCreateInfo info) throws BackendException;
 
     /**
      * Creates the mesh pipeline for the shader, this will load and compile pipelines as needed for
@@ -222,8 +200,7 @@ public interface Pipelines<A extends RenderableScene> {
      * @return
      * @throws BackendException
      */
-    RayTracingShader createRayTracingPipeline(RayTracingCreateInfo shaderInfo)
-            throws BackendException;
+    RayTracingShader createRayTracingPipeline(RayTracingCreateInfo shaderInfo) throws BackendException;
 
     /**
      * Deletes all created graphicspipelines
@@ -237,8 +214,7 @@ public interface Pipelines<A extends RenderableScene> {
      * @param dynamicOffsets
      * @param target
      */
-    void cmdBindDescriptorSets(@NonNull Subtype type, @NonNull Queue queue, IntBuffer dynamicOffsets,
-            @NonNull DescriptorSetTarget target);
+    void cmdBindDescriptorSets(@NonNull Subtype type, @NonNull Queue queue, IntBuffer dynamicOffsets, @NonNull DescriptorSetTarget target);
 
     /**
      * Records a command to push constants
@@ -247,8 +223,7 @@ public interface Pipelines<A extends RenderableScene> {
      * @param queue
      * @param pipeline
      */
-    void cmdPushConstants(@NonNull PushConstants pushConstants, @NonNull Queue queue,
-            @NonNull GraphicsPipeline pipeline);
+    void cmdPushConstants(@NonNull PushConstants pushConstants, @NonNull Queue queue, @NonNull GraphicsPipeline pipeline);
 
     /**
      * Fetches the graphics pipeline for the specified hash

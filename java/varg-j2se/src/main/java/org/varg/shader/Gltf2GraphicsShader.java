@@ -322,19 +322,7 @@ public class Gltf2GraphicsShader extends BaseShaderImplementation<GraphicsShader
 
     final PipelineVertexInputState inputState;
 
-    public static Gltf2GraphicsShader getInstance(GraphicsShaderCreateInfo info, PipelineVertexInputState inputState) {
-        if (inputState == null) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null");
-        }
-        Gltf2GraphicsShader shader = (Gltf2GraphicsShader) getShader(inputState.getHash());
-        if (shader == null) {
-            shader = new Gltf2GraphicsShader(info, inputState);
-            putShader(inputState.getHash(), shader);
-        }
-        return shader;
-    }
-
-    Gltf2GraphicsShader(GraphicsShaderCreateInfo info, PipelineVertexInputState inputState) {
+    private Gltf2GraphicsShader(GraphicsShaderCreateInfo info, PipelineVertexInputState inputState) {
         super(info);
         if (inputState == null) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null");

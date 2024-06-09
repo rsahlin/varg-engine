@@ -1469,8 +1469,7 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
     @Override
     public DescriptorSetLayout createDescriptorSetLayout(DescriptorSetLayoutCreateInfo layoutInfo) {
         DescriptorSetLayoutBinding setLayoutBinding = layoutInfo.getDescriptorSetLayout();
-        VkDescriptorSetLayoutBinding.Buffer layoutBinding = VkDescriptorSetLayoutBinding
-                .calloc(1);
+        VkDescriptorSetLayoutBinding.Buffer layoutBinding = VkDescriptorSetLayoutBinding.calloc(1);
         int index = 0;
         layoutBinding.get(index++).binding(setLayoutBinding.getBinding())
                 .descriptorType(setLayoutBinding.getDescriptorType().value)
@@ -1745,8 +1744,7 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
                 .descriptorType(layoutBinding.getDescriptorType().value);
 
         if (descriptorImageInfos != null) {
-            VkDescriptorImageInfo.Buffer descriptorSets = VkDescriptorImageInfo
-                    .calloc(descriptorImageInfos.length);
+            VkDescriptorImageInfo.Buffer descriptorSets = VkDescriptorImageInfo.calloc(descriptorImageInfos.length);
             for (int index = 0; index < descriptorImageInfos.length; index++) {
                 DescriptorImageInfo info = (DescriptorImageInfo) descriptorImageInfos[index];
                 VkDescriptorImageInfo vkInfo = descriptorSets.get(index);
@@ -1755,14 +1753,11 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
                             .imageView(info.imageView.getImageView())
                             .imageLayout(info.imageLayout.value);
                 } else {
-                    throw new IllegalArgumentException(
-                            ErrorMessage.INVALID_VALUE.message + "VkDescriptorImageInfo is null");
+                    throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "VkDescriptorImageInfo is null");
                 }
-                Logger.d(getClass(), "Updating descriptor for: " + info.imageView.type + " at binding "
-                        + (layoutBinding.getBinding() + index + ", set: " + descriptorSet.getDescriptorSet()));
+                Logger.d(getClass(), "Updating descriptor for: " + info.imageView.type + " at binding " + (layoutBinding.getBinding() + index + ", set: " + descriptorSet.getDescriptorSet()));
             }
-            write.descriptorCount(descriptorImageInfos.length)
-                    .pImageInfo(descriptorSets);
+            write.descriptorCount(descriptorImageInfos.length).pImageInfo(descriptorSets);
         }
 
         VK12.vkUpdateDescriptorSets(deviceInstance, write, null);

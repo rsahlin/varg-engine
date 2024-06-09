@@ -393,7 +393,10 @@ public class GLSLCompiler {
      */
     private void setCoat(JSONMaterial material, Shader.Stage... stages) {
         if (material.getClearcoatFactor() != null) {
-            addMacro("COAT", "1", stages);
+            // Only set coat if no coat texturechannels are present.
+            if (material.getTextureInfo(Channel.COAT_NORMAL) == null && material.getTextureInfo(Channel.COAT_FACTOR) == null && material.getTextureInfo(Channel.COAT_ROUGHNESS) == null) {
+                addMacro("COAT", "1", stages);
+            }
         }
     }
 

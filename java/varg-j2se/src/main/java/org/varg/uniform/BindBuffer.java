@@ -140,6 +140,22 @@ public class BindBuffer {
     }
 
     /**
+     * Fetches array of float data from floatPosition
+     * 
+     * @param floatPosition
+     * @param destination
+     */
+    void getFloatData(int floatPosition, float[]... destination) {
+        if (getDynamicSize() != 0) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Buffer uses dynamic offsets");
+        }
+        backingFloatBuffer.position(floatPosition);
+        for (float[] floats : destination) {
+            backingFloatBuffer.get(floats);
+        }
+    }
+
+    /**
      * Stores float data at the dynamic float offset position
      * 
      * @param floatData

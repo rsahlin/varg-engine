@@ -12,6 +12,7 @@ import org.gltfio.gltf2.JSONMaterial;
 import org.gltfio.gltf2.JSONMesh;
 import org.gltfio.gltf2.JSONNode;
 import org.gltfio.gltf2.JSONPBRMetallicRoughness;
+import org.gltfio.gltf2.JSONPrimitive;
 import org.gltfio.gltf2.JSONTexture;
 import org.gltfio.gltf2.JSONTexture.Channel;
 import org.gltfio.gltf2.JSONTexture.TextureInfo;
@@ -41,6 +42,7 @@ import org.varg.renderer.BRDF.BRDFFloatProperties;
 import org.varg.renderer.DrawCallBundle;
 import org.varg.renderer.GltfRenderer;
 import org.varg.renderer.MVPMatrices;
+import org.varg.renderer.MVPMatrices.ConcatModelCallback;
 import org.varg.renderer.MVPMatrices.Matrices;
 import org.varg.shader.Gltf2GraphicsShader;
 import org.varg.shader.Gltf2GraphicsShader.GltfDescriptorSetTarget;
@@ -355,7 +357,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             put(buffer, material.getNormalTextureInfo() != null ? material.getNormalTextureInfo().getScale() : 1.0f);
             put(buffer, pbr.getBaseColorFactor());
             put(buffer, pbr.getReflectiveColor(new float[4]));
-            put(buffer, material.getProperties());
+            put(buffer, material.getProperties(environmentIOR));
             // Store texcoord data
             destination.position(TEXTURE_SAMPLERS_INDEX * Short.BYTES + startPos);
             ByteBuffer buf = material.getSamplersData().position(0);
@@ -407,53 +409,38 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
      * @param root
      */
     public void setDynamicStorage(RenderableScene root, JSONCamera camera) {
+        // Set model matrices before light - pointlight uses the
+        BindBuffer matrixBuffer = getBuffer(GltfDescriptorSetTarget.MATRIX);
+        setNodeModelMatrices(root, matrixBuffer);
+        matrixBuffer.setState(BufferState.updated);
+
         BindBuffer buffer = getBuffer(GltfDescriptorSetTarget.GLOBAL_RENDERPASS);
         setCamera(root, buffer, camera);
         JSONNode[] lights = root.getLightNodes();
         setLights(root, buffer, lights);
         buffer.setState(BufferState.updated);
-        BindBuffer matrixBuffer = getBuffer(GltfDescriptorSetTarget.MATRIX);
-        setNodeModelMatrices(root, matrixBuffer);
-        matrixBuffer.setState(BufferState.updated);
     }
 
+    /**
+     * TODO - store matrix in float array, then do one copy to destination buffer
+     * 
+     * @param root
+     * @param buffer
+     */
     private void setNodeModelMatrices(RenderableScene root, BindBuffer buffer) {
-        // buffer.resetElement();
         JSONNode[] sceneNodes = root.getNodes();
         if (sceneNodes != null) {
             MVPMatrices matrices = new MVPMatrices();
             Transform sceneTransform = root.getSceneTransform();
             matrices.setMatrix(Matrices.MODEL, sceneTransform.updateMatrix());
-            for (int i = 0; i < sceneNodes.length; i++) {
-                setNodeModelMatrices(sceneNodes[i], matrices, buffer);
-            }
-        }
-
-    }
-
-    private void setNodeModelMatrices(JSONNode node, MVPMatrices matrices, BindBuffer buffer) {
-        if (node != null && (node.getChildCount() > 0 || node.getMeshIndex() >= 0)) {
-            matrices.push(Matrices.MODEL);
-            if (node.getCamera() != null) {
-                System.out.println("camera");
-            } else {
-                matrices.concatModelMatrix(node.getTransform().updateMatrix());
-            }
-            JSONMesh mesh = node.getMesh();
-            if (mesh != null) {
-                buffer.storeFloatData(node.getMatrixIndex() * Matrix.MATRIX_ELEMENTS, matrices.getMatrix(
-                        Matrices.MODEL));
-            }
-            setNodeModelMatrices(node.getChildNodes(), matrices, buffer);
-            matrices.pop(Matrices.MODEL);
-        }
-    }
-
-    private void setNodeModelMatrices(JSONNode[] children, MVPMatrices matrices, BindBuffer buffer) {
-        if (children != null && children.length > 0) {
-            for (JSONNode n : children) {
-                setNodeModelMatrices(n, matrices, buffer);
-            }
+            matrices.concatModelMatrices(sceneNodes, new ConcatModelCallback() {
+                @Override
+                public void concatModelMatrix(JSONNode<JSONMesh<JSONPrimitive>> node, float[] matrix) {
+                    if (node.getMesh() != null) {
+                        buffer.storeFloatData(node.getMatrixIndex() * Matrix.MATRIX_ELEMENTS, matrices.getMatrix(Matrices.MODEL));
+                    }
+                }
+            });
         }
     }
 
@@ -514,9 +501,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
 
     private void setLights(RenderableScene root, BindBuffer buffer, JSONNode[] lights) {
         if (lights != null) {
-            float[] sceneMatrix = root.getSceneTransform().updateMatrix();
-            // Create a temp matrix
-            float[] matrix = MatrixUtils.createMatrix();
+            // Point lights are transformed according to scene transform in shader - only need to get node transform
+            float[] matrix = MatrixUtils.setIdentity(MatrixUtils.createMatrix(), 0);
             int directionalIndex = 0;
             int pointIndex = 0;
             ByteBuffer destination = buffer.getBackingBuffer().position(0);
@@ -546,13 +532,11 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
                             directionalIndex++;
                             break;
                         case point:
-                            MatrixUtils.copy(sceneMatrix, 0, matrix, 0);
-                            setPointLight(destination, pointIndex, light, getLightPosition(lights[i], matrix));
+                            setPointLight(destination, pointIndex, light, getLightPosition(lights[i]));
                             pointIndex++;
                             break;
                         default:
-                            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                                    + "Not implemented for type " + light.getType());
+                            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Not implemented for type " + light.getType());
                     }
                 }
             }
@@ -578,14 +562,18 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
 
     }
 
-    private float[] getLightPosition(JSONNode node, float[] matrix) {
-        float[] vec4 = new float[4];
-        matrix = getParentsMatrix(node, matrix);
-        Transform t = node.getTransform();
-        // MatrixUtils.setScaleM(matrix, 0, t.getScale());
-        // MatrixUtils.rotateM(matrix, t.getRotation());
-        MatrixUtils.translate(matrix, t.getTranslate());
-        return MatrixUtils.getTranslate(matrix);
+    private float[] getLightPosition(JSONNode node) {
+        float[] matrix = new float[Matrix.MATRIX_ELEMENTS];
+        JSONNode parent = node.getParent();
+        if (parent != null) {
+            BindBuffer matrixBuffer = getBuffer(GltfDescriptorSetTarget.MATRIX);
+            matrixBuffer.getFloatData(parent.getMatrixIndex() * Matrix.MATRIX_ELEMENTS, matrix);
+        } else {
+            MatrixUtils.setIdentity(matrix, 0);
+        }
+        float[] pos = new float[3];
+        MatrixUtils.mulVec3(matrix, node.getTransform().getTranslate(), 0, pos, 0);
+        return pos;
     }
 
     private void setIrradianceMap(BindBuffer buffer, EnvironmentMap environmentMap) {

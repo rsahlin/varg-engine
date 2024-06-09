@@ -25,9 +25,19 @@ float GA_SMITH( in float16_t v, in float16_t r) {
 /**
  * Call once for fragment shader - then call getPerPixelBRDFDirectional() for each lightsource.
  */
-void getPerPixelBRDF(in vec3 normal, in vec3 toView) {
-    brdf.normal = normal;
-    brdf.NdotV = float16_t(max(0, dot(normal, toView)));
+void getPerPixelBRDF(in vec3 toView) {
+
+#ifdef NORMAL
+    brdf.normal = normalize(vec3(GETNORMALTEXTURE(material.samplersData[NORMAL_TEXTURE_INDEX])) * mTangentLight);
+#else
+    brdf.normal = normalize(surface.normal);
+#endif
+
+#ifdef COAT_NORMAL
+    brdf.coatNormal = normalize(vec3(GETNORMALTEXTURE(material.samplersData[COAT_NORMAL_INDEX])) * mTangentLight);
+#endif
+
+    brdf.NdotV = float16_t(max(0, dot(brdf.normal, toView)));
 }
 
 void getPerPixelBRDFDirectional(in vec3 lightDirection, in vec3 toView) {
@@ -42,7 +52,7 @@ void getPerPixelBRDFDirectional(in vec3 lightDirection, in vec3 toView) {
  * This is used for materials that do not have normal/metallicrough/occlusion texture maps
  */
 void setupPBRMaterial() {
-    brdf.orma.rgb = material.ormp.rgb;
+    brdf.orma.rgb = material.orm.rgb;
     brdf.orma.a = material.properties[0].r;
 }
 
@@ -53,7 +63,7 @@ void setupPBRMaterial(in f16vec3 orm) {
 
 
 void setupPBRMaterial(const float16_t occlusion) {
-    brdf.orma.rgb = material.ormp.rgb;
+    brdf.orma.rgb = material.orm.rgb;
     brdf.orma.r = occlusion;
     brdf.orma.a = material.properties[0].r;
 }
@@ -66,7 +76,7 @@ void setupPBRMaterial(const float16_t occlusion, in f16vec4 rm) {
 
 
 void setupPBRMaterial(in f16vec2 rm) {
-    brdf.orma = material.ormp;
+    brdf.orma = material.orm;
     brdf.orma.g = rm.x;
     brdf.orma.b = rm.y;
     brdf.orma.a = mix(material.properties[0].r, METAL_ABSORPTION, rm.y);
@@ -80,9 +90,9 @@ void setupPBRMaterial(in f16vec2 rm) {
  */
 void outputPixel(vec4 pbr) {
 #ifdef RAW_BASECOLOR
-    fragColor = getBaseColor();
+    fragColor = vec4(GETTEXTURE(material.samplersData[BASECOLOR_TEXTURE_INDEX]).rgb, 1.0);
 #elif RAW_ORM
-    fragColor = vec4(GETTEXTURE(material.samplersData[MR_TEXTURE_INDEX]).rgb, 1.0);
+    fragColor = vec4(brdf.orma.rgb, 1.0);
 #elif RAW_OCCLUSION
     float o = GETTEXTURE(material.samplersData[OCCLUSION_TEXTURE_INDEX]).r;
     fragColor = vec4(o, o, o, 1.0);

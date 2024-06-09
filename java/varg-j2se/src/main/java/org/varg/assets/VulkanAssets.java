@@ -299,14 +299,12 @@ public class VulkanAssets implements Assets {
     public TextureImages createTextureImages(RenderableScene asset) {
         TextureImages textureImages = textureImagesMap.get(asset.getId());
         if (textureImages != null) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message
-                    + "Already created textureimages for glTF with ID " + asset.getId());
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Already created textureimages for glTF with ID " + asset.getId());
         }
         ImageBufferUsage imageBufferUsage = new ImageBufferUsage();
         if (asset.getTextureCount() > 0) {
             if (sourceImages.getImageCount(asset) == 0) {
-                throw new IllegalArgumentException(
-                        ErrorMessage.INVALID_STATE.message + ", must load texture images before calling this method");
+                throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + ", must load texture images before calling this method");
             }
             calculateTextureUsage(asset, imageBufferUsage);
         }
@@ -314,8 +312,7 @@ public class VulkanAssets implements Assets {
         VulkanImageBuffer[] cubemapImages = calculateCubemapUsage(asset, imageBufferUsage, textureImages);
         createTextureImages(imageBufferUsage, textureImages);
         // Texture descriptors for samplers - may end up with more than image array count descriptors.
-        Logger.d(getClass(), "Using " + textureImages.getTextureMemoryCount() + " texture memory allocations, for "
-                + textureImages.getTextureImageCount() + " texture image uses.");
+        Logger.d(getClass(), "Using " + textureImages.getTextureMemoryCount() + " texture memory allocations, for " + textureImages.getTextureImageCount() + " texture image uses.");
         createDescriptors(asset, cubemapImages, textureImages);
         textureImagesMap.put(asset.getId(), textureImages);
         return textureImages;
@@ -349,8 +346,7 @@ public class VulkanAssets implements Assets {
                 deviceMemory.allocateStagingBuffer(stagingSize);
                 for (SourceImageBufferInfo info : infos) {
                     ImageBufferList buffers = imageBufferUsage.getDynamicImageBuffers(info);
-                    ImageMemory imageMemory = (ImageMemory) createTextureMemory(deviceMemory, queue,
-                            ImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, info, buffers.getImageBuffers());
+                    ImageMemory imageMemory = (ImageMemory) createTextureMemory(deviceMemory, queue, ImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, info, buffers.getImageBuffers());
                     textureImages.addTextureMemory(imageMemory);
                     for (byte layer = 0; layer < buffers.getDynamicImageBufferCount(); layer++) {
                         DynamicImageBuffer buffer = buffers.getDynamicImageBuffer(layer);
@@ -687,8 +683,7 @@ public class VulkanAssets implements Assets {
     public TextureImages getTextureImages(RenderableScene asset) {
         TextureImages textureImages = textureImagesMap.get(asset.getId());
         if (textureImages == null) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + "Must create texture images first.");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Must create texture images first.");
         }
         return textureImages;
     }
@@ -700,8 +695,7 @@ public class VulkanAssets implements Assets {
         if (sampler == null) {
             float max = backend.getSelectedDevice().getProperties().getLimits().getMaxSamplerAnisotropy();
             float anisotropy = Settings.getInstance().getFloat(FloatProperties.MAX_ANISOTROPY, max);
-            sampler = createSampler(asset.getSampler(texture), 0f, imageMemory.getImage().getMipLevels(), 0f,
-                    anisotropy);
+            sampler = createSampler(asset.getSampler(texture), 0f, imageMemory.getImage().getMipLevels(), 0f, anisotropy);
             samplers.put(texture.getSamplerIndex(), sampler);
         }
         TextureDescriptor descriptor = createDescriptorImageInfo(imageMemory, type, mapping, sampler);
@@ -730,17 +724,13 @@ public class VulkanAssets implements Assets {
      * @param lodBias
      * @return
      */
-    private Sampler createSampler(org.gltfio.gltf2.JSONSampler glTFSampler, float minLod, float maxLod,
-            float lodBias, float anisotropy) {
+    private Sampler createSampler(org.gltfio.gltf2.JSONSampler glTFSampler, float minLod, float maxLod, float lodBias, float anisotropy) {
         Sampler sampler = null;
         SamplerCreateInfo create = null;
         GLFilter mag = GLFilter.get(glTFSampler.getMagFilter());
         GLFilter min = GLFilter.get(glTFSampler.getMinFilter());
-        create = new SamplerCreateInfo(mag.filter, min.filter, min.mipmapMode,
-                GLWrapMode.get(glTFSampler.getWrapS()).mode,
-                GLWrapMode.get(glTFSampler.getWrapT()).mode, minLod, maxLod, lodBias);
-        if (backend.getLogicalDevice().getFeatures().getPhysicalDeviceFeatures().samplerAnisotropy &&
-                (mag != GLFilter.GL_NEAREST || min != GLFilter.GL_NEAREST)) {
+        create = new SamplerCreateInfo(mag.filter, min.filter, min.mipmapMode, GLWrapMode.get(glTFSampler.getWrapS()).mode, GLWrapMode.get(glTFSampler.getWrapT()).mode, minLod, maxLod, lodBias);
+        if (backend.getLogicalDevice().getFeatures().getPhysicalDeviceFeatures().samplerAnisotropy && (mag != GLFilter.GL_NEAREST || min != GLFilter.GL_NEAREST)) {
             create.setMaxAnisotropy(anisotropy);
             Logger.d(getClass(), "SamplerAnisotropy set to " + anisotropy);
         } else {
