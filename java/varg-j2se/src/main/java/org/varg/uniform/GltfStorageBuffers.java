@@ -110,9 +110,9 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     public static final int ORM_INDEX = 0;
     public static final int SCALE_FACTORS_INDEX = 4;
     public static final int MATERIALCOLOR_INDEX = 8;
-    public static final int PROPERTIES_INDEX = 16;
+    public static final int LAYER_INDEX = 16;
     // Samplers uses SAMPLERS_DATA.length slots
-    public static final int TEXTURE_SAMPLERS_INDEX = 24;
+    public static final int TEXTURE_SAMPLERS_INDEX = 32;
     public static final int PADDING = 4;
     public static final int MATERIAL_DATA_SIZE_IN_BYTES = TEXTURE_SAMPLERS_INDEX * Short.BYTES + JSONMaterial.SAMPLERS_DATA_BYTELENGTH + PADDING;
 
@@ -345,12 +345,9 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             int startPos = destination.position();
             ShortBuffer buffer = destination.asShortBuffer();
             buffer.position(ORM_INDEX);
-            put(buffer, material.getOcclusionTextureInfo() != null ? material.getOcclusionTextureInfo().getStrength() : 1.0f);
-            put(buffer, pbr.getRoughnessFactor());
-            put(buffer, pbr.getMetallicFactor());
-            float fresnelPower = (environmentIOR - material.getIOR()) / (environmentIOR + material.getIOR());
-            fresnelPower = fresnelPower * fresnelPower;
-            put(buffer, fresnelPower);
+            // Just using orm so add a zero for padding
+            put(buffer, material.getOcclusionTextureInfo() != null ? material.getOcclusionTextureInfo().getStrength() : 1.0f,
+                    pbr.getRoughnessFactor(), pbr.getMetallicFactor(), 0.0f);
             Float emissiveStrength = material.getEmissiveStrength();
             float factor = emissiveStrength != null ? emissiveStrength : Settings.getInstance().getInt(BackendIntProperties.MAX_WHITE);
             put(buffer, material.getEmissive(factor, new float[3]));

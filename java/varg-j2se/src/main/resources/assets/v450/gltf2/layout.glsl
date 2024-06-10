@@ -28,17 +28,16 @@ layout (constant_id = 5) const int MATRIX_COUNT = 1;
 
 /**
  * This must be aligned with the data in glTF material 
- * Size of material struct must match alilgnment of the first datatype, for instance 16 bytes if it's a vec4, 8 bytes if it's a f16vec4
+ * Size of material struct must match alignment of the first datatype, for instance 16 bytes if it's a vec4, 8 bytes if it's a f16vec4
  */
 struct Material {
-    //occlusion, roughness, metallic
+    //occlusion, roughness, metallic, reflectionFactor (specular)
     f16vec4 orm;
     //emissive factor [RGB], normalscale
     f16vec4 scaleFactors;
     f16vec4[2] materialColor;
-    //absorbfactor, coatfactor, coatroughness, reflectionFactor
-    //metal F0, dielectric F0, coat metal F0, coat dielectric F0 
-    f16vec4[2] properties; 
+    f16vec4[2] layer;
+    f16vec4[2] layerFresnel;
     u8vec4[PBR_TEXTURE_COUNT] samplersData;
     u8vec4 padding;
 } material;
