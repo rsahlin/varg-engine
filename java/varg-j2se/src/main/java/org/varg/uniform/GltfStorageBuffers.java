@@ -106,6 +106,8 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
     public static final int COAT_FACTOR_INDEX = 6;
     public static final int COAT_NORMAL_INDEX = 7;
     public static final int COAT_ROUGHNESS_INDEX = 8;
+    public static final int SCATTERED_TRANSMISSION_INDEX = 9;
+    public static final int SCATTERED_TRANSMISSION_COLOR_INDEX = 10;
 
     public static final int ORM_INDEX = 0;
     public static final int SCALE_FACTORS_INDEX = 4;
@@ -354,7 +356,7 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
             put(buffer, material.getNormalTextureInfo() != null ? material.getNormalTextureInfo().getScale() : 1.0f);
             put(buffer, pbr.getBaseColorFactor());
             put(buffer, pbr.getReflectiveColor(new float[4]));
-            put(buffer, material.getProperties(environmentIOR));
+            put(buffer, material.getLayers(environmentIOR));
             // Store texcoord data
             destination.position(TEXTURE_SAMPLERS_INDEX * Short.BYTES + startPos);
             ByteBuffer buf = material.getSamplersData().position(0);

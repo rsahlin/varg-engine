@@ -66,8 +66,17 @@ float16_t F_SCHLICK(in float16_t u, in float16_t n) {
 float16_t getFresnelFactor(in float16_t R0, in float16_t NdotL) {
     return F_SCHLICK(max(F16_ZERO, NdotL), R0);
 }
+/**
+  * Only call if ndotl < 0 
+  */
+void scatteredTransmission(in float16_t ndotl,in float intensity) {
+    ndotl = abs(ndotl);
+    float16_t transmit = F16_ONE - getFresnelFactor(material.layerFresnel[0].x, ndotl);
+    brdf.colors[TRANSMITTED_COLOR_INDEX] += (transmit * brdf.orma.a * oneByTwoPi * material.layer[0].rgb) * intensity;
+    
+}
 
-void processPunctualLight(in vec3 lightDirection, in vec3 color, in float intensity, in float16_t solidAngle, in f16vec3 transmissionColor, in f16vec3 reflectionColor, in vec3 toView) {
+void processPunctualLight(in vec3 lightDirection, in vec3 color, in float intensity, in float16_t solidAngle, in f16vec4 transmissionColor, in f16vec3 reflectionColor, in vec3 toView) {
     float16_t a = brdf.orma.g * brdf.orma.g;
     float16_t gafView = float16_t(GA_SMITH(brdf.NdotV, a));
     brdf.NdotL = float16_t(dot(brdf.normal, -lightDirection));
@@ -75,7 +84,7 @@ void processPunctualLight(in vec3 lightDirection, in vec3 color, in float intens
     //Will be minor diff at normal incidence, can be fixed by upscaling the specularFactor in material
     float16_t tempf = getFresnelFactor(mix(material.layerFresnel[0].x, material.layerFresnel[0].y, brdf.orma.b), brdf.NdotL);
     float16_t oneMinusRP = F16_ONE - tempf;
-    float16_t RPower = mix(material.layer[0].y, F16_ONE, tempf) * tempf; 
+    float16_t RPower = mix(material.layerFresnel[0].z, F16_ONE, tempf) * tempf; 
     float16_t emitFactor = float16_t(1.0) - brdf.orma.a;
     //Using roughness root for reflected color will bring down "whiteness" for non smooth surfaces
     float16_t roughRoot = sqrt(brdf.orma.g);
@@ -101,12 +110,15 @@ void processPunctualLight(in vec3 lightDirection, in vec3 color, in float intens
         float coatndf = ND_SCHLICK(coatView , max(coatRoughness * coatRoughness, solidAngle));
         brdf.colors[REFLECTED_COLOR_INDEX] += CRPower * gaf * gafView * (coatndf * uniforms.brdfProperties.x) * (intensity * color);
         intensity -= CRPower;
+    } else {
+#if defined(SCATTEREDTRANSMIT)
+    scatteredTransmit    
+#endif
     }
     //Fresnel power now comes from the coat layer vs the material - based on coatfactor.
-        RPower = mix(RPower, mix(material.layerFresnel[1].y, material.layerFresnel[1].z, brdf.orma.b), coatFactor);
+    RPower = mix(RPower, mix(material.layerFresnel[1].y, material.layerFresnel[1].z, brdf.orma.b), coatFactor);
 #endif
 #endif
-
 
     if (brdf.NdotL >= F16_ZERO) {
         getPerPixelBRDFDirectional(lightDirection, toView);
@@ -133,13 +145,21 @@ void processPunctualLight(in vec3 lightDirection, in vec3 color, in float intens
         float absorb = oneMinusRP * brdf.orma.a;
         float reemit = (oneMinusRP - absorb) * RPower;
         float retransmit = reemit *  brdf.orma.a;
-        brdf.colors[TRANSMITTED_COLOR_INDEX] += gaf * (absorb + retransmit) * mix(oneByPI, oneByFourPi, brdf.orma.g) * intensity * (transmissionColor * color);
+        brdf.colors[TRANSMITTED_COLOR_INDEX] += gaf * (absorb + retransmit) * mix(oneByPI, oneByFourPi, brdf.orma.g) * intensity * (transmissionColor.rgb * color);
         brdf.colors[REFLECTED_COLOR_INDEX] += (RPower + (reemit - retransmit)) * gaf * gafView * (ndf * uniforms.brdfProperties.x) * mix(float16_t(1.0), float16_t(0.0), roughRoot) * reflectionColor * (intensity * color) ;
 #else
-        brdf.colors[TRANSMITTED_COLOR_INDEX] +=  gaf * emitFactor * (oneMinusRP * mix(oneByPI, oneByFourPi, brdf.orma.g)) * intensity * (transmissionColor * color);
+#ifdef MASK
+        //Treat as normal if alpha != 0
+        gaf *= transmissionColor.a;
+#endif
+        brdf.colors[TRANSMITTED_COLOR_INDEX] +=  gaf * emitFactor * (oneMinusRP * mix(oneByPI, oneByFourPi, brdf.orma.g)) * intensity * (transmissionColor.rgb * color);
         //The ndf will disperse the normal using some made up factor, to be correct the intensity shall be reduced by the increase in reflected area.
         //This is not known so use an inverse if the roughness and mix from 1.0 to zero - currently best guess.
         brdf.colors[REFLECTED_COLOR_INDEX] += (RPower * gaf * gafView * (ndf * uniforms.brdfProperties.x)) * mix(float16_t(1.0), float16_t(0.0), roughRoot) * reflectionColor * (intensity * color);
+#endif
+    } else {
+#if defined(SCATTEREDTRANSMIT)
+    scatteredTransmission(brdf.NdotL, intensity);
 #endif
     }
 }
@@ -162,7 +182,7 @@ vec4 brdf_main(in f16vec4 transmissionColor, in f16vec3 reflectionColor, in vec3
 #ifdef DIRECTIONAL
     for (int lightNumber = 0; lightNumber < DIRECTIONAL_LIGHT_COUNT; lightNumber++) {
         processPunctualLight(uniforms.directionallight[lightNumber].direction.xyz, uniforms.directionallight[lightNumber].color.rgb, uniforms.directionallight[lightNumber].color.a, 
-            uniforms.directionallight[lightNumber].property.x, transmissionColor.rgb, reflectionColor, toView);
+            uniforms.directionallight[lightNumber].property.x, transmissionColor, reflectionColor, toView);
     }
 #endif
 
@@ -172,7 +192,7 @@ vec4 brdf_main(in f16vec4 transmissionColor, in f16vec3 reflectionColor, in vec3
         vec3 pointDirection = normalize(toPoint);
         float intensity = uniforms.pointlight[lightNumber].color.a / pow(length(toPoint),2);
         processPunctualLight(pointDirection, uniforms.pointlight[lightNumber].color.rgb, intensity, 
-            uniforms.pointlight[lightNumber].property.x, transmissionColor.rgb, reflectionColor, toView);
+            uniforms.pointlight[lightNumber].property.x, transmissionColor, reflectionColor, toView);
     }
 #endif
 

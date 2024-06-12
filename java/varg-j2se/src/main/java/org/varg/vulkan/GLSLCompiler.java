@@ -383,6 +383,15 @@ public class GLSLCompiler {
         setAttributes(attributes, Shader.Stage.VERTEX);
         addMacro(alphaMode.name(), "1", Stage.FRAGMENT);
         setCoat(material, Stage.FRAGMENT);
+        setScatteredTransmission(material, Stage.FRAGMENT);
+    }
+
+    private void setScatteredTransmission(JSONMaterial material, Shader.Stage... stages) {
+        if (material.getScatteredTransmissionFactor() != null) {
+            if ((material.getTextureChannelsValue() & (Channel.SCATTERED_TRANSMISSION.value | Channel.SCATTERED_TRANSMISSION_COLOR.value)) == 0) {
+                addMacro("SCATTEREDTRANSMIT", "1", stages);
+            }
+        }
     }
 
     /**
@@ -394,7 +403,7 @@ public class GLSLCompiler {
     private void setCoat(JSONMaterial material, Shader.Stage... stages) {
         if (material.getClearcoatFactor() != null) {
             // Only set coat if no coat texturechannels are present.
-            if (material.getTextureInfo(Channel.COAT_NORMAL) == null && material.getTextureInfo(Channel.COAT_FACTOR) == null && material.getTextureInfo(Channel.COAT_ROUGHNESS) == null) {
+            if ((material.getTextureChannelsValue() & (Channel.COAT_NORMAL.value | Channel.COAT_FACTOR.value | Channel.COAT_ROUGHNESS.value)) == 0) {
                 addMacro("COAT", "1", stages);
             }
         }

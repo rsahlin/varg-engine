@@ -53,25 +53,25 @@ void getPerPixelBRDFDirectional(in vec3 lightDirection, in vec3 toView) {
  */
 void setupPBRMaterial() {
     brdf.orma.rgb = material.orm.rgb;
-    brdf.orma.a = material.layer[0].x;
+    brdf.orma.a = material.layer[0].a;
 }
 
 void setupPBRMaterial(in f16vec3 orm) {
     brdf.orma.rgb = orm;
-    brdf.orma.a = mix(material.layer[0].x, METAL_ABSORPTION, orm.b);
+    brdf.orma.a = mix(material.layer[0].a, METAL_ABSORPTION, orm.b);
 }
 
 
 void setupPBRMaterial(const float16_t occlusion) {
     brdf.orma.rgb = material.orm.rgb;
     brdf.orma.r = occlusion;
-    brdf.orma.a = material.layer[0].x;
+    brdf.orma.a = material.layer[0].a;
 }
 
 void setupPBRMaterial(const float16_t occlusion, in f16vec4 rm) {
     brdf.orma.r = occlusion;
     brdf.orma.gb = rm.gb;
-    brdf.orma.a = mix(material.layer[0].x, METAL_ABSORPTION, rm.b);
+    brdf.orma.a = mix(material.layer[0].a, METAL_ABSORPTION, rm.b);
 }
 
 
@@ -79,7 +79,7 @@ void setupPBRMaterial(in f16vec2 rm) {
     brdf.orma = material.orm;
     brdf.orma.g = rm.x;
     brdf.orma.b = rm.y;
-    brdf.orma.a = mix(material.layer[0].x, METAL_ABSORPTION, rm.y);
+    brdf.orma.a = mix(material.layer[0].a, METAL_ABSORPTION, rm.y);
     
 }
 

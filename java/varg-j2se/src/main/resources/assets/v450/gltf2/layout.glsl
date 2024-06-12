@@ -31,12 +31,14 @@ layout (constant_id = 5) const int MATRIX_COUNT = 1;
  * Size of material struct must match alignment of the first datatype, for instance 16 bytes if it's a vec4, 8 bytes if it's a f16vec4
  */
 struct Material {
-    //occlusion, roughness, metallic, reflectionFactor (specular)
+    //occlusion, roughness, metallic
     f16vec4 orm;
     //emissive factor [RGB], normalscale
     f16vec4 scaleFactors;
     f16vec4[2] materialColor;
+    //Layer 0 is the base layer
     f16vec4[2] layer;
+    //Layer 0 is the base layer
     f16vec4[2] layerFresnel;
     u8vec4[PBR_TEXTURE_COUNT] samplersData;
     u8vec4 padding;
