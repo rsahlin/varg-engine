@@ -34,7 +34,9 @@ import org.ktximageio.ktx.ImageHeader;
 import org.ktximageio.ktx.ImageReader.ColorSpace;
 import org.ktximageio.ktx.ImageReader.MimeFormat;
 import org.ktximageio.ktx.ImageUtils.ArrayToLinearRunnable;
+import org.ktximageio.ktx.ImageUtils.ArrayToLinearRunnableInt;
 import org.ktximageio.ktx.ImageUtils.ArrayToLinearRunnableShort;
+import org.ktximageio.ktx.IntArrayImageBuffer;
 import org.ktximageio.ktx.KTX.TextureType;
 import org.ktximageio.ktx.ShortArrayImageBuffer;
 import org.varg.BackendException;
@@ -568,15 +570,13 @@ public class VulkanAssets implements Assets {
         }
         try {
             String mime = image.getMimeType() != null ? image.getMimeType() : image.getUri();
-            org.ktximageio.ktx.ImageReader.MimeFormat format = org.ktximageio.ktx.ImageReader.MimeFormat
-                    .get(mime);
+            org.ktximageio.ktx.ImageReader.MimeFormat format = org.ktximageio.ktx.ImageReader.MimeFormat.get(mime);
             if (format == null) {
                 throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", no FileFormat for " + mime);
             }
             org.ktximageio.ktx.ImageReader reader = org.ktximageio.ktx.ImageReader.getImageReader(format);
             if (reader == null) {
-                throw new IllegalArgumentException(
-                        ErrorMessage.INVALID_VALUE.message + ", no ImageReader for " + format);
+                throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", no ImageReader for " + format);
             }
             ImageBuffer buffer = loadImage(asset, image, reader);
             return buffer;
@@ -591,7 +591,7 @@ public class VulkanAssets implements Assets {
         } else if (sourceImage instanceof ShortArrayImageBuffer) {
             toLinearJavaShort((ShortArrayImageBuffer) sourceImage, surfaceFormat);
         } else {
-            throw new IllegalArgumentException();
+            toLinearJavaInt((IntArrayImageBuffer) sourceImage, surfaceFormat);
         }
     }
 
@@ -602,6 +602,11 @@ public class VulkanAssets implements Assets {
 
     private void toLinearJavaShort(ShortArrayImageBuffer sourceImage, SurfaceFormat surfaceFormat) {
         short[] pixels = sourceImage.getAsShortArray();
+        toLinearFromSRGB(pixels);
+    }
+
+    private void toLinearJavaInt(IntArrayImageBuffer sourceImage, SurfaceFormat surfaceFormat) {
+        int[] pixels = sourceImage.getAsIntArray();
         toLinearFromSRGB(pixels);
     }
 
@@ -637,8 +642,28 @@ public class VulkanAssets implements Assets {
         Semaphore lock = new Semaphore(0);
         ArrayToLinearRunnable command = null;
         for (int i = 0; i < ts.threadCount; i++) {
-            command = i < ts.threadCount - 1 ? new ArrayToLinearRunnableShort(length, offset, resultData, lock)
-                    : new ArrayToLinearRunnableShort(resultData.length - i * length, offset, resultData, lock);
+            command = i < ts.threadCount - 1 ? new ArrayToLinearRunnableShort(length, offset, resultData, lock) : new ArrayToLinearRunnableShort(resultData.length - i * length, offset, resultData, lock);
+            offset += length;
+            ts.execute(command);
+        }
+        try {
+            lock.acquire(ts.threadCount);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * TODO - consider moving this to an image package
+     */
+    private static void toLinearFromSRGB(int[] resultData) {
+        ThreadService ts = ThreadService.getInstance();
+        int offset = 0;
+        int length = resultData.length / ts.threadCount;
+        Semaphore lock = new Semaphore(0);
+        ArrayToLinearRunnable command = null;
+        for (int i = 0; i < ts.threadCount; i++) {
+            command = i < ts.threadCount - 1 ? new ArrayToLinearRunnableInt(length, offset, resultData, lock) : new ArrayToLinearRunnableInt(resultData.length - i * length, offset, resultData, lock);
             offset += length;
             ts.execute(command);
         }
@@ -655,11 +680,8 @@ public class VulkanAssets implements Assets {
         ImageHeader header = null;
         if (image.getBufferView() != Constants.NO_VALUE) {
             header = reader.read(asset.getBufferView(image.getBufferView()).getReadByteBuffer(0));
-            Logger.d(getClass(),
-                    "Loading image from bufferview " + image.getBufferView() + " with buffer format "
-                            + header.getFormat() + ", using reader " + reader.getReaderName()
-                            + " for formats " + MimeFormat.toString(reader.getMime()) + " took "
-                            + (System.currentTimeMillis() - start) + " millis");
+            Logger.d(getClass(), "Loading image from bufferview " + image.getBufferView() + " with buffer format " + header.getFormat() + ", using reader " + reader.getReaderName() + " for formats " + MimeFormat.toString(reader.getMime())
+                    + " took " + (System.currentTimeMillis() - start) + " millis");
         } else {
             URI uri = URI.create(image.getUri());
             Path path = null;
