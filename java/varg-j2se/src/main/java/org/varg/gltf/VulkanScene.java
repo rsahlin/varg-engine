@@ -193,13 +193,10 @@ public class VulkanScene extends JSONScene implements VulkanRenderableScene {
             VulkanDrawCallBundle calls = new VulkanDrawCallBundle(memoryBuffers, deviceMemory, primitiveInstanceCount, GltfStorageBuffers.getUniformPrimitiveDataSize());
             calls.createDrawCalls(primitivesByPipeline, vertexBufferMap);
             IndirectDrawCalls[] dcs = calls.getAllDrawCalls();
-            Logger.d(getClass(), "Created " + dcs.length + " IndirectDrawCalls, for a total of "
-                    + getPrimitiveInstanceCount() + " primitives.");
+            Logger.d(getClass(), "Created " + dcs.length + " IndirectDrawCalls, for a total of " + getPrimitiveInstanceCount() + " primitives.");
             for (IndirectDrawCalls dc : dcs) {
-                Logger.d(getClass(), Integer.toString(dc.arrayInstanceCount) + " array instances, " + dc
-                        .getIndexedInstanceCount(IndexType.BYTE) + " byte indexinstances, "
-                        + dc.getIndexedInstanceCount(IndexType.SHORT) + " short indexinstances, "
-                        + dc.getIndexedInstanceCount(IndexType.INT) + " int indexinstances");
+                Logger.d(getClass(), Integer.toString(dc.arrayInstanceCount) + " array instances, " + dc.getIndexedInstanceCount(IndexType.BYTE) + " byte indexinstances, " + dc.getIndexedInstanceCount(IndexType.SHORT)
+                        + " short indexinstances, " + dc.getIndexedInstanceCount(IndexType.INT) + " int indexinstances");
             }
             this.drawCallBundle = calls;
         } else {

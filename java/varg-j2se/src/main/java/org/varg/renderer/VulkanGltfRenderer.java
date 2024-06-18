@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 import org.gltfio.gltf2.JSONCamera;
-import org.gltfio.gltf2.JSONNode;
-import org.gltfio.gltf2.JSONPrimitive.Attributes;
 import org.gltfio.gltf2.JSONTexture.ComponentMapping;
 import org.gltfio.gltf2.JSONTexture.ComponentSwizzle;
 import org.gltfio.lib.BitFlags;
@@ -25,7 +23,6 @@ import org.ktximageio.ktx.ImageReader.ImageFormat;
 import org.varg.assets.Assets;
 import org.varg.assets.VulkanAssets;
 import org.varg.gltf.VulkanMesh;
-import org.varg.gltf.VulkanPrimitive;
 import org.varg.pipeline.Pipelines;
 import org.varg.pipeline.Pipelines.DescriptorSetTarget;
 import org.varg.pipeline.Pipelines.SetType;
@@ -52,7 +49,6 @@ import org.varg.vulkan.Vulkan10.ImageAspectFlagBit;
 import org.varg.vulkan.Vulkan10.ImageLayout;
 import org.varg.vulkan.Vulkan10.ImageUsageFlagBits;
 import org.varg.vulkan.Vulkan10.ImageViewType;
-import org.varg.vulkan.Vulkan10.IndexType;
 import org.varg.vulkan.Vulkan10.MemoryPropertyFlagBit;
 import org.varg.vulkan.Vulkan10.PipelineBindPoint;
 import org.varg.vulkan.Vulkan10.PipelineStageFlagBit;
@@ -76,8 +72,6 @@ import org.varg.vulkan.image.ImageView;
 import org.varg.vulkan.image.ImageViewCreateInfo;
 import org.varg.vulkan.memory.DeviceMemory;
 import org.varg.vulkan.memory.ImageMemory;
-import org.varg.vulkan.memory.MemoryBuffer;
-import org.varg.vulkan.memory.VertexMemory;
 import org.varg.vulkan.pipeline.ComputePipeline;
 import org.varg.vulkan.pipeline.GraphicsPipeline;
 import org.varg.vulkan.renderpass.AttachmentDescription;
@@ -91,7 +85,6 @@ import org.varg.vulkan.structs.HDRMetadata;
 import org.varg.vulkan.structs.Rect2D;
 import org.varg.vulkan.structs.Semaphore;
 import org.varg.vulkan.structs.SemaphoreCreateInfo;
-import org.varg.vulkan.vertex.BindVertexBuffers;
 
 /**
  * Platform and render backend agnostic renderer - use this to implement renderer based on specific API such as Vulkan.
@@ -598,64 +591,6 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
             }
         }
         this.camera = camera;
-    }
-
-    @Override
-    public void render(JSONNode<VulkanMesh> node, DescriptorBuffers<?> uniforms, Queue renderQueue) {
-        if (node.getMeshIndex() >= 0) {
-            renderMesh(node, uniforms, renderQueue);
-        }
-        // Render children.
-        renderNodes(node.getChildNodes(), uniforms, renderQueue);
-        // mvpMatrices.pop(Matrices.MODEL);
-    }
-
-    private void renderNodes(JSONNode<VulkanMesh>[] children, DescriptorBuffers<?> uniforms, Queue renderQueue) {
-        if (children != null && children.length > 0) {
-            for (JSONNode<VulkanMesh> n : children) {
-                render(n, uniforms, renderQueue);
-            }
-        }
-    }
-
-    private void renderMesh(JSONNode<VulkanMesh> node, DescriptorBuffers<?> descriptorBuffers, Queue renderQueue) {
-        VulkanMesh mesh = node.getMesh();
-        if (mesh != null) {
-            VertexMemory vertexMemory = getAssets().getVertexBuffers(node);
-            VulkanPrimitive[] primitives = mesh.getPrimitives();
-            if (primitives != null) {
-                for (VulkanPrimitive p : primitives) {
-                    renderPrimitive(p, vertexMemory, descriptorBuffers, renderQueue);
-                }
-            }
-        }
-
-    }
-
-    private void renderPrimitive(VulkanPrimitive primitive, VertexMemory vertexMemory,
-            DescriptorBuffers<?> descriptorBuffers, Queue renderQueue) {
-        // TODO - optimize for small number of pipelines, one pipeline per model would be best.
-        int hash = primitive.getPipelineHash();
-        if (boundPipelineHash != hash) {
-            GraphicsPipeline pipeline = pipelineManager.getPipeline(primitive.getPipelineHash());
-            renderQueue.cmdBindPipeline(pipeline, PipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS);
-            boundPipelineHash = hash;
-        }
-        BindVertexBuffers bindBuffers = primitive.getBindBuffers();
-        renderQueue.cmdBindVertexBuffers(bindBuffers.firstBinding, bindBuffers.getBuffers(), bindBuffers.getOffsets());
-        MemoryBuffer indices = primitive.getIndicesBuffer();
-        int count = primitive.getDrawCount();
-        if (indices != null) {
-            long buffer = indices.getPointer();
-            IndexType type = GltfUtils.getFromGltfType(primitive.getIndicesType());
-            renderQueue.cmdBindIndexBuffer(buffer, primitive.getIndicesOffset(), type);
-            renderQueue.cmdDrawIndexed(count, 1, 0, 0, primitive.getStreamVertexIndex());
-            renderLogger.logIndexedDraw(count);
-        } else {
-            count = primitive.getAccessor(Attributes.POSITION).getCount();
-            renderQueue.cmdDraw(count, 1, 0, primitive.getStreamVertexIndex());
-            renderLogger.logArrayDraw(count);
-        }
     }
 
     @Override

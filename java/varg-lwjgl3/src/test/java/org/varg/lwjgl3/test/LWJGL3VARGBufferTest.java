@@ -20,31 +20,21 @@ public class LWJGL3VARGBufferTest extends LWJGLBaseTest {
     }
 
     public static void main(String[] args) {
-        System.setProperty(FilesystemProperties.JAVA_TARGET_DIRECTORY.getKey(), "target/test-classes");
-        System.setProperty(FilesystemProperties.SOURCE_DIRECTORY.getKey(), "src/test");
+        System.setProperty(FilesystemProperties.JAVA_TARGET_DIRECTORY.getKey(), "target/classes");
+        System.setProperty(FilesystemProperties.SOURCE_DIRECTORY.getKey(), "src/main");
         Settings.getInstance().setProperty(BackendStringProperties.UNIFORM_USAGE, "VK_BUFFER_USAGE_TRANSFER_SRC_BIT");
         Settings.getInstance().setProperty(BackendStringProperties.VERTEX_USAGE, "VK_BUFFER_USAGE_TRANSFER_SRC_BIT");
+        Settings.getInstance().setProperty(BackendStringProperties.COLORSPACE, "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
+        Settings.getInstance().setProperty(BackendStringProperties.SURFACE_FORMAT, "8888_UNORM");
 
         LWJGL3VARGBufferTest varg = new LWJGL3VARGBufferTest(args, Renderers.VULKAN13, "Varg Buffer Test");
         varg.createApp();
         varg.run();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    protected void init() {
-        try {
-            createDescriptorPool(10, 0, 0, 10);
-            loadGltfAsset("assets/", "gltf/WaterBottle/WaterBottle.gltf");
-
-            getRenderer().setCamera(loadedAsset.getCamera(0));
-            startConsoleInput();
-            setInitialized();
-            getRenderer().getSwapBuffer().setClearValue(1, 0, 0, 1);
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-
+    protected String getDefaultModelName() {
+        return "gltf/OrientationTest.glb";
     }
 
     @Override

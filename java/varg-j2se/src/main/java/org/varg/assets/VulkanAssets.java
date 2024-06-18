@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
 import org.eclipse.jdt.annotation.NonNull;
-import org.gltfio.gltf2.JSONBuffer;
-import org.gltfio.gltf2.JSONBufferView;
 import org.gltfio.gltf2.JSONImage;
 import org.gltfio.gltf2.JSONNode;
 import org.gltfio.gltf2.JSONTexture;
@@ -39,7 +37,6 @@ import org.ktximageio.ktx.ImageUtils.ArrayToLinearRunnableShort;
 import org.ktximageio.ktx.IntArrayImageBuffer;
 import org.ktximageio.ktx.KTX.TextureType;
 import org.ktximageio.ktx.ShortArrayImageBuffer;
-import org.varg.BackendException;
 import org.varg.assets.ImageBufferUsage.DynamicImageBuffer;
 import org.varg.assets.ImageBufferUsage.ImageBufferList;
 import org.varg.assets.SourceImages.SourceImageBufferInfo;
@@ -85,7 +82,6 @@ import org.varg.vulkan.memory.ImageMemory;
 import org.varg.vulkan.memory.Memory;
 import org.varg.vulkan.memory.MemoryBuffer;
 import org.varg.vulkan.memory.VertexMemory;
-import org.varg.vulkan.memory.VertexMemory.Mode;
 import org.varg.vulkan.structs.Extent3D;
 import org.varg.vulkan.structs.FormatProperties;
 import org.varg.vulkan.structs.Sampler;
@@ -128,9 +124,7 @@ public class VulkanAssets implements Assets {
         private final int index;
         private final Semaphore semaphore;
 
-        private ImageLoadRunnable(Assets assetHandler,
-                ImageBuffer[] imgBuffers, ColorSpace[] sCSpace, int i, Semaphore sem,
-                RenderableScene a, JSONImage img) {
+        private ImageLoadRunnable(Assets assetHandler, ImageBuffer[] imgBuffers, ColorSpace[] sCSpace, int i, Semaphore sem, RenderableScene a, JSONImage img) {
             assets = assetHandler;
             asset = a;
             image = img;
@@ -187,11 +181,9 @@ public class VulkanAssets implements Assets {
     @Override
     public void loadSourceImages(RenderableScene asset) throws IOException {
         if (sourceImages.get(asset, TextureType.TYPE_2D) != null) {
-            throw new IllegalStateException(
-                    ErrorMessage.INVALID_STATE.message + ", already loaded images for glTF " + asset.getId());
+            throw new IllegalStateException(ErrorMessage.INVALID_STATE.message + ", already loaded images for glTF " + asset.getId());
         }
-        sourceImages.add(asset, loadImages(asset, (KHREnvironmentMap) asset.getExtension(
-                ExtensionTypes.KHR_environment_map)));
+        sourceImages.add(asset, loadImages(asset, (KHREnvironmentMap) asset.getExtension(ExtensionTypes.KHR_environment_map)));
     }
 
     private VulkanImageBuffer[] loadImages(RenderableScene asset, KHREnvironmentMap extension) {
@@ -201,13 +193,10 @@ public class VulkanAssets implements Assets {
             for (int i = 0; i < loadedImages.length; i++) {
                 if (extension.referencesImage(i)) {
                     if (loadedImages[i].sourceImageBuffer.faceCount != 6) {
-                        throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                                + "Source image is not cubemap. Facecount = "
-                                + loadedImages[i].sourceImageBuffer.faceCount);
+                        throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Source image is not cubemap. Facecount = " + loadedImages[i].sourceImageBuffer.faceCount);
                     }
                     // Set miplevels in environmentmap so that it can be uploaded to uniform storage
-                    int mipLevels = environmentMaps[0].calculateMipLevels(loadedImages[i].sourceImageBuffer.width,
-                            loadedImages[i].sourceImageBuffer.height);
+                    int mipLevels = environmentMaps[0].calculateMipLevels(loadedImages[i].sourceImageBuffer.width, loadedImages[i].sourceImageBuffer.height);
                     // Set miplevels in vulkanimagebuffer so texture is created with that number of miplevels
                     loadedImages[i].setMipLevels(mipLevels);
                     extension.getCubemap(0).setSize(loadedImages[i].getInfo().width);
@@ -233,8 +222,7 @@ public class VulkanAssets implements Assets {
             java.util.concurrent.Semaphore lock = new java.util.concurrent.Semaphore(0);
             int index = 0;
             for (JSONImage image : images) {
-                ImageLoadRunnable loader = new ImageLoadRunnable(this, imageBuffers, colorSpace, index++, lock, asset,
-                        image);
+                ImageLoadRunnable loader = new ImageLoadRunnable(this, imageBuffers, colorSpace, index++, lock, asset, image);
                 ThreadService.getInstance().execute(loader);
             }
             try {
@@ -245,19 +233,16 @@ public class VulkanAssets implements Assets {
             // Check if loading of source image failed.
             for (ImageBuffer ib : imageBuffers) {
                 if (ib == null) {
-                    throw new RuntimeException(
-                            ErrorMessage.FAILED_WITH_ERROR.message + " Could not load image, check log for details.");
+                    throw new RuntimeException(ErrorMessage.FAILED_WITH_ERROR.message + " Could not load image, check log for details.");
                 }
             }
-            Logger.d(getClass(),
-                    "Loaded " + images.length + " images in " + (System.currentTimeMillis() - start) + " millis");
+            Logger.d(getClass(), "Loaded " + images.length + " images in " + (System.currentTimeMillis() - start) + " millis");
             return toVulkanBuffers(asset, imageBuffers, colorSpace, images);
         }
         return null;
     }
 
-    private VulkanImageBuffer[] toVulkanBuffers(RenderableScene asset, ImageBuffer[] imageBuffers,
-            ColorSpace[] colorSpace, JSONImage[] srcImages) {
+    private VulkanImageBuffer[] toVulkanBuffers(RenderableScene asset, ImageBuffer[] imageBuffers, ColorSpace[] colorSpace, JSONImage[] srcImages) {
         // Check colorspace of the source and make sure source is SRGB where relevant, target texture format
         // shall always be linear.
         long start = System.currentTimeMillis();
@@ -267,12 +252,10 @@ public class VulkanAssets implements Assets {
             // Check if pq is used - then use gamma 2.8 instead of 2.4
             Vulkan10.Format textureFormat = deviceMemory.getMemoryFormat(imageBuffers[i]);
             if (colorSpace[i] == ColorSpace.SRGB) {
-                Logger.d(getClass(), "Image source colorspace is sRGB - converting to linear "
-                        + surfaceFormat.getColorSpace());
+                Logger.d(getClass(), "Image source colorspace is sRGB - converting to linear " + surfaceFormat.getColorSpace());
                 toLinearJava(imageBuffers[i], surfaceFormat);
             }
-            vulkanImageBuffers[i] = new VulkanImageBuffer(imageBuffers[i], textureFormat,
-                    srcImages[i].getSourceId());
+            vulkanImageBuffers[i] = new VulkanImageBuffer(imageBuffers[i], textureFormat, srcImages[i].getSourceId());
         }
         Logger.d(getClass(), "Converting images took " + (System.currentTimeMillis() - start) + " millis");
         return vulkanImageBuffers;
@@ -764,51 +747,6 @@ public class VulkanAssets implements Assets {
     }
 
     @Override
-    public VertexMemory createVertexBuffers(Mode mode, RenderableScene glTF)
-            throws BackendException {
-        VertexMemory vertexBuffers = vertexBuffersMap.get(glTF.getId());
-        if (vertexBuffers != null) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + "Already created buffers for glTF id " + glTF.getId());
-        }
-        vertexBuffers = createVertexBufferMemory(mode, deviceMemory, glTF.getBufferViews());
-        vertexBuffersMap.put(glTF.getId(), vertexBuffers);
-        return vertexBuffers;
-    }
-
-    @Override
-    public VertexMemory createVertexBuffers(RenderableScene glTF, JSONBuffer[] indexBuffers,
-            JSONBuffer[] vertexBuffers) {
-        VertexMemory vertexMem = vertexBuffersMap.get(glTF.getId());
-        if (vertexMem != null) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + "Already created buffers for glTF id " + glTF.getId());
-        }
-        vertexMem = createVertexBufferMemory(deviceMemory, indexBuffers, vertexBuffers);
-        vertexBuffersMap.put(glTF.getId(), vertexMem);
-        return vertexMem;
-
-    }
-
-    @Override
-    public void updateVertexBuffers(RenderableScene glTF) {
-        VertexMemory vertexMemory = getVertexBuffers(glTF);
-        MemoryBuffer[] buffers = vertexMemory.getMemoryBuffers();
-        ByteBuffer[] byteBuffers = vertexMemory.getBuffers();
-        switch (vertexMemory.getMode()) {
-            case BUFFERVIEWS:
-                deviceMemory.updateBuffers(byteBuffers, buffers, queue);
-                break;
-            case BUFFERS:
-                deviceMemory.updateBuffers(vertexMemory.getBuffers(), buffers, queue);
-                deviceMemory.updateBuffers(vertexMemory.getIndexBuffers(), vertexMemory.getIndexMemoryBuffers(), queue);
-                break;
-            default:
-                throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", " + vertexMemory.getMode());
-        }
-    }
-
-    @Override
     public void updateVertexBuffers(VertexMemory... vertexBuffers) {
         queue.queueBegin();
         for (VertexMemory vm : vertexBuffers) {
@@ -818,50 +756,8 @@ public class VulkanAssets implements Assets {
     }
 
     @Override
-    public void deleteVertexBuffers(RenderableScene glTF) {
-        VertexMemory vertexMemory = getVertexBuffers(glTF);
-        if (vertexMemory == null) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + "No vertexbuffers for glTF id " + glTF.getId());
-        }
-        deviceMemory.freeBuffer(vertexMemory.getMemoryBuffers());
-        vertexBuffersMap.remove(glTF.getId());
-    }
-
-    /**
-     * Creates the vertex buffers needed for the BufferView object in the model.
-     * Resulting array will match BufferView array - index will be the same as the index for the bufferview.
-     * 
-     * @param mode
-     * @param memory
-     * @param glTF
-     * @return
-     */
-    private VertexMemory createVertexBufferMemory(Mode mode, DeviceMemory memory, JSONBufferView... buffers) {
-        BufferUsageFlagBit[] usageFlags = VulkanBackend.getBufferUsage(BackendStringProperties.VERTEX_USAGE,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-        int bufferUsage = BitFlags.getFlagsValue(usageFlags);
-        return memory.allocateVertexMemory(mode, bufferUsage, buffers);
-    }
-
-    private VertexMemory createVertexBufferMemory(DeviceMemory memory, JSONBuffer[] indexBuffers,
-            JSONBuffer[] vertexBuffers) {
-        BufferUsageFlagBit[] usageFlags = VulkanBackend.getBufferUsage(BackendStringProperties.VERTEX_USAGE,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-        int usage = BitFlags.getFlagsValue(usageFlags);
-        return memory.allocateVertexMemory(usage, indexBuffers, vertexBuffers);
-    }
-
-    @Override
     public VertexMemory getVertexBuffers(JSONNode node) {
         return vertexBuffersMap.get(node.getRoot().getId());
-    }
-
-    @Override
-    public VertexMemory getVertexBuffers(RenderableScene glTF) {
-        return vertexBuffersMap.get(glTF.getId());
     }
 
     @Override
@@ -880,8 +776,7 @@ public class VulkanAssets implements Assets {
         addStorageBuffers(info.shaderType, buffers);
     }
 
-    private void createStorageBuffers(DescriptorSetTarget[] targets, int[] bufferSizes, int[] dynamicOffsets,
-            DescriptorBuffers<?> buffers) {
+    private void createStorageBuffers(DescriptorSetTarget[] targets, int[] bufferSizes, int[] dynamicOffsets, DescriptorBuffers<?> buffers) {
         targets = DescriptorSetTarget.sortBySet(targets);
         MemoryBuffer[] bufferList = new MemoryBuffer[targets.length];
         int[] offsets = new int[targets.length];

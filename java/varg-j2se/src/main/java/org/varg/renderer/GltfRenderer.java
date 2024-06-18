@@ -155,16 +155,6 @@ public interface GltfRenderer<R extends RenderableScene, M extends JSONMesh<?>> 
     void render(R root, Queue queue, DescriptorBuffers<?> descriptorBuffers);
 
     /**
-     * Submits a node to be rendered using the current mvp matrix, will call children recursively.
-     * 
-     * @param node The node to be rendered
-     * @param descriptorBuffers The bound buffers
-     * @param queue The queue to record render commands on
-     */
-    @Deprecated
-    void render(JSONNode<M> node, DescriptorBuffers<?> descriptorBuffers, Queue queue);
-
-    /**
      * Signals the end of a frame - rendering is considered to be finished, the current image shall be displayed
      * and rendering synchronized.
      * 

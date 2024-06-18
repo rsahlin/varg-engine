@@ -218,7 +218,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
             VulkanStreamingScene scene = (VulkanStreamingScene) loadedAsset.getScene(0);
             getRenderer().getQueue().queueBegin();
             if (!prepareAsset(scene)) {
-                getRenderer().getAssets().updateVertexBuffers(scene);
+                // getRenderer().getAssets().updateVertexBuffers(scene);
                 DescriptorBuffers<?> buffers = getRenderer().getAssets().getStorageBuffers(GraphicsShaderType.GLTF2);
                 Extent2D displaySize = getRenderer().getBackend().getKHRSwapchain().getExtent();
                 buffers.setStaticStorage(scene, getRenderer());

@@ -265,8 +265,7 @@ public class GLSLCompiler {
     public static GLSLCompiler getInstance(Renderers version) {
         GLSLCompiler compiler = compilerTable.get(version);
         if (compiler == null) {
-            compiler = new GLSLCompiler(ShaderCompiler.get(Settings.getInstance().getProperty(
-                    CompilerProperties.GLSL_COMPILER)));
+            compiler = new GLSLCompiler(ShaderCompiler.get(Settings.getInstance().getProperty(CompilerProperties.GLSL_COMPILER)));
             compiler.glslcSetCompileString(version);
             compilerTable.put(version, compiler);
         }
@@ -286,15 +285,10 @@ public class GLSLCompiler {
     private void glslcSetCompileString(Renderers version) {
         switch (compiler) {
             case SHADERC:
-                compileString =
-                        GLSLC_COMPILE_COMMAND + " " + GLSLC_TARGET_COMMAND + version.toString() + " "
-                                + GLSLC_PREPROCESS_COMMAND
-                                + " "
-                                + GLSLC_OPTIMIZE_COMMAND;
+                compileString = GLSLC_COMPILE_COMMAND + " " + GLSLC_TARGET_COMMAND + version.toString() + " " + GLSLC_PREPROCESS_COMMAND + " " + GLSLC_OPTIMIZE_COMMAND;
                 break;
             case GLSLANG:
-                compileString =
-                        GLSLANG_COMPILE_COMMAND + " " + GLSLANG_TARGET_COMMAND + version.toString();
+                compileString = GLSLANG_COMPILE_COMMAND + " " + GLSLANG_TARGET_COMMAND + version.toString();
                 break;
             default:
                 throw new IllegalArgumentException();
@@ -566,14 +560,12 @@ public class GLSLCompiler {
      * @throws IOException
      * @throws IllegalArgumentException If macros has not been set before calling this method.
      */
-    public synchronized SpirvBinary compileStage(String sourcePath, String sourceName, Stage stage, String destinationPath, String outputHash)
-            throws IOException {
+    public synchronized SpirvBinary compileStage(String sourcePath, String sourceName, Stage stage, String destinationPath, String outputHash) throws IOException {
         String sourceInput = sourcePath + sourceName + "." + stage.stage;
         buffer.clear();
         String resourceDirectory;
         try {
-            resourceDirectory =
-                    GLSLCompiler.getCompileFolderPath(sourcePath);
+            resourceDirectory = GLSLCompiler.getCompileFolderPath(sourcePath);
             boolean isJar = false;
             // if (FileUtils.getInstance().isJAR(sourceInput, module)) {
             if (isJar) {
@@ -615,8 +607,7 @@ public class GLSLCompiler {
         // This is a fix to make resource folder lookup work - TODO make into setting/property that can
         // be configured.
         String module = "vargj2se";
-        return FileUtils.getInstance().getResourcePath(sourcePath, SHADER_JAVA_TARGET_DIRECTORY,
-                SHADER_SOURCE_DIRECTORY, module);
+        return FileUtils.getInstance().getResourcePath(sourcePath, SHADER_JAVA_TARGET_DIRECTORY, SHADER_SOURCE_DIRECTORY, module);
 
     }
 

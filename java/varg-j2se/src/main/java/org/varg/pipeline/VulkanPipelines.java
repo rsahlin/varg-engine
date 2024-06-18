@@ -7,7 +7,6 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.gltfio.gltf2.JSONGltf;
 import org.gltfio.gltf2.JSONMaterial.AlphaMode;
 import org.gltfio.gltf2.JSONPrimitive.DrawMode;
 import org.gltfio.gltf2.RenderableScene;
@@ -109,7 +108,6 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     private final GltfRenderer<VulkanRenderableScene, VulkanMesh> renderer;
 
     HashMap<Integer, MemoryBuffer[]> vertexBuffersMap = new HashMap<Integer, MemoryBuffer[]>();
-    private ArrayList<PrimitiveVertexInputState> inputStates = new ArrayList<PrimitiveVertexInputState>();
 
     private Descriptors descriptors = new Descriptors();
     // DO NOT ACCESS DIRECTLY, use get and put methods
@@ -214,11 +212,9 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     }
 
     @Override
-    public ComputeShader createComputePipelines(ComputeShaderCreateInfo shaderInfo, StorageBuffers buffers)
-            throws BackendException {
+    public ComputeShader createComputePipelines(ComputeShaderCreateInfo shaderInfo, StorageBuffers buffers) throws BackendException {
         long start = System.currentTimeMillis();
         Subtype shaderType = shaderInfo.shaderType;
-
         if (buffers != null) {
             createDescriptorSetLayouts(buffers, shaderType.getTargets());
             createDescriptorSets(shaderType.getTargets());
@@ -287,6 +283,8 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
                     compiler.setMacros(dc.getAttributes(), dc.getAlphaMode(), dc.getMaterial());
                     compiler.setMacros(BaseShaderImplementation.ShaderProperties.values());
                     pipelineByHash.put(dc.getPipelineHash(), createGraphicsPipeline(glTF, dc, info, specializationInfo));
+                } else {
+                    Logger.d(getClass(), "Using existing graphics pipeline for hash: " + dc.getPipelineHash());
                 }
             }
             updateTextureDescriptorSets(textureImages, SamplerType.sampler2DArray);
@@ -391,10 +389,11 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     }
 
     @Override
-    public void deleteGraphicsPipelines(JSONGltf glTF) {
-        freeDescriptorSets(GltfDescriptorSetTarget.MATERIAL_TEXTURE);
-        deleteDescriptorLayout(GltfDescriptorSetTarget.MATERIAL_TEXTURE);
-        inputStates.clear();
+    public void deleteDescriptorSets() {
+        for (GltfDescriptorSetTarget target : GltfDescriptorSetTarget.values()) {
+            freeDescriptorSets(target);
+            deleteDescriptorLayout(target);
+        }
     }
 
     private void createDescriptorSets(DescriptorSetTarget... targets) {

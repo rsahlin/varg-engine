@@ -382,8 +382,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             shaderInfo = new Gltf2GraphicsShaderCreateInfo(asset, renderer.getVersion(), GraphicsShaderType.GLTF2, null);
             int vsr = Settings.getInstance().getInt(BackendIntProperties.FRAGMENTSIZE);
             if (vsr > 1) {
-                shaderInfo.setFragmentShadingRate(new PipelineFragmentShadingRateStateCreateInfoKHR(
-                        vsr, vsr));
+                shaderInfo.setFragmentShadingRate(new PipelineFragmentShadingRateStateCreateInfoKHR(vsr, vsr));
             }
             GltfStorageBuffers buffers = new GltfStorageBuffers(textureImages);
             renderer.getAssets().createStorageBuffers(shaderInfo, shaderInfo, buffers);
@@ -447,6 +446,7 @@ public abstract class LWJGL3Application extends J2SEWindowApplication implements
             s.freeVertexMemory(renderer.getBufferFactory());
             s.getRoot().destroy();
             s.destroy();
+            renderer.getPipelines().deleteDescriptorSets();
         }
         renderer.getBufferFactory().logMemory();
     }

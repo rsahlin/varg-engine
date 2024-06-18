@@ -203,9 +203,9 @@ public interface Pipelines<A extends RenderableScene> {
     RayTracingShader createRayTracingPipeline(RayTracingCreateInfo shaderInfo) throws BackendException;
 
     /**
-     * Deletes all created graphicspipelines
+     * Deletes the created and allocated descriptorsets
      */
-    void deleteGraphicsPipelines(@NonNull JSONGltf glTF);
+    void deleteDescriptorSets();
 
     /**
      * Binds the descriptorsets for the target

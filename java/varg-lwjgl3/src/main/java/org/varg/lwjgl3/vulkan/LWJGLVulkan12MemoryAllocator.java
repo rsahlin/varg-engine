@@ -192,8 +192,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
             if (buffer != null) {
                 bound = buffer.getBoundMemory();
                 if (bound.pointer != buffer.getBoundMemory().pointer) {
-                    throw new IllegalArgumentException(
-                            ErrorMessage.INVALID_VALUE.message + "Different memory pointers");
+                    throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Different memory pointers");
                 }
                 unbindBuffer(buffer);
                 if (bound != null && memoryAllocations.contains(bound)) {
@@ -615,17 +614,14 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
     }
 
     @Override
-    public MemoryBuffer copyFromDeviceMemory(Image image, ImageAspectFlagBit flagBit, ImageSubresourceLayers subLayers,
-            Queue queue) {
-
+    public MemoryBuffer copyFromDeviceMemory(Image image, ImageAspectFlagBit flagBit, ImageSubresourceLayers subLayers, Queue queue) {
         // Size of mip 0
         int divisor = subLayers.mipLevel == 0 ? 1 : 4 * subLayers.mipLevel;
         SubresourceLayout subLayout = image.getSubresourceLayout();
         if (subLayout == null) {
             subLayout = LWJGL3Vulkan12Backend.getSubresourceLayout(deviceInstance, image.pointer);
         }
-        long byteSize = subLayout.rowPitch != 0 ? subLayout.rowPitch * image.getExtent().height : image
-                .getSubresourceLayout().size;
+        long byteSize = subLayout.rowPitch != 0 ? subLayout.rowPitch * image.getExtent().height : subLayout.size;
         int size = (int) (byteSize / divisor);
 
         MemoryBuffer tempMemory = createStagingBuffer(size, BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT.value);

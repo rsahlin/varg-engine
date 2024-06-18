@@ -3,14 +3,12 @@ package org.varg.assets;
 import java.io.IOException;
 
 import org.eclipse.jdt.annotation.NonNull;
-import org.gltfio.gltf2.JSONBuffer;
 import org.gltfio.gltf2.JSONImage;
 import org.gltfio.gltf2.JSONNode;
 import org.gltfio.gltf2.JSONTexture;
 import org.gltfio.gltf2.JSONTexture.ComponentMapping;
-import org.ktximageio.ktx.ImageBuffer;
 import org.gltfio.gltf2.RenderableScene;
-import org.varg.BackendException;
+import org.ktximageio.ktx.ImageBuffer;
 import org.varg.assets.SourceImages.SourceImageBufferInfo;
 import org.varg.assets.SourceImages.VulkanImageBuffer;
 import org.varg.shader.Shader.StorageBufferConsumer;
@@ -24,7 +22,6 @@ import org.varg.vulkan.image.ImageCreateInfo;
 import org.varg.vulkan.memory.DeviceMemory;
 import org.varg.vulkan.memory.ImageMemory;
 import org.varg.vulkan.memory.VertexMemory;
-import org.varg.vulkan.memory.VertexMemory.Mode;
 
 /**
  * Handles loading and tracking of glTF assets such as textures and images,
@@ -174,50 +171,6 @@ public interface Assets {
     void deleteTextureMemory(DeviceMemory memoryAllocator, TextureMemory textureMemory);
 
     /**
-     * Creates the vertex buffers as needed for rendering the model
-     * This will allocate buffer memory - this shall not upload data or create any layout specific objects.
-     * 
-     * @param mode
-     * @param glTF
-     * @throws BackendException
-     * @throws IllegalArgumentException If vertexbuffers already have been created
-     */
-    @Deprecated
-    VertexMemory createVertexBuffers(Mode mode, RenderableScene glTF) throws BackendException;
-
-    /**
-     * Creates the vertex buffer memory for the buffers and attributes, array sizes must match and may have null
-     * elements
-     * 
-     * @param indicesBuffers Array of buffers with indices - byte, short and int
-     * @param vertexBuffers Array of vertex attributes - must match VertexAttribute order
-     * @param attributes
-     * @return
-     */
-    @Deprecated
-    VertexMemory createVertexBuffers(RenderableScene glTF, JSONBuffer[] indicesBuffers,
-            JSONBuffer[] vertexBuffers);
-
-    /**
-     * Deletes the vertex buffers for the glTF asset
-     * 
-     * @param glTF
-     * @throws IllegalArgumentException If vertexbuffers have not bee created or already deleted
-     */
-    @Deprecated
-    void deleteVertexBuffers(RenderableScene glTF);
-
-    /**
-     * Updates the vertex buffers for the glTF model to allocated memory by copying the data in all BufferViews
-     * to allocated memory
-     * 
-     * @param glTF
-     * @throws IllegalArgumentException If vertexbuffers has not been created by calling #createVertexBuffers()
-     */
-    @Deprecated
-    void updateVertexBuffers(RenderableScene glTF);
-
-    /**
      * Updates the vertexbuffers to device, including indexbuffers if specified.
      * 
      * @param vertexBuffers
@@ -231,14 +184,6 @@ public interface Assets {
      * @return The vertex buffers or null
      */
     VertexMemory getVertexBuffers(@NonNull JSONNode node);
-
-    /**
-     * Returns the vertex buffers for the glTF asset
-     * 
-     * @param glTF
-     * @return The vertex buffers or null
-     */
-    VertexMemory getVertexBuffers(@NonNull RenderableScene glTF);
 
     /**
      * Creates the storagebuffers for the consumer and adds using the createinfo subtype.
