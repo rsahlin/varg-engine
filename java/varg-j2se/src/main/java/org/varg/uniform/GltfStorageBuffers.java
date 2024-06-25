@@ -22,6 +22,7 @@ import org.gltfio.gltf2.extensions.GltfExtensions.ExtensionTypes;
 import org.gltfio.gltf2.extensions.KHREnvironmentMap.KHREnvironmentMapReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.KHRLightsPunctualReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.Light;
+import org.gltfio.lib.Constants;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.Logger;
 import org.gltfio.lib.Matrix;
@@ -566,7 +567,13 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
         JSONNode parent = node.getParent();
         if (parent != null) {
             BindBuffer matrixBuffer = getBuffer(GltfDescriptorSetTarget.MATRIX);
-            matrixBuffer.getFloatData(parent.getMatrixIndex() * Matrix.MATRIX_ELEMENTS, matrix);
+            // Check if parent node is part of render (matrix) tree
+            int parentMatrixIndex = parent.getMatrixIndex();
+            if (parentMatrixIndex != Constants.NO_VALUE) {
+                matrixBuffer.getFloatData(parent.getMatrixIndex() * Matrix.MATRIX_ELEMENTS, matrix);
+            } else {
+                MatrixUtils.copy(parent.getTransform().updateMatrix(), 0, matrix, 0);
+            }
         } else {
             MatrixUtils.setIdentity(matrix, 0);
         }
