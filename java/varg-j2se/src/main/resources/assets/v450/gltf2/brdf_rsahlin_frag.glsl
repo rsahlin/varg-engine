@@ -192,7 +192,7 @@ vec4 brdf_main(in f16vec4 transmissionColor, in f16vec3 reflectionColor, in vec3
         vec3 pointDirection = normalize(toPoint);
         float intensity = uniforms.pointlight[lightNumber].color.a / pow(length(toPoint),2);
         processPunctualLight(pointDirection, uniforms.pointlight[lightNumber].color.rgb, intensity, 
-            uniforms.pointlight[lightNumber].property.x, transmissionColor, reflectionColor, toView);
+        uniforms.pointlight[lightNumber].property.x, transmissionColor, reflectionColor, toView);
     }
 #endif
 
@@ -275,12 +275,26 @@ vec4 brdf_main(in f16vec4 transmissionColor, in f16vec3 reflectionColor, in vec3
  * This is simply an approximation of the light that would hit the viewer from the emissive material.
  */
 #ifdef EMISSIVE
+#ifndef BLEND
+    //Emissive texture but no alphablend - return transmitted and reflected color + emissive
     return vec4(brdf.colors[TRANSMITTED_COLOR_INDEX] + brdf.colors[REFLECTED_COLOR_INDEX] + 
-        vec3(mix(oneByTwoPi, F16_ONE, brdf.NdotV) * GETTEXTURE(material.samplersData[EMISSIVE_TEXTURE_INDEX]).rgb * material.scaleFactors.rgb), alpha);
+        vec3(mix(oneByTwoPi, F16_ONE, brdf.NdotV) * GETTEXTURE(material.samplersData[EMISSIVE_TEXTURE_INDEX]).rgb * (alpha * material.scaleFactors.rgb)), alpha);
+#else
+    //Emissive teture and alphablend - return transmitted color + emissive
+    return vec4(brdf.colors[TRANSMITTED_COLOR_INDEX] + 
+        vec3(mix(oneByTwoPi, F16_ONE, brdf.NdotV) * GETTEXTURE(material.samplersData[EMISSIVE_TEXTURE_INDEX]).rgb * (alpha * material.scaleFactors.rgb)), alpha);
 #endif
+#endif
+#ifndef BLEND
+    //NO Emissive texture and no alphablend - return transmitted and reflected color
     return vec4(brdf.colors[TRANSMITTED_COLOR_INDEX] + brdf.colors[REFLECTED_COLOR_INDEX] + 
         vec3(mix(oneByTwoPi, F16_ONE, brdf.NdotV) * material.scaleFactors.rgb), alpha);
- 
+#else
+    //NO Emissive texture but alphablend - return transmitted color
+    return vec4(brdf.colors[TRANSMITTED_COLOR_INDEX] + 
+        vec3(mix(oneByTwoPi, F16_ONE, brdf.NdotV) * material.scaleFactors.rgb), alpha);
+
+#endif 
 }
 
 
