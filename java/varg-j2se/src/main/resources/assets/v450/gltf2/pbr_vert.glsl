@@ -5,10 +5,10 @@
 /**
  * Calculate the tangent light matrix, use this for per pixel normal maps
  */
-void createTangentLightMatrix() {
+void createTangentLightMatrix(in mat3 matrix) {
     // From the glTF spec: 
     // bitangent = cross(normal, tangent.xyz) * tangent.w
-    vec3 tangent = vec3(TANGENT_ATTRIBUTE) * mat3(matrix.uModelMatrix[instance.primitive.y]);
+    vec3 tangent = vec3(TANGENT_ATTRIBUTE) * matrix;
     vec3 bitangent =  TANGENT_ATTRIBUTE.w * cross(surface.normal, tangent);
     mTangentLight = transpose(mat3(tangent,bitangent,surface.normal));
 }
@@ -38,11 +38,15 @@ void setLight(in vec4 worldPos) {
  * Calculates the position and light for gltf materials
  */
 void glTFVertexSetup() {
-    surface.normal = NORMAL_ATTRIBUTE * mat3(matrix.uModelMatrix[instance.primitive.y]);
+    // Create model matrix from as instance
+    vec4[] m = asInstance.accelerationInstance[instance.primitive.y].modelMatrix;
+    mat4 model = mat4(m[0], m[1], m[2], vec4(0.0, 0.0, 0.0, 1.0));
+
+    surface.normal = NORMAL_ATTRIBUTE * mat3(model);
 #if defined(NORMAL) || defined(COAT_NORMAL)
-    createTangentLightMatrix();
+    createTangentLightMatrix(mat3(model));
 #endif
-    vec4 worldPos = vec4(POSITION_ATTRIBUTE, 1.0) * matrix.uModelMatrix[instance.primitive.y];
+    vec4 worldPos = vec4(POSITION_ATTRIBUTE, 1.0) * model;
     gl_Position = (worldPos * uniforms.vpMatrix[0]) * uniforms.vpMatrix[1];
     setLight(worldPos);
 #ifdef COLOR_0

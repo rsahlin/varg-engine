@@ -7,6 +7,7 @@ import org.gltfio.lib.BitFlags;
 import org.gltfio.lib.Buffers;
 import org.gltfio.lib.Constants;
 import org.gltfio.lib.ErrorMessage;
+import org.varg.uniform.BindBuffer.BufferState;
 import org.varg.vulkan.Vulkan10.BufferUsageFlagBit;
 
 /**
@@ -32,6 +33,8 @@ public class MemoryBuffer {
     public final int usage;
     private Memory memory;
     private long boundOffset;
+
+    private BufferState state = BufferState.created;
 
     /**
      * 
@@ -110,10 +113,26 @@ public class MemoryBuffer {
 
     @Override
     public String toString() {
-        return "Size " + size + ", alignment " + alignment + ", boundoffset "
-                + boundOffset + " isbound " + isBound() + ",  usageflags " +
-                BitFlags.toString(BitFlags.getBitFlags(usage, BufferUsageFlagBit.values()).toArray(
-                        new BufferUsageFlagBit[0]));
+        return "Size " + size + ", alignment " + alignment + ", boundoffset " + boundOffset + " isbound " + isBound() + ",  usageflags "
+                + BitFlags.toString(BitFlags.getBitFlags(usage, BufferUsageFlagBit.values()).toArray(new BufferUsageFlagBit[0]));
+    }
+
+    /**
+     * Returns the bufferstate
+     * 
+     * @return
+     */
+    public BufferState getState() {
+        return state;
+    }
+
+    /**
+     * Sets the bufferstate
+     * 
+     * @param state
+     */
+    public void setState(BufferState state) {
+        this.state = state;
     }
 
 }

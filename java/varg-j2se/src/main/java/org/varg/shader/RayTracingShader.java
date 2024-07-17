@@ -17,8 +17,7 @@ import org.varg.vulkan.extensions.KHRRayTracingPipeline.RayTracingShaderGroupCre
 public interface RayTracingShader extends Shader<RayTracingCreateInfo> {
 
     enum RayTracingShaderType implements Subtype {
-        PICKING_SHADER("picking", "picking/", new Stage[] { Stage.RAYGEN, Stage.ANYHIT, },
-                RayTracingDescriptorSetTarget.values());
+        PICKING_SHADER("picking", "picking/", new Stage[] { Stage.RAYGEN, Stage.ANYHIT, }, RayTracingDescriptorSetTarget.values());
 
         private final Stage[] stages;
         private final String sourceName;
@@ -76,10 +75,8 @@ public interface RayTracingShader extends Shader<RayTracingCreateInfo> {
     int RAYTRACING_BINDING = 2;
 
     enum RayTracingDescriptorSetTarget implements DescriptorSetTarget {
-
-        DATA(RAYTRACING_BINDING, 0, SetType.STORAGE_BUFFER_TYPE, DescriptorType.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        TOPLEVEL(RAYTRACING_BINDING, 0, SetType.UNIFORM_TYPE, DescriptorType.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, BufferUsageFlagBit.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT),
+        DATA(RAYTRACING_BINDING, 1, SetType.STORAGE_BUFFER_TYPE, DescriptorType.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, BufferUsageFlagBit.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
         private final SetType type;
         private final int set;
@@ -87,8 +84,7 @@ public interface RayTracingShader extends Shader<RayTracingCreateInfo> {
         private final DescriptorType descriptorType;
         private final BufferUsageFlagBit[] bufferUsage;
 
-        RayTracingDescriptorSetTarget(int binding, int set, SetType type, DescriptorType descriptorType,
-                BufferUsageFlagBit... bufferUsage) {
+        RayTracingDescriptorSetTarget(int binding, int set, SetType type, DescriptorType descriptorType, BufferUsageFlagBit... bufferUsage) {
             this.binding = binding;
             this.type = type;
             this.set = set;
@@ -138,7 +134,7 @@ public interface RayTracingShader extends Shader<RayTracingCreateInfo> {
 
         @Override
         public ShaderStageFlagBit[] getStageBits() {
-            return new ShaderStageFlagBit[] { ShaderStageFlagBit.VK_SHADER_STAGE_ALL_GRAPHICS };
+            return new ShaderStageFlagBit[] { ShaderStageFlagBit.VK_SHADER_STAGE_RAYGEN_BIT_KHR, ShaderStageFlagBit.VK_SHADER_STAGE_ANY_HIT_BIT_KHR };
         }
 
         @Override
@@ -159,8 +155,7 @@ public interface RayTracingShader extends Shader<RayTracingCreateInfo> {
 
     RayTracingShaderGroupCreateInfoKHR[] createRayTracingShaderGroupCreateInfo();
 
-    abstract class RayTracingCreateInfo extends ShaderCreateInfo
-            implements Shader.StorageBufferConsumer<DescriptorSetTarget> {
+    abstract class RayTracingCreateInfo extends ShaderCreateInfo implements Shader.StorageBufferConsumer<DescriptorSetTarget> {
 
         protected RayTracingCreateInfo(@NonNull Renderers version, @NonNull Subtype shaderType) {
             super(version, shaderType);

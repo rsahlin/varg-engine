@@ -68,6 +68,7 @@ import org.varg.vulkan.Vulkan10.MemoryPropertyFlagBit;
 import org.varg.vulkan.Vulkan10.SampleCountFlagBit;
 import org.varg.vulkan.Vulkan10.SurfaceFormat;
 import org.varg.vulkan.Vulkan10Backend;
+import org.varg.vulkan.Vulkan12.MemoryAllocateFlagBits;
 import org.varg.vulkan.VulkanBackend;
 import org.varg.vulkan.VulkanBackend.BackendStringProperties;
 import org.varg.vulkan.VulkanBackend.FloatProperties;
@@ -694,8 +695,7 @@ public class VulkanAssets implements Assets {
     }
 
     @Override
-    public TextureDescriptor createTextureDescriptor(RenderableScene asset,
-            JSONTexture texture, ImageMemory imageMemory, ImageViewType type, ComponentMapping mapping) {
+    public TextureDescriptor createTextureDescriptor(RenderableScene asset, JSONTexture texture, ImageMemory imageMemory, ImageViewType type, ComponentMapping mapping) {
         Sampler sampler = samplers.get(texture.getSamplerIndex());
         if (sampler == null) {
             float max = backend.getSelectedDevice().getProperties().getLimits().getMaxSamplerAnisotropy();
@@ -707,15 +707,10 @@ public class VulkanAssets implements Assets {
         return descriptor;
     }
 
-    private DescriptorImageInfo createDescriptorImageInfo(ImageMemory imageMemory, ImageViewType type,
-            ComponentMapping mapping, Sampler sampler) {
-        int layerCount = (type == ImageViewType.VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
-                || type == ImageViewType.VK_IMAGE_VIEW_TYPE_CUBE) ? Vulkan10.VK_REMAINING_ARRAY_LAYERS
-                        : imageMemory.getImage().getArrayLayers();
-        ImageSubresourceRange subresource = new ImageSubresourceRange(ImageAspectFlagBit.VK_IMAGE_ASPECT_COLOR_BIT, 0,
-                imageMemory.getImage().getMipLevels(), 0, layerCount);
-        ImageViewCreateInfo createInfo = new ImageViewCreateInfo(imageMemory.getImage(), type,
-                imageMemory.getImage().getFormatValue(), mapping, subresource);
+    private DescriptorImageInfo createDescriptorImageInfo(ImageMemory imageMemory, ImageViewType type, ComponentMapping mapping, Sampler sampler) {
+        int layerCount = (type == ImageViewType.VK_IMAGE_VIEW_TYPE_CUBE_ARRAY || type == ImageViewType.VK_IMAGE_VIEW_TYPE_CUBE) ? Vulkan10.VK_REMAINING_ARRAY_LAYERS : imageMemory.getImage().getArrayLayers();
+        ImageSubresourceRange subresource = new ImageSubresourceRange(ImageAspectFlagBit.VK_IMAGE_ASPECT_COLOR_BIT, 0, imageMemory.getImage().getMipLevels(), 0, layerCount);
+        ImageViewCreateInfo createInfo = new ImageViewCreateInfo(imageMemory.getImage(), type, imageMemory.getImage().getFormatValue(), mapping, subresource);
         ImageView imageView = backend.createImageView(createInfo);
         return new DescriptorImageInfo(sampler, imageView, imageMemory, subresource);
     }
@@ -782,6 +777,7 @@ public class VulkanAssets implements Assets {
         int[] offsets = new int[targets.length];
         int[] sizes = new int[targets.length];
         int totalSize = 0;
+        int allocateFlags = 0;
         for (int i = 0; i < targets.length; i++) {
             if (targets[i].getSet() != i) {
                 throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Conficting sets");
@@ -791,24 +787,22 @@ public class VulkanAssets implements Assets {
             int align = 0;
             int size = bufferSizes[set];
             if (size > 0) {
-                Vulkan10.BufferUsageFlagBit[] usageBits = VulkanBackend.getBufferUsage(
-                        BackendStringProperties.UNIFORM_USAGE, target.getBufferUsage());
+                Vulkan10.BufferUsageFlagBit[] usageBits = VulkanBackend.getBufferUsage(BackendStringProperties.UNIFORM_USAGE, target.getBufferUsage());
                 int usage = BitFlags.getFlagsValue(usageBits);
                 if ((usage & BufferUsageFlagBit.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT.value) != 0) {
-                    int maxUniform = backend.getLogicalDevice().getPhysicalDeviceProperties().getLimits()
-                            .getMaxUniformBufferRange();
+                    int maxUniform = backend.getLogicalDevice().getPhysicalDeviceProperties().getLimits().getMaxUniformBufferRange();
                     if (size > maxUniform) {
-                        throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + target
-                                + " uniform buffer too large " + size + ", max=" + maxUniform);
+                        throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + target + " uniform buffer too large " + size + ", max=" + maxUniform);
                     }
                 }
                 if ((usage & BufferUsageFlagBit.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT.value) != 0) {
-                    int maxStorage = backend.getLogicalDevice().getPhysicalDeviceProperties().getLimits()
-                            .getMaxStorageBufferRange();
+                    int maxStorage = backend.getLogicalDevice().getPhysicalDeviceProperties().getLimits().getMaxStorageBufferRange();
                     if (size > maxStorage) {
-                        throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + target
-                                + " storage buffer too large " + size + ", max=" + maxStorage);
+                        throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + target + " storage buffer too large " + size + ", max=" + maxStorage);
                     }
+                }
+                if ((usage & BufferUsageFlagBit.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT.value) != 0) {
+                    allocateFlags = allocateFlags | MemoryAllocateFlagBits.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.value;
                 }
                 MemoryBuffer b = deviceMemory.createBuffer(bufferSizes[set], usage);
                 align = (totalSize % (int) b.alignment) == 0 ? 0 : (int) b.alignment - (totalSize % (int) b.alignment);
@@ -819,8 +813,7 @@ public class VulkanAssets implements Assets {
             totalSize += sizes[set] + align;
         }
 
-        Memory memory = deviceMemory.allocateMemory(totalSize,
-                BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        Memory memory = deviceMemory.allocateMemory(totalSize, BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), allocateFlags, 0);
         ByteBuffer backingBuffer = Buffers.createByteBuffer((int) memory.size);
         buffers.setAllocatedMemory(memory, backingBuffer);
 

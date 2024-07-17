@@ -8,8 +8,7 @@ import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderPropertiesEXT;
 
 public class LWJGL3EXTMeshShader extends EXTMeshShader<LWJGLVulkan12Queue> {
 
-    public LWJGL3EXTMeshShader(@NonNull PhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures,
-            @NonNull PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties) {
+    public LWJGL3EXTMeshShader(@NonNull PhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures, @NonNull PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties) {
         super(meshShaderFeatures, meshShaderProperties);
     }
 
@@ -19,8 +18,7 @@ public class LWJGL3EXTMeshShader extends EXTMeshShader<LWJGLVulkan12Queue> {
     }
 
     @Override
-    public void drawMeshTasksIndirectCountEXT(LWJGLVulkan12Queue queue, long buffer, int offset, long countBuffer,
-            int countBufferOffset, int maxDrawCount, int stride) {
+    public void drawMeshTasksIndirectCountEXT(LWJGLVulkan12Queue queue, long buffer, int offset, long countBuffer, int countBufferOffset, int maxDrawCount, int stride) {
         org.lwjgl.vulkan.EXTMeshShader.vkCmdDrawMeshTasksIndirectCountEXT(queue.getCommandBuffer(), buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     }
 

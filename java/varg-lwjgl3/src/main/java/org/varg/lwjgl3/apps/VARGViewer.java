@@ -28,14 +28,11 @@ import org.gltfio.lib.Settings.StringProperty;
 import org.gltfio.lib.WindowListener;
 import org.gltfio.prepare.GltfSettings.Alignment;
 import org.gltfio.serialize.Writer;
-import org.varg.BackendException;
 import org.varg.gltf.VulkanStreamingScene;
 import org.varg.pipeline.Pipelines.SetType;
 import org.varg.renderer.BRDF.BRDFFloatProperties;
 import org.varg.renderer.Renderers;
 import org.varg.shader.Gltf2GraphicsShader.GltfDescriptorSetTarget;
-import org.varg.shader.Gltf2GraphicsShader.GraphicsShaderType;
-import org.varg.uniform.DescriptorBuffers;
 import org.varg.vulkan.Features;
 import org.varg.vulkan.Vulkan10.Extension;
 import org.varg.vulkan.Vulkan10.SurfaceFormat;
@@ -48,8 +45,8 @@ import org.varg.vulkan.VulkanRenderableScene;
 import org.varg.vulkan.extensions.PhysicalDeviceAccelerationStructureFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceFragmentShadingRateFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
+import org.varg.vulkan.extensions.PhysicalDeviceRayTracingPipelineFeaturesKHR;
 import org.varg.vulkan.structs.ExtensionProperties;
-import org.varg.vulkan.structs.Extent2D;
 import org.varg.vulkan.structs.RequestedFeatures;
 
 public class VARGViewer extends LWJGL3Application implements Glb2Streamer<VulkanStreamingScene>, WindowListener, CreateDevice {
@@ -210,28 +207,6 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
         }
     }
 
-    /**
-     * Call this when scene has been updated.
-     */
-    protected void sceneUpdated() {
-        try {
-            VulkanStreamingScene scene = (VulkanStreamingScene) loadedAsset.getScene(0);
-            getRenderer().getQueue().queueBegin();
-            if (!prepareAsset(scene)) {
-                // getRenderer().getAssets().updateVertexBuffers(scene);
-                DescriptorBuffers<?> buffers = getRenderer().getAssets().getStorageBuffers(GraphicsShaderType.GLTF2);
-                Extent2D displaySize = getRenderer().getBackend().getKHRSwapchain().getExtent();
-                buffers.setStaticStorage(scene, getRenderer());
-            }
-            scene.addIndirectDrawCalls();
-            // scene.getIndirectDrawCall().copyToDevice(getRenderer().getBufferFactory(), getRenderer().getQueue());
-
-        } catch (IOException | BackendException e) {
-            throw new IllegalArgumentException(e);
-        }
-
-    }
-
     @Override
     public void glb2Update(StreamingGltf<VulkanStreamingScene> glTF, Type type) {
         switch (type) {
@@ -374,7 +349,7 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
             sceneControl.autoRotate();
             VulkanRenderableScene scene = sceneControl.getCurrentScene();
             if (scene.isUpdated()) {
-                sceneUpdated();
+                throw new IllegalArgumentException();
             }
             internalDrawFrame(scene);
         }
@@ -466,6 +441,9 @@ public class VARGViewer extends LWJGL3Application implements Glb2Streamer<Vulkan
         }
         if (ExtensionProperties.get(Extension.VK_KHR_fragment_shading_rate.getName(), availableFeatures.getExtensions()) != null) {
             requestedFeatures.addKHRFragmentShadingRate(new PhysicalDeviceFragmentShadingRateFeaturesKHR(true, false, false));
+        }
+        if (ExtensionProperties.get(Extension.VK_KHR_ray_tracing_pipeline.getName(), availableFeatures.getExtensions()) != null) {
+            requestedFeatures.addKHRRayTracing(new PhysicalDeviceRayTracingPipelineFeaturesKHR(true, false, false, false, false));
         }
         PhysicalDeviceAccelerationStructureFeaturesKHR accelerationFeatures = new PhysicalDeviceAccelerationStructureFeaturesKHR();
         requestedFeatures.addRayTracing(accelerationFeatures);

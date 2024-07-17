@@ -3,60 +3,27 @@ package org.varg.vulkan.memory;
 import java.nio.ByteBuffer;
 
 import org.gltfio.data.VertexBuffer;
-import org.gltfio.gltf2.JSONBuffer;
-import org.gltfio.gltf2.JSONBufferView;
 import org.gltfio.lib.ErrorMessage;
+import org.varg.vulkan.vertex.BindVertexBuffers;
 
 /**
- * Collection of vulkan memory, memorybuffer(s) and offsets - this is a mapping from glTF buffers-to GPU storage
+ * Collection of vulkan memory, memorybuffer(s) and offsets - this is a mapping to GPU storage
  */
 public class VertexMemory {
-
-    public enum Mode {
-        BUFFERVIEWS(),
-        FLATTENED(),
-        BUFFERS();
-    }
 
     private MemoryBuffer[] memoryBuffers;
     private ByteBuffer[] buffers;
     private int[] offsets;
-    private final Mode mode;
     private ByteBuffer[] indexBuffers;
     private MemoryBuffer[] indexMemory;
+    private BindVertexBuffers bindBuffers;
+    private BindVertexBuffers bindIndexBuffers;
 
-    public VertexMemory(MemoryBuffer[] memoryBuffers, JSONBufferView[] bufferViews) {
-        mode = Mode.BUFFERVIEWS;
-        this.memoryBuffers = memoryBuffers;
-        this.offsets = null;
-        this.buffers = new ByteBuffer[bufferViews.length];
-        for (int i = 0; i < buffers.length; i++) {
-            this.buffers[i] = bufferViews[i].getReadByteBuffer(0);
-        }
-    }
-
-    public VertexMemory(MemoryBuffer[] indexMemory, MemoryBuffer[] memoryBuffers, JSONBuffer[] indexBuffers,
-            JSONBuffer[] vertexBuffers) {
-        mode = Mode.BUFFERS;
-        this.memoryBuffers = memoryBuffers;
-        this.indexMemory = indexMemory;
-        this.buffers = new ByteBuffer[vertexBuffers.length];
-        for (int i = 0; i < buffers.length; i++) {
-            this.buffers[i] = vertexBuffers[i] != null ? vertexBuffers[i].getAsReadBuffer() : null;
-        }
-        this.indexBuffers = new ByteBuffer[indexBuffers.length];
-        for (int i = 0; i < indexBuffers.length; i++) {
-            this.indexBuffers[i] = indexBuffers[i] != null ? indexBuffers[i].getAsReadBuffer() : null;
-        }
-    }
-
-    public VertexMemory(MemoryBuffer[] indexMemory, VertexBuffer[] indexSourceBuffers, MemoryBuffer[] attributeBuffers,
-            VertexBuffer[] sourceBuffers) {
+    public VertexMemory(MemoryBuffer[] indexMemory, VertexBuffer[] indexSourceBuffers, MemoryBuffer[] attributeBuffers, VertexBuffer[] sourceBuffers) {
         if (attributeBuffers.length != sourceBuffers.length) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Arrays must match in size");
         }
         this.memoryBuffers = attributeBuffers;
-        this.mode = Mode.BUFFERS;
         this.buffers = new ByteBuffer[sourceBuffers.length];
         for (int i = 0; i < sourceBuffers.length; i++) {
             this.buffers[i] = sourceBuffers[i] != null ? sourceBuffers[i].getAsReadOnlyBuffer() : null;
@@ -68,6 +35,38 @@ public class VertexMemory {
                 this.indexBuffers[i] = indexSourceBuffers[i] != null ? indexSourceBuffers[i].getAsReadOnlyBuffer()
                         : null;
             }
+        }
+        createBindBuffers();
+    }
+
+    /**
+     * Returns the buffers to bind vertex data before issuing drawcalls.
+     * 
+     * @return
+     */
+    public BindVertexBuffers getBindVertexBuffers() {
+        return bindBuffers;
+    }
+
+    /**
+     * Returns the indexbuffers to bind before issuing drawcalls, or null if arrayed drawing.
+     * 
+     * @return
+     */
+    public BindVertexBuffers getBindIndexBuffers() {
+        return bindIndexBuffers;
+    }
+
+    /**
+     * Creates the buffers needed to bind vertex and index memory before issuing drawcalls
+     */
+    private void createBindBuffers() {
+        MemoryBuffer[] buffers = getMemoryBuffers();
+        MemoryBuffer[] indexBuffers = getIndexMemoryBuffers();
+        bindBuffers = new BindVertexBuffers(0, buffers, new long[buffers.length]);
+        bindIndexBuffers = null;
+        if (indexBuffers != null && indexBuffers.length > 0) {
+            bindIndexBuffers = new BindVertexBuffers(0, indexBuffers, new long[indexBuffers.length]);
         }
     }
 
@@ -114,44 +113,6 @@ public class VertexMemory {
      */
     public MemoryBuffer[] getIndexMemoryBuffers() {
         return indexMemory;
-    }
-
-    /**
-     * Returns the mode
-     * 
-     * @return
-     */
-    public Mode getMode() {
-        return mode;
-    }
-
-    /**
-     * Only use when mode is FLATTENED
-     * 
-     * @return
-     */
-    public MemoryBuffer getMemoryBuffer() {
-        if (mode != Mode.FLATTENED) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", mode must be " + Mode.FLATTENED);
-        }
-        return memoryBuffers[0];
-    }
-
-    /**
-     * Returns the memorybuffer for the buffer view index - if mode is flattened this will return the whole memory.
-     * 
-     * @param bufferViewIndex
-     * @return
-     */
-    public MemoryBuffer getMemoryBuffer(int bufferViewIndex) {
-        switch (mode) {
-            case BUFFERVIEWS:
-                return memoryBuffers[bufferViewIndex];
-            case FLATTENED:
-                return memoryBuffers[0];
-            default:
-                throw new IllegalArgumentException(mode.name());
-        }
     }
 
     /**

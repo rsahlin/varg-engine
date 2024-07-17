@@ -13,8 +13,7 @@ public abstract class EXTMeshShader<Q extends Queue> {
     private final PhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures;
     private final PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties;
 
-    protected EXTMeshShader(@NonNull PhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures,
-            @NonNull PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties) {
+    protected EXTMeshShader(@NonNull PhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures, @NonNull PhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties) {
         this.meshShaderFeatures = meshShaderFeatures;
         this.meshShaderProperties = meshShaderProperties;
     }

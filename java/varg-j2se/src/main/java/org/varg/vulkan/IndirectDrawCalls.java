@@ -16,6 +16,7 @@ import org.varg.gltf.VulkanScene;
 import org.varg.renderer.AbstractDrawCalls;
 import org.varg.vulkan.memory.DeviceMemory;
 import org.varg.vulkan.memory.MemoryBuffer;
+import org.varg.vulkan.memory.VertexMemory;
 import org.varg.vulkan.pipeline.PipelineVertexInputState;
 import org.varg.vulkan.vertex.BindVertexBuffers;
 import org.varg.vulkan.vertex.VertexInputAttributeDescription;
@@ -57,17 +58,15 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
     protected int[] vkIndexOffsets;
     // Offset for array drawing
     protected int vkArrayIndexOffset;
-    protected BindVertexBuffers indexBuffers;
-    protected BindVertexBuffers vertexBuffers;
+    private VertexMemory vertexMemory;
     private int pipelineHash;
 
     private static transient VertexInputAttributeDescription[] inputs;
 
-    public IndirectDrawCalls(PrimitiveSorter primitives, BindVertexBuffers indexBuffers, BindVertexBuffers vertexBuffers, int firstInstance) {
+    public IndirectDrawCalls(PrimitiveSorter primitives, VertexMemory vertexMemory, int firstInstance) {
         super(primitives.attributeHash, primitives.sortedAttributes, primitives.getMaterial(), primitives.mode, primitives.getArrayPrimitiveCount(), primitives.getIndexedPrimitiveCount(), primitives.getIndicesCount(), firstInstance);
         this.pipelineHash = primitives.getPipelineHash();
-        this.indexBuffers = indexBuffers;
-        this.vertexBuffers = vertexBuffers;
+        this.vertexMemory = vertexMemory;
     }
 
     @Override
@@ -99,15 +98,6 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
      * 
      * @return
      */
-    public int getCurrentIndicesIndex(IndexType type) {
-        return currentIndicesIndex[type.index];
-    }
-
-    /**
-     * Use when adding indirect drawcalls
-     * 
-     * @return
-     */
     public int getCurrentVertexOffset() {
         return currentVertexOffset;
     }
@@ -123,7 +113,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
 
     @Override
     public BindVertexBuffers getVertexBuffers() {
-        return vertexBuffers;
+        return vertexMemory.getBindVertexBuffers();
     }
 
     /**
@@ -156,6 +146,7 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
 
     @Override
     public void drawIndirect(Queue queue) {
+        BindVertexBuffers vertexBuffers = vertexMemory.getBindVertexBuffers();
         queue.cmdBindVertexBuffers(0, vertexBuffers.getBuffers(), vertexBuffers.getOffsets());
         queue.cmdDrawIndirect(this);
     }
@@ -276,13 +267,14 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
     }
 
     /**
-     * Returns the indexbuffer pointer for the type
+     * Returns the indexbuffer pointer for the type, or null if arrayed drawing
      * 
      * @param indexType
      * @return
      */
     public long getIndexBufferPointer(IndexType indexType) {
-        return indexBuffers.getBuffers().get(indexType.index);
+        BindVertexBuffers indexBuffers = vertexMemory.getBindIndexBuffers();
+        return indexBuffers != null ? indexBuffers.getBuffers().get(indexType.index) : null;
     }
 
     @Override
@@ -298,6 +290,15 @@ public class IndirectDrawCalls extends AbstractDrawCalls implements IndirectDraw
     @Override
     public JSONMaterial getMaterial() {
         return material;
+    }
+
+    /**
+     * Returns the vertex and index memory
+     * 
+     * @return
+     */
+    public VertexMemory getVertexMemory() {
+        return vertexMemory;
     }
 
 }

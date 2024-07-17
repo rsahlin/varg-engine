@@ -74,6 +74,8 @@ import org.lwjgl.vulkan.VkPhysicalDeviceMeshShaderFeaturesEXT;
 import org.lwjgl.vulkan.VkPhysicalDeviceMeshShaderPropertiesEXT;
 import org.lwjgl.vulkan.VkPhysicalDeviceProperties;
 import org.lwjgl.vulkan.VkPhysicalDeviceProperties2;
+import org.lwjgl.vulkan.VkPhysicalDeviceRayTracingPipelineFeaturesKHR;
+import org.lwjgl.vulkan.VkPhysicalDeviceRayTracingPipelinePropertiesKHR;
 import org.lwjgl.vulkan.VkPhysicalDeviceRobustness2FeaturesEXT;
 import org.lwjgl.vulkan.VkPhysicalDeviceVulkan11Features;
 import org.lwjgl.vulkan.VkPhysicalDeviceVulkan12Features;
@@ -113,6 +115,7 @@ import org.lwjgl.vulkan.VkTimelineSemaphoreSubmitInfo;
 import org.lwjgl.vulkan.VkVertexInputAttributeDescription;
 import org.lwjgl.vulkan.VkVertexInputBindingDescription;
 import org.lwjgl.vulkan.VkWriteDescriptorSet;
+import org.lwjgl.vulkan.VkWriteDescriptorSetAccelerationStructureKHR;
 import org.varg.BackendException;
 import org.varg.assets.TextureDescriptor;
 import org.varg.lwjgl3.vulkan.LWJGLCommandBuffers.LWJGLCommandBuffer;
@@ -135,6 +138,7 @@ import org.varg.vulkan.Queue;
 import org.varg.vulkan.Vulkan10;
 import org.varg.vulkan.Vulkan10.ColorSpaceKHR;
 import org.varg.vulkan.Vulkan10.CompositeAlphaFlagBitsKHR;
+import org.varg.vulkan.Vulkan10.DescriptorType;
 import org.varg.vulkan.Vulkan10.Format;
 import org.varg.vulkan.Vulkan10.FormatFeatureFlagBits;
 import org.varg.vulkan.Vulkan10.ImageAspectFlagBit;
@@ -148,6 +152,7 @@ import org.varg.vulkan.Vulkan10.SurfaceFormat;
 import org.varg.vulkan.Vulkan10.SurfaceTransformFlagBitsKHR;
 import org.varg.vulkan.Vulkan10.VulkanExtension;
 import org.varg.vulkan.Vulkan12Backend;
+import org.varg.vulkan.descriptor.AccelerationStructureDescriptorInfo;
 import org.varg.vulkan.descriptor.DescriptorBufferInfo;
 import org.varg.vulkan.descriptor.DescriptorImageInfo;
 import org.varg.vulkan.descriptor.DescriptorPool;
@@ -168,6 +173,8 @@ import org.varg.vulkan.extensions.PhysicalDeviceFragmentShadingRateFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceFragmentShadingRatePropertiesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderPropertiesEXT;
+import org.varg.vulkan.extensions.PhysicalDeviceRayTracingPipelineFeaturesKHR;
+import org.varg.vulkan.extensions.PhysicalDeviceRayTracingPipelinePropertiesKHR;
 import org.varg.vulkan.framebuffer.FrameBuffer;
 import org.varg.vulkan.framebuffer.FramebufferCreateInfo;
 import org.varg.vulkan.image.Image;
@@ -377,26 +384,30 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
                     .sType(VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2);
             VkPhysicalDeviceMeshShaderPropertiesEXT vkMeshProperties = null;
             VkPhysicalDeviceFragmentShadingRatePropertiesKHR vkFragmentShadingRateProperties = null;
-            ExtensionProperties meshExtension = ExtensionProperties.get(
-                    org.varg.vulkan.Vulkan10.Extension.VK_EXT_mesh_shader.name(),
-                    extensions);
-            ExtensionProperties fragmentShadingRateExtension = ExtensionProperties.get(
-                    Vulkan10.Extension.VK_KHR_fragment_shading_rate.name(), extensions);
+            VkPhysicalDeviceRayTracingPipelinePropertiesKHR vkRayTracingProperties = null;
+            ExtensionProperties meshExtension = ExtensionProperties.get(org.varg.vulkan.Vulkan10.Extension.VK_EXT_mesh_shader.name(), extensions);
+            ExtensionProperties fragmentShadingRateExtension = ExtensionProperties.get(Vulkan10.Extension.VK_KHR_fragment_shading_rate.name(), extensions);
+            ExtensionProperties rayTracingExtension = ExtensionProperties.get(Vulkan10.Extension.VK_KHR_ray_tracing_pipeline.name(), extensions);
+            long next = MemoryUtil.NULL;
             if (meshExtension != null) {
                 vkMeshProperties = VkPhysicalDeviceMeshShaderPropertiesEXT.calloc()
                         .sType(EXTMeshShader.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT)
                         .pNext(MemoryUtil.NULL);
-                properties2.pNext(vkMeshProperties);
+                next = vkMeshProperties.address();
             }
             if (fragmentShadingRateExtension != null) {
                 vkFragmentShadingRateProperties = VkPhysicalDeviceFragmentShadingRatePropertiesKHR.calloc()
-                        .sType(org.lwjgl.vulkan.KHRFragmentShadingRate.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR);
-                if (vkMeshProperties == null) {
-                    properties2.pNext(vkFragmentShadingRateProperties);
-                } else {
-                    vkMeshProperties.pNext(vkFragmentShadingRateProperties.address());
-                }
+                        .sType(org.lwjgl.vulkan.KHRFragmentShadingRate.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR)
+                        .pNext(next);
+                next = vkFragmentShadingRateProperties.address();
             }
+            if (rayTracingExtension != null) {
+                vkRayTracingProperties = VkPhysicalDeviceRayTracingPipelinePropertiesKHR.calloc()
+                        .sType(org.lwjgl.vulkan.KHRRayTracingPipeline.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR)
+                        .pNext(next);
+                next = vkRayTracingProperties.address();
+            }
+            properties2.pNext(next);
             VK12.vkGetPhysicalDeviceProperties2(device, properties2);
             VkPhysicalDeviceProperties deviceProperties = properties2.properties();
             apiVersion = new APIVersion(deviceProperties.apiVersion());
@@ -405,17 +416,19 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
             deviceName = deviceProperties.deviceNameString();
             deviceType = PhysicalDeviceType.get(deviceProperties.deviceType());
             if (vkMeshProperties != null) {
-                PhysicalDeviceMeshShaderPropertiesEXT meshProperties =
-                        new PhysicalDeviceMeshShaderPropertiesEXT(vkMeshProperties);
-                propertiesTable.put(org.varg.vulkan.Vulkan10.Extension.VK_EXT_mesh_shader,
-                        meshProperties);
+                PhysicalDeviceMeshShaderPropertiesEXT meshProperties = new PhysicalDeviceMeshShaderPropertiesEXT(vkMeshProperties);
+                propertiesTable.put(org.varg.vulkan.Vulkan10.Extension.VK_EXT_mesh_shader, meshProperties);
                 vkMeshProperties.free();
             }
             if (vkFragmentShadingRateProperties != null) {
-                PhysicalDeviceFragmentShadingRatePropertiesKHR fragmentShadingRateProperties =
-                        new PhysicalDeviceFragmentShadingRatePropertiesKHR(vkFragmentShadingRateProperties);
+                PhysicalDeviceFragmentShadingRatePropertiesKHR fragmentShadingRateProperties = new PhysicalDeviceFragmentShadingRatePropertiesKHR(vkFragmentShadingRateProperties);
                 propertiesTable.put(Vulkan10.Extension.VK_KHR_fragment_shading_rate, fragmentShadingRateProperties);
                 vkFragmentShadingRateProperties.free();
+            }
+            if (vkRayTracingProperties != null) {
+                PhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties = new PhysicalDeviceRayTracingPipelinePropertiesKHR(vkRayTracingProperties);
+                propertiesTable.put(Vulkan10.Extension.VK_KHR_ray_tracing_pipeline, rayTracingProperties);
+                vkRayTracingProperties.free();
             }
             properties2.free();
         }
@@ -540,8 +553,7 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
         }
     }
 
-    private VkInstance createInstance(PointerBuffer extensionsPtrs, PointerBuffer validationLayerPtrs,
-            boolean debugMessenger) {
+    private VkInstance createInstance(PointerBuffer extensionsPtrs, PointerBuffer validationLayerPtrs, boolean debugMessenger) {
 
         VkApplicationInfo appInfo = VkApplicationInfo.calloc()
                 .sType(VK12.VK_STRUCTURE_TYPE_APPLICATION_INFO)
@@ -652,6 +664,19 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
                     .indexTypeUint8(true)
                     .pNext(getLastAdress(result));
             result.add(indexedUint8.address());
+        }
+        PhysicalDeviceRayTracingPipelineFeaturesKHR rayTracing = featureExtensions.getPhysicalDeviceRayTracingPipelineFeaturesKHR();
+        if (rayTracing != null) {
+            VkPhysicalDeviceRayTracingPipelineFeaturesKHR vkRayFeatures = VkPhysicalDeviceRayTracingPipelineFeaturesKHR.calloc()
+                    .sType(org.lwjgl.vulkan.KHRRayTracingPipeline.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR)
+                    .rayTracingPipeline(rayTracing.rayTracingPipeline)
+                    .rayTracingPipelineShaderGroupHandleCaptureReplay(rayTracing.rayTracingPipelineShaderGroupHandleCaptureReplay)
+                    .rayTracingPipelineShaderGroupHandleCaptureReplayMixed(rayTracing.rayTracingPipelineShaderGroupHandleCaptureReplayMixed)
+                    .rayTracingPipelineTraceRaysIndirect(rayTracing.rayTracingPipelineTraceRaysIndirect)
+                    .rayTraversalPrimitiveCulling(rayTracing.rayTraversalPrimitiveCulling)
+                    .pNext(getLastAdress(result));
+            result.add(vkRayFeatures.address());
+            Logger.d(getClass(), "Added PhysicalDeviceRayTracingPipelineFeaturesKHR");
         }
         PhysicalDeviceMeshShaderFeaturesEXT requestedMesh = featureExtensions.getPhysicalDeviceMeshShaderFeaturesEXT();
         if (requestedMesh != null) {
@@ -908,11 +933,9 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
         ImageView[] result = new ImageView[bufferCount];
 
         ImageViewType type = ImageViewType.VK_IMAGE_VIEW_TYPE_2D;
-        ImageSubresourceRange range = new ImageSubresourceRange(ImageAspectFlagBit.VK_IMAGE_ASPECT_COLOR_BIT, 0,
-                mipLevels, 0, arrayLayers);
+        ImageSubresourceRange range = new ImageSubresourceRange(ImageAspectFlagBit.VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, arrayLayers);
         for (int i = 0; i < bufferCount; i++) {
-            ImageViewCreateInfo createInfo = new ImageViewCreateInfo(images[i], type, images[i].getFormatValue(),
-                    components, range);
+            ImageViewCreateInfo createInfo = new ImageViewCreateInfo(images[i], type, images[i].getFormatValue(), components, range);
             result[i] = createImageView(createInfo);
         }
         return result;
@@ -1773,21 +1796,30 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
         for (int set = 0; set < descriptorSets.length; set++) {
             DescriptorSet descriptorSet = descriptorSets[set];
             DescriptorBufferInfo bufferInfo = descriptorBufferInfos[set];
-            VkDescriptorBufferInfo.Buffer vkInfo = VkDescriptorBufferInfo.calloc(1);
-            vkInfo.get(0).buffer(bufferInfo.buffer.getPointer())
-                    .offset(bufferInfo.offset)
-                    .range(bufferInfo.range);
+            VkDescriptorBufferInfo.Buffer vkInfo = null;
+            VkWriteDescriptorSetAccelerationStructureKHR vkWrite = null;
+            if (descriptorSet.getLayoutBinding().getDescriptorType() == DescriptorType.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+                AccelerationStructureDescriptorInfo asInfo = (AccelerationStructureDescriptorInfo) bufferInfo;
+                vkWrite = VkWriteDescriptorSetAccelerationStructureKHR.calloc()
+                        .sType(KHRAccelerationStructure.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR)
+                        .pNext(MemoryUtil.NULL)
+                        .pAccelerationStructures(asInfo.handles);
+            } else {
+                vkInfo = VkDescriptorBufferInfo.calloc(1);
+                vkInfo.get(0).buffer(bufferInfo.getBuffer().getPointer())
+                        .offset(bufferInfo.offset)
+                        .range(bufferInfo.range);
+            }
 
             write.get()
                     .sType(VK12.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)
-                    .pNext(MemoryUtil.NULL)
+                    .pNext(vkWrite != null ? vkWrite.address() : MemoryUtil.NULL)
                     .dstSet(descriptorSet.getDescriptorSet())
                     .dstBinding(descriptorSet.getLayoutBinding().getBinding())
                     .descriptorType(descriptorSet.getLayoutBinding().getDescriptorType().value)
                     .descriptorCount(1)
                     .pBufferInfo(vkInfo);
-            Logger.d(getClass(), "UpdateDescriptorSet: " + descriptorSet.toString() + ",  Buffer: " + bufferInfo.buffer
-                    .toString());
+            Logger.d(getClass(), "UpdateDescriptorSet: " + descriptorSet.toString() + ",  Buffer: " + bufferInfo.toString());
 
         }
         write.clear();
@@ -1817,8 +1849,7 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + ", Already released descriptor.");
         }
         Logger.d(getClass(), "Freeing descriptorset " + descriptorSet.getDescriptorSet());
-        assertResult(VK12.vkFreeDescriptorSets(deviceInstance, descriptorPool.getDescriptorPool(),
-                descriptorSet.getDescriptorSetBuffer()));
+        assertResult(VK12.vkFreeDescriptorSets(deviceInstance, descriptorPool.getDescriptorPool(), descriptorSet.getDescriptorSetBuffer()));
         descriptorSet.getDescriptorSetBuffer().put(0);
     }
 
@@ -1828,10 +1859,8 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
     }
 
     private void assertExtensionEnabled(VulkanExtension extension) {
-        if (!org.varg.vulkan.Vulkan10.Extension.contains(extension.getName(), getLogicalDevice()
-                .getEnabledExtensions())) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + " extension not enabled: " + extension.getName());
+        if (!org.varg.vulkan.Vulkan10.Extension.contains(extension.getName(), getLogicalDevice().getEnabledExtensions())) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + " extension not enabled: " + extension.getName());
         }
     }
 
@@ -1865,14 +1894,21 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
     }
 
     @Override
+    public KHRRayTracingPipeline<?> getKHRRayTracingPipeline() {
+        if (khrRayTracingPipeline == null) {
+            assertExtensionEnabled(Vulkan10.Extension.VK_KHR_ray_tracing_pipeline);
+            khrRayTracingPipeline = new LWJGL3KHRRayTracingPipeline(deviceInstance, logicalDevice.getFeatures().getPhysicalDeviceFeatureExtensions().getPhysicalDeviceRayTracingPipelineFeaturesKHR(),
+                    (PhysicalDeviceRayTracingPipelinePropertiesKHR) selectedDevice.getProperties().getProperties(Vulkan10.Extension.VK_KHR_ray_tracing_pipeline));
+        }
+        return khrRayTracingPipeline;
+    }
+
+    @Override
     public KHRFragmentShadingRate getKHRFragmentShadingRate() {
         if (khrFragmentShadingRate == null) {
             assertExtensionEnabled(Vulkan10.Extension.VK_KHR_fragment_shading_rate);
-            khrFragmentShadingRate = new LWJGL3KHRFragmentShadingRate(
-                    logicalDevice.getFeatures().getPhysicalDeviceFeatureExtensions()
-                            .getPhysicalDeviceFragmentShadingRateFeaturesKHR(),
-                    (PhysicalDeviceFragmentShadingRatePropertiesKHR) selectedDevice.getProperties()
-                            .getProperties(Vulkan10.Extension.VK_KHR_fragment_shading_rate));
+            khrFragmentShadingRate = new LWJGL3KHRFragmentShadingRate(logicalDevice.getFeatures().getPhysicalDeviceFeatureExtensions().getPhysicalDeviceFragmentShadingRateFeaturesKHR(),
+                    (PhysicalDeviceFragmentShadingRatePropertiesKHR) selectedDevice.getProperties().getProperties(Vulkan10.Extension.VK_KHR_fragment_shading_rate));
         }
         return khrFragmentShadingRate;
     }
@@ -1919,15 +1955,6 @@ public class LWJGL3Vulkan12Backend extends Vulkan12Backend<VkDevice> {
         }
         return khrAccelerationStructure;
 
-    }
-
-    @Override
-    public KHRRayTracingPipeline<?> getKHRRayTracingPipeline() {
-        if (khrRayTracingPipeline == null) {
-            assertExtensionEnabled(Vulkan10.Extension.VK_KHR_ray_tracing_pipeline);
-            khrRayTracingPipeline = new LWJGL3KHRRayTracingPipeline(deviceInstance);
-        }
-        return khrRayTracingPipeline;
     }
 
     @Override

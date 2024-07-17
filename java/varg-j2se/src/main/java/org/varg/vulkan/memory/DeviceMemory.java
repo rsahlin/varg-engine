@@ -5,8 +5,6 @@ import java.nio.ByteBuffer;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.gltfio.data.VertexBuffer;
-import org.gltfio.gltf2.JSONBuffer;
-import org.gltfio.gltf2.JSONBufferView;
 import org.ktximageio.ktx.ImageBuffer;
 import org.varg.pipeline.Pipelines.DescriptorSetTarget;
 import org.varg.uniform.BindBuffer;
@@ -18,7 +16,6 @@ import org.varg.vulkan.Vulkan10.MemoryPropertyFlagBit;
 import org.varg.vulkan.image.Image;
 import org.varg.vulkan.image.ImageCreateInfo;
 import org.varg.vulkan.image.ImageSubresourceLayers;
-import org.varg.vulkan.memory.VertexMemory.Mode;
 import org.varg.vulkan.structs.FormatProperties;
 
 /**
@@ -34,8 +31,7 @@ public interface DeviceMemory {
      * @return
      */
     static long getPaddedBufferSize(long size) {
-        return size + ((size % DeviceMemory.MIN_BUFFER_DATASIZE) == 0 ? 0 : DeviceMemory.MIN_BUFFER_DATASIZE
-                - (size % DeviceMemory.MIN_BUFFER_DATASIZE));
+        return size + ((size % DeviceMemory.MIN_BUFFER_DATASIZE) == 0 ? 0 : DeviceMemory.MIN_BUFFER_DATASIZE - (size % DeviceMemory.MIN_BUFFER_DATASIZE));
     }
 
     /**
@@ -88,21 +84,6 @@ public interface DeviceMemory {
     VertexMemory allocateVertexMemory(int indexUsage, VertexBuffer[] indexBuffers, int vertexUsage, VertexBuffer[] vertexBuffers);
 
     /**
-     * Allocates memory, creates buffers and binds to the memory - use this to allocate vertex memory.
-     * 
-     * @param bufferViews
-     * @return Bound memorybuffers with memory allocated to fit
-     */
-    VertexMemory allocateVertexMemory(Mode mode, int bufferUsage, JSONBufferView... bufferViews);
-
-    /**
-     * Allocates memory, creates buffers and binds to the memory - use this to allocate vertex memory.
-     * 
-     * @return Bound memorybuffers with memory allocated to fit
-     */
-    VertexMemory allocateVertexMemory(int bufferUsage, JSONBuffer[] indexBuffers, JSONBuffer[] vertexBuffers);
-
-    /**
      * Frees the buffers and memory that is allocted for the buffers
      * If array contains more than one BufferMemory they must be connected to the same Memory
      * 
@@ -120,24 +101,15 @@ public interface DeviceMemory {
     void freeBuffer(BindBuffer... buffers);
 
     /**
-     * Allocates memory with the specified size in bytes and memory flags
+     * Allocates memory with the specified size in byte, memoryproperty flags, memoryallocate and devicemask
      * 
      * @param sizeInBytes
-     * @param memoryProperties
-     * @return
-     */
-    Memory allocateMemory(long sizeInBytes, int memoryProperties);
-
-    /**
-     * Allocates memory with the specified size in byte, memory flags and uses the allocateFlag and deviceMask
-     * 
-     * @param sizeInBytes
-     * @param memoryProperties
-     * @param allocateFlag
+     * @param memoryProperties Must be a value from one or more MemoryPropertyFlagBit
+     * @param allocateFlags Must be a value from one or more MemoryAllocateFlagBits
      * @param deviceMask
      * @return
      */
-    Memory allocateMemory(long sizeInBytes, int memoryProperties, int allocateFlag, int deviceMask);
+    Memory allocateMemory(long sizeInBytes, int memoryProperties, int allocateFlags, int deviceMask);
 
     /**
      * Allocates and binds image memory, the allocated memory must be freed by calling
@@ -279,15 +251,6 @@ public interface DeviceMemory {
      * @param queue
      */
     void updateBuffers(ByteBuffer[] sourceBuffers, MemoryBuffer[] deviceBuffers, Queue queue);
-
-    /**
-     * Copies one or more bytebuffers to one device memorybuffer, using update or copy depending on size
-     * 
-     * @param deviceBuffer
-     * @param queue
-     * @param sourceBuffers One or more source buffers.
-     */
-    void updateBuffers(MemoryBuffer deviceBuffer, Queue queue, ByteBuffer... sourceBuffers);
 
     /**
      * Copies memory from device buffer memory to the destination buffer

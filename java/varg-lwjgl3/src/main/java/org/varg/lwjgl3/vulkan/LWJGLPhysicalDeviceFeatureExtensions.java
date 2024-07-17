@@ -7,6 +7,7 @@ import org.lwjgl.vulkan.EXTIndexTypeUint8;
 import org.lwjgl.vulkan.EXTMeshShader;
 import org.lwjgl.vulkan.EXTRobustness2;
 import org.lwjgl.vulkan.KHRFragmentShadingRate;
+import org.lwjgl.vulkan.KHRRayTracingPipeline;
 import org.lwjgl.vulkan.VK12;
 import org.lwjgl.vulkan.VkPhysicalDevice;
 import org.lwjgl.vulkan.VkPhysicalDevice16BitStorageFeatures;
@@ -16,12 +17,14 @@ import org.lwjgl.vulkan.VkPhysicalDeviceFeatures2;
 import org.lwjgl.vulkan.VkPhysicalDeviceFragmentShadingRateFeaturesKHR;
 import org.lwjgl.vulkan.VkPhysicalDeviceIndexTypeUint8FeaturesEXT;
 import org.lwjgl.vulkan.VkPhysicalDeviceMeshShaderFeaturesEXT;
+import org.lwjgl.vulkan.VkPhysicalDeviceRayTracingPipelineFeaturesKHR;
 import org.lwjgl.vulkan.VkPhysicalDeviceRobustness2FeaturesEXT;
 import org.lwjgl.vulkan.VkPhysicalDeviceShaderFloat16Int8Features;
 import org.varg.vulkan.extensions.EXTRobustness2.PhysicalDeviceRobustness2FeaturesEXT;
 import org.varg.vulkan.extensions.PhysicalDeviceAccelerationStructureFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceFragmentShadingRateFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
+import org.varg.vulkan.extensions.PhysicalDeviceRayTracingPipelineFeaturesKHR;
 import org.varg.vulkan.structs.PhysicalDevice16BitStorageFeatures;
 import org.varg.vulkan.structs.PhysicalDevice8BitStorageFeatures;
 import org.varg.vulkan.structs.PhysicalDeviceFeatureExtensions;
@@ -29,7 +32,6 @@ import org.varg.vulkan.structs.PhysicalDeviceShaderFloat16Int8Features;
 
 public class LWJGLPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeatureExtensions {
 
-    @SuppressWarnings("checkstyle:linelength")
     public LWJGLPhysicalDeviceFeatureExtensions(@NonNull VkPhysicalDevice device) {
         VkPhysicalDeviceConditionalRenderingFeaturesEXT conRender = VkPhysicalDeviceConditionalRenderingFeaturesEXT
                 .calloc()
@@ -52,18 +54,19 @@ public class LWJGLPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeatureE
         VkPhysicalDeviceRobustness2FeaturesEXT robustness2 = VkPhysicalDeviceRobustness2FeaturesEXT.calloc()
                 .sType(EXTRobustness2.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT)
                 .pNext(shader16Bit.address());
-        VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragmentShadingRate =
-                VkPhysicalDeviceFragmentShadingRateFeaturesKHR.calloc()
-                        .sType(KHRFragmentShadingRate.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR)
-                        .pNext(robustness2.address());
-        org.lwjgl.vulkan.VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure =
-                org.lwjgl.vulkan.VkPhysicalDeviceAccelerationStructureFeaturesKHR.calloc()
-                        .sType(org.lwjgl.vulkan.KHRAccelerationStructure.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR)
-                        .pNext(fragmentShadingRate.address());
+        VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragmentShadingRate = VkPhysicalDeviceFragmentShadingRateFeaturesKHR.calloc()
+                .sType(KHRFragmentShadingRate.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR)
+                .pNext(robustness2.address());
+        org.lwjgl.vulkan.VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure = org.lwjgl.vulkan.VkPhysicalDeviceAccelerationStructureFeaturesKHR.calloc()
+                .sType(org.lwjgl.vulkan.KHRAccelerationStructure.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR)
+                .pNext(fragmentShadingRate.address());
+        VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingStructure = VkPhysicalDeviceRayTracingPipelineFeaturesKHR.calloc()
+                .sType(KHRRayTracingPipeline.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR)
+                .pNext(accelerationStructure.address());
 
         VkPhysicalDeviceFeatures2 features = VkPhysicalDeviceFeatures2.calloc()
                 .sType(VK12.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2)
-                .pNext(accelerationStructure.address());
+                .pNext(rayTracingStructure.address());
 
         VK12.vkGetPhysicalDeviceFeatures2(device, features);
         copyBooleanField(indexedUint8, getClass().getSuperclass(), "indexTypeUint8");
@@ -79,6 +82,7 @@ public class LWJGLPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeatureE
 
         fragmentShadingRateFeatures = new PhysicalDeviceFragmentShadingRateFeaturesKHR(fragmentShadingRate);
         accelerationStructureFeatures = new PhysicalDeviceAccelerationStructureFeaturesKHR(accelerationStructure);
+        rayTracingFeatures = new PhysicalDeviceRayTracingPipelineFeaturesKHR(rayTracingStructure);
     }
 
 }

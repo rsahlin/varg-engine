@@ -159,22 +159,27 @@ public class VulkanScene extends JSONScene implements VulkanRenderableScene {
         }
     }
 
-    private HashMap<Integer, VertexMemory> createAttributeMemory(DeviceMemory deviceMemory,
-            VertexBufferBundle vertexBufferMap) {
+    private HashMap<Integer, VertexMemory> createAttributeMemory(DeviceMemory deviceMemory, VertexBufferBundle vertexBufferMap) {
+        /**
+         * TODO - Raytracer needs buffer usage flag bits - should this be conditional if raytracing is used or not?
+         */
         BufferUsageFlagBit[] vertexFlags = VulkanBackend.getBufferUsage(BackendStringProperties.VERTEX_USAGE,
                 BufferUsageFlagBit.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                BufferUsageFlagBit.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                BufferUsageFlagBit.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
         int vertexUsage = BitFlags.getFlagsValue(vertexFlags);
 
         BufferUsageFlagBit[] indexFlags = new BufferUsageFlagBit[] {
                 BufferUsageFlagBit.VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT };
+                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                BufferUsageFlagBit.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                BufferUsageFlagBit.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR };
         int indexUsage = BitFlags.getFlagsValue(indexFlags);
 
         HashMap<Integer, VertexMemory> result = new HashMap<Integer, VertexMemory>();
         for (Integer key : vertexBufferMap.getVertexBufferKeys()) {
-            VertexMemory mem = deviceMemory.allocateVertexMemory(indexUsage, vertexBufferMap.getIndexBuffers(key),
-                    vertexUsage, vertexBufferMap.getVertexBuffers(key));
+            VertexMemory mem = deviceMemory.allocateVertexMemory(indexUsage, vertexBufferMap.getIndexBuffers(key), vertexUsage, vertexBufferMap.getVertexBuffers(key));
             result.put(key, mem);
         }
         return result;

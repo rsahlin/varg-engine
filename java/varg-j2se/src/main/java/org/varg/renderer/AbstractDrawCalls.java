@@ -90,9 +90,9 @@ public abstract class AbstractDrawCalls {
         this.arrayInstanceCount = arrayInstanceCount;
         this.indexedInstanceCount = indexedInstanceCount;
         this.arrayMinMax = new float[6 * arrayInstanceCount];
-        this.indexedMinMax[IndexType.BYTE.index] = new float[indexedInstanceCount[0]];
-        this.indexedMinMax[IndexType.SHORT.index] = new float[indexedInstanceCount[1]];
-        this.indexedMinMax[IndexType.INT.index] = new float[indexedInstanceCount[2]];
+        this.indexedMinMax[IndexType.BYTE.index] = new float[6 * indexedInstanceCount[0]];
+        this.indexedMinMax[IndexType.SHORT.index] = new float[6 * indexedInstanceCount[1]];
+        this.indexedMinMax[IndexType.INT.index] = new float[6 * indexedInstanceCount[2]];
         if (arrayInstanceCount > 0) {
             indirectCommandBuffer = Buffers.createByteBuffer(arrayInstanceCount * getCommandSize() * Integer.BYTES);
             indirectCommands = indirectCommandBuffer.asIntBuffer();
@@ -109,14 +109,22 @@ public abstract class AbstractDrawCalls {
         }
     }
 
+    public float[] getIndexedMinMax(IndexType indexType) {
+        return indexedMinMax[indexType.index];
+    }
+
     /**
      * Returns the instance count (drawcount) for the indexed type
      * 
-     * @param indexType
+     * @param indexType, null to return all indexed instancecounts
      * @return
      */
     public int getIndexedInstanceCount(IndexType indexType) {
-        return indexedInstanceCount != null ? indexedInstanceCount[indexType.index] : 0;
+        if (indexType == null) {
+            return indexedInstanceCount != null ? indexedInstanceCount[0] + indexedInstanceCount[1] + indexedInstanceCount[2] : 0;
+        } else {
+            return indexedInstanceCount != null ? indexedInstanceCount[indexType.index] : 0;
+        }
     }
 
     /**
@@ -206,6 +214,35 @@ public abstract class AbstractDrawCalls {
         IntBuffer indirect = indirectIndexCommandBuffers[type.index].asIntBuffer();
         indirect.put(indirectCall);
         currentIndicesIndex[type.index]++;
+    }
+
+    /**
+     * Returns the indirect indexedcommands, or null
+     * 
+     * @param type
+     * @return
+     */
+    public int[] getInderectIndexedDrawCommands(IndexType type) {
+        return getIndirectCommands(indirectIndexCommandBuffers[type.index], getIndexedCommandSize(), getIndexedInstanceCount(type));
+    }
+
+    private int[] getIndirectCommands(ByteBuffer cmdBuffer, int cmdSize, int instanceCount) {
+        int[] result = null;
+        if (cmdBuffer != null) {
+            cmdBuffer.position(0);
+            result = new int[cmdSize * instanceCount];
+            cmdBuffer.asIntBuffer().get(result);
+        }
+        return result;
+    }
+
+    /**
+     * Returns the indirect array drawcommands, or null
+     * 
+     * @return
+     */
+    public int[] getIndirectArrayDrawCommands() {
+        return getIndirectCommands(indirectCommandBuffer, getCommandSize(), arrayInstanceCount);
     }
 
 }

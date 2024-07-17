@@ -593,8 +593,7 @@ public class GLSLCompiler {
         MacroSet stageMacros = getMacroSet(stage.name());
         String macroString = stageMacros.getMacroString();
         String output = destinationPath + sourceName + stage.name + outputHash + SPIRV_EXTENSION;
-        compile(new String[] { resourceDirectory, compileString + " " + macroString +
-                getCompileSourceString(sourceInput, resourceDirectory + output) }, buffer);
+        compile(new String[] { resourceDirectory, compileString + " " + macroString + getCompileSourceString(sourceInput, resourceDirectory + output) }, buffer);
         switch (compiler) {
             case SHADERC:
                 return saveAsSPIRV(buffer, resourceDirectory + output);

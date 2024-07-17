@@ -12,7 +12,7 @@ import org.varg.shader.MeshShader;
 import org.varg.shader.MeshShader.MeshShaderCreateInfo;
 import org.varg.shader.Shader;
 import org.varg.shader.ShaderBinary;
-import org.varg.shader.VulkanMeshShaderBinary;
+import org.varg.shader.VulkanShaderBinary;
 import org.varg.shader.voxels.VoxelMeshShader.VoxelMeshShaderCreateInfo;
 import org.varg.vulkan.GLSLCompiler;
 import org.varg.vulkan.Vulkan10.Format;
@@ -205,7 +205,7 @@ public class VoxelMeshShader extends BaseShaderImplementation<VoxelMeshShaderCre
             case TASK:
             case MESH:
             case FRAGMENT:
-                VulkanMeshShaderBinary spirv = new VulkanMeshShaderBinary();
+                VulkanShaderBinary spirv = new VulkanShaderBinary();
                 return internalGetShaderSource(stage, getShaderInfo(), spirv);
             default:
                 throw new IllegalArgumentException(ErrorMessage.NOT_IMPLEMENTED.message + stage);

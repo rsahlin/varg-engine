@@ -55,7 +55,9 @@ public class Gltf2GraphicsShader extends BaseShaderImplementation<GraphicsShader
         MATRIX(GLTF_BINDING, UNIFORM_MATRIX_SET, SetType.UNIFORM_TYPE,
                 DescriptorType.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 BufferUsageFlagBit.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+                BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                BufferUsageFlagBit.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                BufferUsageFlagBit.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR),
         MATERIAL(GLTF_BINDING, UNIFORM_MATERIAL_SET, SetType.UNIFORM_TYPE,
                 DescriptorType.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, BufferUsageFlagBit.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 BufferUsageFlagBit.VK_BUFFER_USAGE_TRANSFER_DST_BIT),
@@ -78,8 +80,7 @@ public class Gltf2GraphicsShader extends BaseShaderImplementation<GraphicsShader
         private final DescriptorType descriptorType;
         private final BufferUsageFlagBit[] bufferUsage;
 
-        GltfDescriptorSetTarget(int binding, int set, SetType type, DescriptorType descriptorType,
-                BufferUsageFlagBit... bufferUsage) {
+        GltfDescriptorSetTarget(int binding, int set, SetType type, DescriptorType descriptorType, BufferUsageFlagBit... bufferUsage) {
             this.binding = binding;
             this.type = type;
             this.set = set;
@@ -162,8 +163,7 @@ public class Gltf2GraphicsShader extends BaseShaderImplementation<GraphicsShader
     private static final String GLTF2_FOLDER = "gltf2/";
 
     public enum GraphicsShaderType implements GraphicsSubtype {
-        GLTF2(GLTF_SOURCE, GLTF2_FOLDER, PolygonMode.VK_POLYGON_MODE_FILL, new Stage[] { Stage.VERTEX,
-                Stage.FRAGMENT }, GltfDescriptorSetTarget.values());
+        GLTF2(GLTF_SOURCE, GLTF2_FOLDER, PolygonMode.VK_POLYGON_MODE_FILL, new Stage[] { Stage.VERTEX, Stage.FRAGMENT }, GltfDescriptorSetTarget.values());
 
         private final Stage[] stages;
         private final String sourceName;
@@ -171,8 +171,7 @@ public class Gltf2GraphicsShader extends BaseShaderImplementation<GraphicsShader
         private final PolygonMode polygonMode;
         private final DescriptorSetTarget[] targets;
 
-        GraphicsShaderType(String sourceName, String folder, PolygonMode polygonMode, Stage[] stages,
-                GltfDescriptorSetTarget... targets) {
+        GraphicsShaderType(String sourceName, String folder, PolygonMode polygonMode, Stage[] stages, GltfDescriptorSetTarget... targets) {
             this.sourceName = sourceName;
             this.folder = folder;
             this.polygonMode = polygonMode;
@@ -263,8 +262,7 @@ public class Gltf2GraphicsShader extends BaseShaderImplementation<GraphicsShader
                 case GLOBAL_RENDERPASS:
                     return GltfStorageBuffers.GLOBAL_UNIFORMS_SIZE;
                 case TEXTURE_TRANSFORM:
-                    return scene.getRoot().getGltfExtensions().getKHRTextureTransformCount()
-                            * Matrix.MATRIX_ELEMENTS * Float.BYTES;
+                    return scene.getRoot().getGltfExtensions().getKHRTextureTransformCount() * Matrix.MATRIX_ELEMENTS * Float.BYTES;
                 case MATRIX:
                     return scene.getMeshCount() * GltfStorageBuffers.UNIFORM_MATRIX_BUFFER_SIZE;
                 case MATERIAL:
@@ -276,8 +274,7 @@ public class Gltf2GraphicsShader extends BaseShaderImplementation<GraphicsShader
                 case MATERIAL_TEXTURE:
                     break;
                 case PRIMITIVE:
-                    return GltfStorageBuffers.getUniformPrimitiveSize(scene.getPrimitiveInstanceCount())
-                            * Integer.BYTES;
+                    return GltfStorageBuffers.getUniformPrimitiveSize(scene.getPrimitiveInstanceCount()) * Integer.BYTES;
                 default:
                     throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE + ", target " + target);
             }
@@ -343,7 +340,7 @@ public class Gltf2GraphicsShader extends BaseShaderImplementation<GraphicsShader
 
     @Override
     public ShaderBinary getShaderSource(Stage stage) {
-        VulkanGraphicsShaderBinary spirv = new VulkanGraphicsShaderBinary();
+        VulkanShaderBinary spirv = new VulkanShaderBinary();
         switch (stage) {
             case VERTEX:
             case FRAGMENT:

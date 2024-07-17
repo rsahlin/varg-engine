@@ -22,6 +22,8 @@ import org.gltfio.gltf2.extensions.GltfExtensions.ExtensionTypes;
 import org.gltfio.gltf2.extensions.KHREnvironmentMap.KHREnvironmentMapReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.KHRLightsPunctualReference;
 import org.gltfio.gltf2.extensions.KHRLightsPunctual.Light;
+import org.gltfio.lib.BitFlags;
+import org.gltfio.lib.Buffers;
 import org.gltfio.lib.Constants;
 import org.gltfio.lib.ErrorMessage;
 import org.gltfio.lib.Logger;
@@ -43,13 +45,14 @@ import org.varg.renderer.BRDF.BRDFFloatProperties;
 import org.varg.renderer.DrawCallBundle;
 import org.varg.renderer.GltfRenderer;
 import org.varg.renderer.MVPMatrices;
-import org.varg.renderer.MVPMatrices.ConcatModelCallback;
 import org.varg.renderer.MVPMatrices.Matrices;
+import org.varg.renderer.MVPMatrices.StoreModelMatrixCallback;
 import org.varg.shader.Gltf2GraphicsShader;
 import org.varg.shader.Gltf2GraphicsShader.GltfDescriptorSetTarget;
 import org.varg.uniform.BindBuffer.BufferState;
 import org.varg.vulkan.VulkanBackend.BackendIntProperties;
 import org.varg.vulkan.VulkanRenderableScene;
+import org.varg.vulkan.extensions.KHRAccelerationStructure.GeometryInstanceFlagBitsKHR;
 
 /**
  *
@@ -421,6 +424,30 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
         buffer.setState(BufferState.updated);
     }
 
+    private final class MatrixCallback implements StoreModelMatrixCallback {
+
+        private final BindBuffer buffer;
+        private final ByteBuffer asInstanceData;
+        private final IntBuffer asInstanceInt;
+        private static final int mask = 0x0ff000000;
+
+        private MatrixCallback(BindBuffer buffer, int hitTableOffset, GeometryInstanceFlagBitsKHR... flags) {
+            this.buffer = buffer;
+            asInstanceData = Buffers.createByteBuffer(4 * Integer.BYTES);
+            asInstanceInt = asInstanceData.asIntBuffer();
+            int flagValue = (BitFlags.getFlagsValue(flags) << 24) & 0x0ff000000;
+            asInstanceInt.position(1).put(flagValue + hitTableOffset);
+        }
+
+        @Override
+        public void storeMatrix(JSONNode<JSONMesh<JSONPrimitive>> node, float[] matrix) {
+            int floatPos = buffer.storeFloatData(node.getMatrixIndex() * Matrix.MATRIX_ELEMENTS, 12, matrix);
+            asInstanceInt.position(0).put(mask + node.getMatrixIndex());
+            asInstanceData.position(0);
+            buffer.getBackingBuffer().position(floatPos * Float.BYTES).put(asInstanceData);
+        }
+    };
+
     /**
      * TODO - store matrix in float array, then do one copy to destination buffer
      * 
@@ -431,16 +458,10 @@ public class GltfStorageBuffers extends DescriptorBuffers<Gltf2GraphicsShader> {
         JSONNode[] sceneNodes = root.getNodes();
         if (sceneNodes != null) {
             MVPMatrices matrices = new MVPMatrices();
+            MatrixCallback setter = new MatrixCallback(buffer, 0, GeometryInstanceFlagBitsKHR.VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR);
             Transform sceneTransform = root.getSceneTransform();
             matrices.setMatrix(Matrices.MODEL, sceneTransform.updateMatrix());
-            matrices.concatModelMatrices(sceneNodes, new ConcatModelCallback() {
-                @Override
-                public void concatModelMatrix(JSONNode<JSONMesh<JSONPrimitive>> node, float[] matrix) {
-                    if (node.getMesh() != null) {
-                        buffer.storeFloatData(node.getMatrixIndex() * Matrix.MATRIX_ELEMENTS, matrices.getMatrix(Matrices.MODEL));
-                    }
-                }
-            });
+            matrices.concatModelMatrices(sceneNodes, setter);
         }
     }
 

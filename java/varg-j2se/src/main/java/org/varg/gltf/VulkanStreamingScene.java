@@ -13,12 +13,10 @@ import org.gltfio.gltf2.JSONTexture.Channel;
 import org.gltfio.gltf2.StreamingScene;
 import org.gltfio.gltf2.stream.MeshStream;
 import org.gltfio.gltf2.stream.NodeStream;
-import org.gltfio.gltf2.stream.PrimitiveStream.IndexType;
 import org.gltfio.gltf2.stream.SceneStream;
 import org.gltfio.gltf2.stream.SubStream.DataType;
 import org.gltfio.gltf2.stream.VertexAttributeStream;
 import org.gltfio.lib.ErrorMessage;
-import org.gltfio.lib.Logger;
 import org.varg.renderer.DrawCallBundle;
 import org.varg.vulkan.IndirectDrawCalls;
 import org.varg.vulkan.IndirectDrawing;
@@ -123,27 +121,6 @@ public class VulkanStreamingScene extends StreamingScene implements VulkanRender
     public IndirectDrawing[] getIndirectDrawCall() {
         return indirectDrawCalls;
 
-    }
-
-    /**
-     * Adds the indirect drawcalls
-     */
-    public void addIndirectDrawCalls() {
-        // TODO - NEEDS synchronization!!!!!
-        IndirectDrawCalls dc = indirectDrawCalls[0];
-        for (IndexType type : IndexType.values()) {
-            ArrayList<Integer> offs = indexOffsets[type.index];
-            for (int i = dc.getCurrentIndicesIndex(type); i < currentPrimitiveIndex; i++) {
-                // int currentOffset = dc.getCurrentIndex()[type.index];
-                int currentOffset = -1;
-                if (currentOffset != offs.get(i)) {
-                    Logger.d(getClass(), "Invalid offset, expected " + offs.get(i));
-                }
-                dc.addIndexedIndirectDraw(type, primitives[i].getIndicesCount(), 1, currentOffset, dc
-                        .getCurrentVertexOffset(), i);
-                dc.addVertexOffset(primitives[i].getVertexCount());
-            }
-        }
     }
 
     @Override

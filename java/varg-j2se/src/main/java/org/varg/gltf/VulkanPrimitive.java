@@ -9,9 +9,7 @@ import org.gltfio.gltf2.JSONGltf;
 import org.gltfio.gltf2.JSONPrimitive;
 import org.gltfio.lib.ErrorMessage;
 import org.varg.vulkan.memory.MemoryBuffer;
-import org.varg.vulkan.memory.VertexMemory;
 import org.varg.vulkan.vertex.BindVertexBuffers;
-import org.varg.vulkan.vertex.VertexInputAttributeDescription;
 import org.varg.vulkan.vertex.VertexInputBindingDescription;
 import org.varg.vulkan.vertex.VertexInputBindingDescription.VertexInputRate;
 
@@ -36,25 +34,6 @@ public class VulkanPrimitive extends JSONPrimitive {
     @Override
     public void resolveTransientValues() {
         super.resolveTransientValues();
-    }
-
-    /**
-     * Creates the buffers needed to bind vertexbuffers for rendering
-     * 
-     * @param vertexMemory
-     * @param inputs
-     */
-    public void createBindBuffers(VertexMemory vertexMemory, VertexInputAttributeDescription[] inputs) {
-        switch (vertexMemory.getMode()) {
-            case BUFFERVIEWS:
-                createBindBuffers(vertexMemory.getMemoryBuffers(), inputs);
-                break;
-            case FLATTENED:
-                createBindBuffers(vertexMemory.getMemoryBuffer(), vertexMemory.getOffsets(), inputs);
-                break;
-            default:
-                throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", " + vertexMemory.getMode());
-        }
     }
 
     /**
@@ -93,39 +72,6 @@ public class VulkanPrimitive extends JSONPrimitive {
      */
     public BindVertexBuffers getBindBuffers() {
         return bindBuffers;
-    }
-
-    private void createBindBuffers(MemoryBuffer[] vertexBuffers, VertexInputAttributeDescription[] inputs) {
-        MemoryBuffer[] boundBuffers = new MemoryBuffer[inputs.length];
-        long[] boundOffsets = new long[boundBuffers.length];
-        for (int i = firstBinding; i < inputs.length; i++) {
-            JSONAccessor accessor = inputs[i] != null ? getAccessor(AttributeSorter.GLTF_SORT_ORDER[i]) : null;
-            if (accessor != null) {
-                boundBuffers[i] = vertexBuffers[accessor.getBufferViewIndex()];
-                boundOffsets[i] = accessor.getByteOffset();
-            } else {
-                boundBuffers[i] = null;
-                boundOffsets[i] = 0;
-            }
-        }
-        bindBuffers = new BindVertexBuffers(firstBinding, boundBuffers, boundOffsets);
-    }
-
-    private void createBindBuffers(MemoryBuffer vertexBuffer, int[] offsets,
-            VertexInputAttributeDescription[] inputs) {
-        MemoryBuffer[] boundBuffers = new MemoryBuffer[inputs.length];
-        long[] boundOffsets = new long[boundBuffers.length];
-        for (int i = firstBinding; i < inputs.length; i++) {
-            JSONAccessor accessor = inputs[i] != null ? getAccessor(AttributeSorter.GLTF_SORT_ORDER[i]) : null;
-            if (accessor != null) {
-                boundBuffers[i] = vertexBuffer;
-                boundOffsets[i] = offsets[accessor.getBufferViewIndex()] + accessor.getByteOffset();
-            } else {
-                boundBuffers[i] = null;
-                boundOffsets[i] = 0;
-            }
-        }
-        bindBuffers = new BindVertexBuffers(firstBinding, boundBuffers, boundOffsets);
     }
 
     /**

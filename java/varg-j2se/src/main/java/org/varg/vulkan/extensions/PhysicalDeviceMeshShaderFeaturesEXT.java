@@ -20,8 +20,16 @@ public class PhysicalDeviceMeshShaderFeaturesEXT extends PlatformStruct {
     @AllowPublic
     public boolean meshShaderQueries;
 
-    public PhysicalDeviceMeshShaderFeaturesEXT(boolean taskShader, boolean meshShader, boolean multiviewMeshShader,
-            boolean primitiveFragmentShadingRateMeshShader, boolean meshShaderQueries) {
+    /**
+     * Use when requesting features
+     * 
+     * @param taskShader
+     * @param meshShader
+     * @param multiviewMeshShader
+     * @param primitiveFragmentShadingRateMeshShader
+     * @param meshShaderQueries
+     */
+    public PhysicalDeviceMeshShaderFeaturesEXT(boolean taskShader, boolean meshShader, boolean multiviewMeshShader, boolean primitiveFragmentShadingRateMeshShader, boolean meshShaderQueries) {
         this.taskShader = taskShader;
         this.meshShader = meshShader;
         this.multiviewMeshShader = multiviewMeshShader;

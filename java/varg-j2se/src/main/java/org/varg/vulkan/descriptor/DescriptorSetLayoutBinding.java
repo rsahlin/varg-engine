@@ -14,8 +14,7 @@ public class DescriptorSetLayoutBinding {
     final ShaderStageFlagBit[] stageFlags;
     final Sampler[] immutableSamplers;
 
-    public DescriptorSetLayoutBinding(int binding, DescriptorType descriptorType, int descriptorCount,
-            ShaderStageFlagBit[] stageFlags, Sampler[] immutableSamplers) {
+    public DescriptorSetLayoutBinding(int binding, DescriptorType descriptorType, int descriptorCount, ShaderStageFlagBit[] stageFlags, Sampler[] immutableSamplers) {
         this.binding = binding;
         this.descriptorType = descriptorType;
         this.descriptorCount = descriptorCount;

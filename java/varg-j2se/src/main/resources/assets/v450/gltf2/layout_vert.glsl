@@ -25,7 +25,27 @@ layout(location = BASECOLOR_LOCATION_OUT) out vec4[2] vMaterialColor;
   layout(location = POINT_LOCATION_OUT) out  vec4 vPointLight[POINT];
 #endif
 
+
+/**
+ * modelMatrix is a 3 X 4 matrix
+ *
+ * instanceCustomIndex and mask occupy the same memory as if a single uint32_t was specified in their place
+ * instanceCustomIndex occupies the 24 least significant bits of that memory
+ * mask occupies the 8 most significant bits of that memory
+ *
+ * instanceShaderBindingTableRecordOffset and flags occupy the same memory as if a single uint32_t was specified in their place
+ * instanceShaderBindingTableRecordOffset occupies the 24 least significant bits of that memory
+ *flags occupies the 8 most significant bits of that memory 
+ *
+ */
+struct AccelerationInstance {
+    vec4[3] modelMatrix;
+    int instanceCustomIndexAndMask;
+    int instanceSBTOffsetAndFlags;
+    int[2] accelerationStructureReference;
+};
+
 layout(std430, set = UNIFORM_MATRIX_SET, binding = GLTF_BINDING) readonly buffer matrixstruct {
-    mat4[MATRIX_COUNT] uModelMatrix;
-} matrix;
+    AccelerationInstance[MATRIX_COUNT] accelerationInstance;
+} asInstance;
 

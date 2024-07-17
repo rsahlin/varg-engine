@@ -76,25 +76,38 @@ public abstract class DescriptorBuffers<S extends Shader<?>> {
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null");
         }
         if (bindBuffersMap.containsKey(target)) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + "Already contains buffers for " + target);
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Already contains buffers for " + target);
         }
-        if (backingFloatData != null && buffer.getBackingBuffer() != null &&
-                buffer.getBackingBuffer().capacity() != backingFloatData.length * Float.BYTES) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_STATE.message + "Size of backing buffer does not match ("
-                            + buffer.getBackingBuffer().capacity() + ") ("
-                            + backingFloatData.length * Float.BYTES + ")");
+        if (backingFloatData != null && buffer.getBackingBuffer() != null && buffer.getBackingBuffer().capacity() != backingFloatData.length * Float.BYTES) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Size of backing buffer does not match ("
+                    + buffer.getBackingBuffer().capacity() + ") ("
+                    + backingFloatData.length * Float.BYTES + ")");
         }
         if (allocatedMemory == null) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Allocated memory must be set.");
         }
         if (buffer.getBuffer().getBoundMemory().pointer != allocatedMemory.pointer) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Allocated memory does not match bound memory pointer");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Allocated memory does not match bound memory pointer");
         }
         bindBuffersMap.put(target, buffer);
         backingBuffersMap.put(target, backingFloatData);
+    }
+
+    /**
+     * Adds the buffer containing toplevel acceleration structures.
+     * This will add the bindbuffer to the
+     * 
+     * @param target
+     * @param buffer
+     */
+    public void addRayTracingToplevelAS(DescriptorSetTarget target, BindBuffer buffer) {
+        if (target == null || buffer == null) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null");
+        }
+        if (bindBuffersMap.containsKey(target)) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Already contains buffers for " + target);
+        }
+        bindBuffersMap.put(target, buffer);
     }
 
     /**

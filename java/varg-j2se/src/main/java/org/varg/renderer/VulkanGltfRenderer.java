@@ -487,8 +487,7 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
     }
 
     @Override
-    public void bindDescriptorSets(Subtype type, DescriptorBuffers buffers, Queue renderQueue,
-            DescriptorSetTarget... targets) {
+    public void bindDescriptorSets(Subtype type, DescriptorBuffers buffers, Queue renderQueue, DescriptorSetTarget... targets) {
         if (targets == null || targets.length < 1) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Targets array is null or empty");
         }
@@ -533,7 +532,7 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
         getPipelines().cmdBindDescriptorSets(Gltf2GraphicsShader.GraphicsShaderType.GLTF2, renderQueue, buffer.getDynamicOffsets(), GltfDescriptorSetTarget.MATRIX);
         for (IndirectDrawCalls dc : drawBundle.getAllDrawCalls()) {
             int pipelineHash = dc.getPipelineHash();
-            GraphicsPipeline pipeline = pipelineManager.getPipeline(pipelineHash);
+            GraphicsPipeline pipeline = pipelineManager.getGraphicsPipeline(pipelineHash);
             renderQueue.cmdBindPipeline(pipeline, PipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS);
             dc.drawIndirect(renderQueue);
         }
@@ -612,7 +611,7 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
     @Override
     public void drawMeshShader(MeshShader<?> meshShader, DescriptorBuffers<?> buffers, Queue q) {
         if (meshShader != null) {
-            GraphicsPipeline pipeline = pipelineManager.getPipeline(meshShader.getShaderInfo().meshShaderType);
+            GraphicsPipeline pipeline = pipelineManager.getGraphicsPipeline(meshShader.getShaderInfo().meshShaderType);
             q.cmdBindPipeline(pipeline, PipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS);
             EXTMeshShader<Queue> extension = (EXTMeshShader<Queue>) getBackend().getEXTMeshShader();
             int[] groupCounts = null;
@@ -628,7 +627,7 @@ public class VulkanGltfRenderer implements GltfRenderer<VulkanRenderableScene, V
     @Override
     public void invokeComputeShader(ComputeShader computeShader, DescriptorBuffers<?> buffers, Queue q) {
         if (computeShader != null) {
-            ComputePipeline p = pipelineManager.getPipeline(computeShader.getShaderInfo().shaderType);
+            ComputePipeline p = pipelineManager.getComputePipeline(computeShader.getShaderInfo().shaderType);
             q.cmdBindPipeline(p, PipelineBindPoint.VK_PIPELINE_BIND_POINT_COMPUTE);
             int[] workSize = computeShader.getWorkGroupCounts();
             q.cmdDispatch(workSize[0], workSize[1], workSize[2]);

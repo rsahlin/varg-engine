@@ -1,8 +1,16 @@
 package org.varg.vulkan.extensions;
 
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
+import java.util.ArrayList;
+
 import org.gltfio.lib.AllowPublic;
 import org.gltfio.lib.BitFlag;
 import org.gltfio.lib.BitFlags;
+import org.gltfio.lib.Buffers;
+import org.gltfio.lib.ErrorMessage;
+import org.varg.uniform.BindBuffer;
+import org.varg.vulkan.IndirectDrawCalls;
 import org.varg.vulkan.Queue;
 import org.varg.vulkan.Vulkan10;
 import org.varg.vulkan.memory.MemoryBuffer;
@@ -21,8 +29,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
      * @param infos
      * @param buildRangeInfos
      */
-    public abstract void cmdBuildAccelerationStructuresKHR(Q queue, AccelerationStructureBuildGeometryInfoKHR[] infos,
-            AccelerationStructureBuildRangeInfoKHR[] buildRangeInfos);
+    public abstract void cmdBuildAccelerationStructuresKHR(Q queue, AccelerationStructureBuildGeometryInfoKHR[] info, AccelerationStructureBuildRangeInfoKHR[] buildRangeInfos);
 
     /**
      * Provided by VK_KHR_acceleration_structure
@@ -50,8 +57,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
      * @param pCreateInfo
      * @return
      */
-    public abstract AccelerationStructureKHR
-            createAccelerationStructureKHR(AccelerationStructureCreateInfoKHR createInfo);
+    public abstract AccelerationStructureKHR createAccelerationStructureKHR(AccelerationStructureCreateInfoKHR createInfo);
 
     /**
      * Retrieve the required size for an acceleration structure
@@ -59,11 +65,10 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
      * 
      * @param buildInfo
      * @param maxPrimitiveCounts
+     * @param type The geometry type to use
      * @return
      */
-    public abstract AccelerationStructureBuildSizesInfoKHR getAccelerationStructureBuildSizesKHR(
-            AccelerationStructureBuildTypeKHR buildType, AccelerationStructureBuildGeometryInfoKHR buildInfo,
-            int... maxPrimitiveCounts);
+    public abstract AccelerationStructureBuildSizesInfoKHR getAccelerationStructureBuildSizesKHR(AccelerationStructureBuildTypeKHR buildType, AccelerationStructureBuildGeometryInfoKHR buildInfo, int maxPrimitiveCount, GeometryTypeKHR type);
 
     public enum BufferUsageFlagBit implements BitFlag {
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR(0x80000),
@@ -226,25 +231,148 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         }
     }
 
-    public static class AccelerationStructureGeometryDataKHR {
+    public enum GeometryInstanceFlagBitsKHR implements BitFlag {
 
-        public final int stride;
-        public final DeviceOrHostAddress data;
+        VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR(0x00000001),
+        VK_GEOMETRY_INSTANCE_TRIANGLE_FLIP_FACING_BIT_KHR(0x00000002),
+        VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR(0x00000004),
+        VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR(0x000000089),
+        // Provided by VK_EXT_opacity_micromap
+        VK_GEOMETRY_INSTANCE_FORCE_OPACITY_MICROMAP_2_STATE_EXT(0x00000010),
+        // Provided by VK_EXT_opacity_micromap
+        VK_GEOMETRY_INSTANCE_DISABLE_OPACITY_MICROMAPS_EXT(0x00000020),
+        VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_KHR(VK_GEOMETRY_INSTANCE_TRIANGLE_FLIP_FACING_BIT_KHR.value),
+        // Provided by VK_NV_ray_tracing
+        VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV(VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR.value),
+        // Provided by VK_NV_ray_tracing
+        VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_NV(VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_KHR.value),
+        // Provided by VK_NV_ray_tracing
+        VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_NV(VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR.value),
+        // Provided by VK_NV_ray_tracing
+        VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_NV(VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR.value);
 
-        protected AccelerationStructureGeometryDataKHR(DeviceOrHostAddress data, int stride) {
-            this.data = data;
-            this.stride = stride;
+        GeometryInstanceFlagBitsKHR(int value) {
+            this.value = value;
+        }
+
+        public final int value;
+
+        @Override
+        public long getValue() {
+            return value;
+        }
+
+        @Override
+        public String getBitName() {
+            return name();
         }
     }
 
-    public static class AccelerationStructureGeometryTrianglesDataKHR {
-        Vulkan10.Format vertexFormat;
-        long vertexData;
-        int vertexStride;
-        int maxVertex;
-        Vulkan10.IndexType indexType;
-        long indexData;
-        long transformData;
+    public abstract static class AccelerationStructureGeometryDataKHR {
+
+        public final int stride;
+        public final DeviceOrHostAddress data;
+        public final GeometryTypeKHR geometryType;
+
+        protected AccelerationStructureGeometryDataKHR(DeviceOrHostAddress data, int stride, GeometryTypeKHR geometryType) {
+            this.data = data;
+            this.stride = stride;
+            this.geometryType = geometryType;
+        }
+
+        public abstract int getMaxPrimitiveCount(int index);
+
+    }
+
+    public static class AccelerationStructureGeometryTrianglesDataKHR extends AccelerationStructureGeometryDataKHR {
+        public final Vulkan10.Format vertexFormat;
+        public final int vertexStride;
+        public final int maxVertex;
+        public final Vulkan10.IndexType indexType;
+        public final DeviceOrHostAddress indexData;
+        public final DeviceOrHostAddress transformData;
+        private final int[] indirectCommands;
+
+        /**
+         * Use this for arrayed indirectdrawcalls
+         * 
+         * @param vertexFormat
+         * @param vertexData
+         * @param vertexStride
+         * @param maxVertex
+         */
+        public AccelerationStructureGeometryTrianglesDataKHR(Vulkan10.Format vertexFormat, DeviceOrHostAddress vertexData, int vertexStride, int maxVertex, int[] indirectCommands) {
+            super(vertexData, vertexFormat.sizeInBytes, GeometryTypeKHR.VK_GEOMETRY_TYPE_TRIANGLES_KHR);
+            this.vertexFormat = vertexFormat;
+            this.vertexStride = vertexStride;
+            this.maxVertex = maxVertex;
+            this.indexType = null;
+            this.indexData = null;
+            this.transformData = null;
+            this.indirectCommands = indirectCommands;
+        }
+
+        /**
+         * Use this for indexed indirectdrawcalls
+         * 
+         * @param vertexFormat
+         * @param vertexData
+         * @param vertexStride
+         * @param maxVertex
+         * @param indexType
+         * @param indexData
+         */
+        public AccelerationStructureGeometryTrianglesDataKHR(Vulkan10.Format vertexFormat, DeviceOrHostAddress vertexData, int vertexStride, int maxVertex, Vulkan10.IndexType indexType, DeviceOrHostAddress indexData,
+                int[] indirectCommands) {
+            super(vertexData, vertexFormat.sizeInBytes, GeometryTypeKHR.VK_GEOMETRY_TYPE_TRIANGLES_KHR);
+            this.vertexFormat = vertexFormat;
+            this.vertexStride = vertexStride;
+            this.maxVertex = maxVertex;
+            this.indexType = indexType;
+            this.indexData = indexData;
+            this.transformData = null;
+            this.indirectCommands = indirectCommands;
+        }
+
+        public int getDrawCallCount() {
+            return indexType != null ? indirectCommands.length / IndirectDrawCalls.DRAW_INDEXED_INDIRECT_COMMAND_SIZE : indirectCommands.length / IndirectDrawCalls.DRAW_INDIRECT_COMMAND_SIZE;
+        }
+
+        public AccelerationStructureBuildRangeInfoKHR createBuildRangeInfo(int primitiveIndex) {
+            AccelerationStructureBuildRangeInfoKHR result = null;
+            int cmdIndex = getCmdIndex(primitiveIndex);
+            if (indexType != null) {
+                /**
+                 * INDEXED:
+                 * indexCount
+                 * instanceCount
+                 * firstIndex
+                 * vertexOffset
+                 * firstInstance
+                 */
+                result = new AccelerationStructureBuildRangeInfoKHR(primitiveIndex, indirectCommands[cmdIndex] / 3, indirectCommands[cmdIndex + 2] / indexType.sizeInBytes(), indirectCommands[cmdIndex + 3], 0);
+
+            } else {
+                /**
+                 * vertexCount,
+                 * instanceCount,
+                 * firstVertex,
+                 * firstInstance
+                 */
+                result = new AccelerationStructureBuildRangeInfoKHR(primitiveIndex, indirectCommands[cmdIndex], indirectCommands[cmdIndex + 2]);
+            }
+            return result;
+        }
+
+        private int getCmdIndex(int index) {
+            return indexType != null ? index * IndirectDrawCalls.DRAW_INDEXED_INDIRECT_COMMAND_SIZE : index * IndirectDrawCalls.DRAW_INDIRECT_COMMAND_SIZE;
+        }
+
+        @Override
+        public int getMaxPrimitiveCount(int index) {
+            return indirectCommands[getCmdIndex(index)] / 3;
+        }
+
     }
 
     public static class TransformMatrixKHR {
@@ -255,35 +383,72 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
 
         public static final int AABB_SIZE_IN_BYTES = 6 * 4;
 
-        public AccelerationStructureGeometryAabbsDataKHR(DeviceOrHostAddress data) {
-            super(data, AABB_SIZE_IN_BYTES);
+        public AccelerationStructureGeometryAabbsDataKHR(DeviceOrHostAddress data, int primitiveCount) {
+            super(data, AABB_SIZE_IN_BYTES, GeometryTypeKHR.VK_GEOMETRY_TYPE_AABBS_KHR);
         }
+
+        @Override
+        public int getMaxPrimitiveCount(int index) {
+            return 1;
+        }
+
     }
 
     public static class AccelerationStructureGeometryInstancesDataKHR extends AccelerationStructureGeometryDataKHR {
 
-        boolean arrayOfPointers;
-        long data;
+        AccelerationStructureInstanceKHR[] instances;
 
-        public static final int INSTANCE_SIZE_IN_BYTES = (3 * 4 + 4) * 4 + (8 * 4);
+        public AccelerationStructureGeometryInstancesDataKHR(DeviceOrHostAddress data, AccelerationStructureInstanceKHR[] instances) {
+            super(data, AccelerationStructureInstanceKHR.INSTANCE_SIZE_IN_BYTES, GeometryTypeKHR.VK_GEOMETRY_TYPE_INSTANCES_KHR);
+            this.instances = instances;
+        }
 
-        public AccelerationStructureGeometryInstancesDataKHR(DeviceOrHostAddress data) {
-            super(data, INSTANCE_SIZE_IN_BYTES);
+        @Override
+        public int getMaxPrimitiveCount(int index) {
+            return 1;
+        }
+
+    }
+
+    public static class AccelerationStructureInstanceKHR {
+        /**
+         * VkTransformMatrixKHR transform matrix is a 3x4 row-major affine transformation matrix.
+         * uint32 instanceCustomIndex:24 and mask:8;
+         * uint32 instanceShaderBindingTableRecordOffset:24; and flags:8;
+         * uint64_t accelerationStructureReference;
+         * 
+         */
+
+        public static final int CUSTOMINDEX_AND_MASK_BYTE_OFFSET = 48;
+        public static final int SBT_HIT_OFFSET_AND_FLAGS_BYTE_OFFSET = 52;
+        public static final int AS_REFERENCE_BYTE_OFFSET = 7 * 8;
+        public static final int INSTANCE_SIZE_IN_BYTES = (3 * 4 + 1 + 1) * Integer.BYTES + Long.BYTES;
+
+        public final int primitiveId;
+
+        public AccelerationStructureInstanceKHR(AccelerationStructureBuildRangeInfoKHR rangeInfo) {
+            this.primitiveId = rangeInfo.primitiveID;
         }
     }
 
     public static class AccelerationStructureGeometryKHR {
         public final GeometryTypeKHR geometryType;
         public final AccelerationStructureGeometryDataKHR geometry;
-        public final int flags;
 
-        public AccelerationStructureGeometryKHR(GeometryTypeKHR geometryType,
-                AccelerationStructureGeometryDataKHR geometry, GeometryFlagBitsKHR... flags) {
+        public AccelerationStructureGeometryKHR(GeometryTypeKHR geometryType, AccelerationStructureGeometryDataKHR geometry) {
             this.geometryType = geometryType;
             this.geometry = geometry;
-            this.flags = BitFlags.getFlagsValue(flags);
         }
 
+        public static AccelerationStructureGeometryDataKHR[] getGeometries(AccelerationStructureGeometryDataKHR[] geometries, GeometryTypeKHR type) {
+            ArrayList<AccelerationStructureGeometryDataKHR> list = new ArrayList<AccelerationStructureGeometryDataKHR>();
+            for (AccelerationStructureGeometryDataKHR geometry : geometries) {
+                if (geometry.geometryType == type) {
+                    list.add(geometry);
+                }
+            }
+            return list.toArray(new AccelerationStructureGeometryDataKHR[0]);
+        }
     }
 
     public static class AccelerationStructureBuildGeometryInfoKHR extends PlatformStruct {
@@ -298,34 +463,39 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         public AccelerationStructureKHR srcAccelerationStructure;
         @AllowPublic
         public AccelerationStructureKHR dstAccelerationStructure;
-        public final int geometryCount;
-        public final AccelerationStructureGeometryKHR geometries;
+        /**
+         * If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR then geometryType of geometries MUST be the same.
+         */
+        public final AccelerationStructureGeometryDataKHR geometries;
         @AllowPublic
-        public DeviceOrHostAddress scratchData;
+        public long scratchData;
 
-        public AccelerationStructureBuildGeometryInfoKHR(AccelerationStructureTypeKHR type,
-                AccelerationStructureGeometryKHR geometries, int geometryCount,
-                BuildAccelerationStructureFlagBitsKHR... flags) {
+        public AccelerationStructureBuildGeometryInfoKHR(AccelerationStructureTypeKHR type, AccelerationStructureGeometryDataKHR geometries, BuildAccelerationStructureFlagBitsKHR... flags) {
             this.type = type;
             this.flags = BitFlags.getFlagsValue(flags);
             this.mode = BuildAccelerationStructureModeKHR.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
             this.geometries = geometries;
-            this.geometryCount = geometryCount;
         }
 
-        public AccelerationStructureBuildGeometryInfoKHR(AccelerationStructureTypeKHR type,
-                BuildAccelerationStructureModeKHR mode,
-                AccelerationStructureKHR srcAccelerationStructure,
-                AccelerationStructureKHR dstAccelerationStructure,
-                int geometryCount, AccelerationStructureGeometryKHR geometries,
+        /**
+         * 
+         * @param type
+         * @param geometries
+         * @param dstAccelerationStructure
+         * @param scratchData
+         * @param flags
+         */
+        public AccelerationStructureBuildGeometryInfoKHR(AccelerationStructureTypeKHR type, AccelerationStructureGeometryDataKHR geometries, AccelerationStructureKHR dstAccelerationStructure, long scratchData,
                 BuildAccelerationStructureFlagBitsKHR... flags) {
+            if (dstAccelerationStructure == null || scratchData == 0) {
+                throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null value");
+            }
             this.type = type;
-            this.mode = mode;
-            this.srcAccelerationStructure = srcAccelerationStructure;
             this.dstAccelerationStructure = dstAccelerationStructure;
-            this.geometryCount = geometryCount;
-            this.geometries = geometries;
+            this.scratchData = scratchData;
             this.flags = BitFlags.getFlagsValue(flags);
+            this.mode = BuildAccelerationStructureModeKHR.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+            this.geometries = geometries;
         }
 
         /**
@@ -334,8 +504,8 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
          * @param srcAccelerationStruct
          * @param srcScratchData
          */
-        public void setAccelerationStruct(AccelerationStructureKHR srcAccelerationStruct, DeviceOrHostAddress srcScratchData) {
-            if (this.scratchData != null || this.dstAccelerationStructure != null) {
+        public void setAccelerationStruct(AccelerationStructureKHR srcAccelerationStruct, long srcScratchData) {
+            if (this.scratchData != 0 || this.dstAccelerationStructure != null) {
                 throw new IllegalArgumentException();
             }
             this.scratchData = srcScratchData;
@@ -346,20 +516,36 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
 
     public static class AccelerationStructureBuildRangeInfoKHR extends PlatformStruct {
 
+        public final int primitiveID;
         public final int primitiveCount;
         public final int primitiveOffset;
         public final int firstVertex;
         public final int transformOffset;
 
+        /**
+         * Use for as instance
+         * 
+         * @param primitiveCount
+         * @param primitiveOffset
+         */
         public AccelerationStructureBuildRangeInfoKHR(int primitiveCount, int primitiveOffset) {
+            primitiveID = -1;
+            this.primitiveCount = primitiveCount;
+            this.primitiveOffset = primitiveOffset;
+            firstVertex = 0;
+            transformOffset = 0;
+        }
+
+        public AccelerationStructureBuildRangeInfoKHR(int primitiveId, int primitiveCount, int primitiveOffset) {
+            this.primitiveID = primitiveId;
             this.primitiveCount = primitiveCount;
             this.primitiveOffset = primitiveOffset;
             this.firstVertex = 0;
             this.transformOffset = 0;
         }
 
-        public AccelerationStructureBuildRangeInfoKHR(int primitiveCount, int primitiveOffset, int firstVertex,
-                int transformOffset) {
+        public AccelerationStructureBuildRangeInfoKHR(int primitiveId, int primitiveCount, int primitiveOffset, int firstVertex, int transformOffset) {
+            this.primitiveID = primitiveId;
             this.primitiveCount = primitiveCount;
             this.primitiveOffset = primitiveOffset;
             this.firstVertex = firstVertex;
@@ -381,31 +567,21 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
          */
         public final long buildScratchSize;
 
-        private final AccelerationStructureBuildGeometryInfoKHR buildInfo;
-
-        public AccelerationStructureBuildSizesInfoKHR(long accelerationStructureSize, long updateScratchSize,
-                long buildScratchSize, AccelerationStructureBuildGeometryInfoKHR buildInfo) {
+        public AccelerationStructureBuildSizesInfoKHR(long accelerationStructureSize, long updateScratchSize, long buildScratchSize) {
             this.accelerationStructureSize = accelerationStructureSize;
             this.updateScratchSize = updateScratchSize;
             this.buildScratchSize = buildScratchSize;
-            this.buildInfo = buildInfo;
-        }
-
-        /**
-         * Returns the buildinfo
-         * 
-         * @return
-         */
-        public AccelerationStructureBuildGeometryInfoKHR getBuildInfo() {
-            return buildInfo;
         }
 
     }
 
     public static class AccelerationStructureKHR extends Handle<AccelerationStructureCreateInfoKHR> {
 
-        public AccelerationStructureKHR(long adress, AccelerationStructureCreateInfoKHR createInfo) {
+        public final long asReference;
+
+        public AccelerationStructureKHR(long adress, long asReference, AccelerationStructureCreateInfoKHR createInfo) {
             super(adress, createInfo);
+            this.asReference = asReference;
         }
 
     }
@@ -416,7 +592,7 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
         /**
          * Must be multiple of 256
          */
-        public final int offset;
+        public final long offset;
         public final long size;
         public final AccelerationStructureTypeKHR type;
         /**
@@ -427,12 +603,11 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
          */
         public final long deviceAddress;
 
-        public AccelerationStructureCreateInfoKHR(MemoryBuffer buffer, long size, AccelerationStructureTypeKHR type,
-                AccelerationStructureCreateFlagBitsKHR... flagBits) {
+        public AccelerationStructureCreateInfoKHR(MemoryBuffer buffer, long size, long offset, AccelerationStructureTypeKHR type, AccelerationStructureCreateFlagBitsKHR... flagBits) {
             this.buffer = buffer;
             this.size = size;
             this.type = type;
-            this.offset = 0;
+            this.offset = offset;
             this.createFlags = BitFlags.getFlagsValue(flagBits);
             this.deviceAddress = 0;
         }
@@ -451,6 +626,26 @@ public abstract class KHRAccelerationStructure<Q extends Queue> {
             this.hostAddress = 0;
         }
 
+        public MemoryBuffer getMemoryBuffer() {
+            return buffer;
+        }
+
+    }
+
+    /**
+     * Creates a bindbuffer for accelerationstructure handles, this is used in descriptorset updates
+     * 
+     * @param toplevelHandles
+     * @return
+     */
+    public static BindBuffer createDescriptorHandleBuffer(AccelerationStructureKHR... toplevelHandles) {
+        ByteBuffer bb = Buffers.createByteBuffer(toplevelHandles.length * Long.BYTES);
+        LongBuffer handles = bb.asLongBuffer();
+        for (AccelerationStructureKHR as : toplevelHandles) {
+            handles.put(as.getHandle());
+        }
+        BindBuffer asHandle = new BindBuffer(bb);
+        return asHandle;
     }
 
 }

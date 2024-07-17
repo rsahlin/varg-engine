@@ -5,6 +5,7 @@ import org.varg.vulkan.extensions.EXTRobustness2.PhysicalDeviceRobustness2Featur
 import org.varg.vulkan.extensions.PhysicalDeviceAccelerationStructureFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceFragmentShadingRateFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
+import org.varg.vulkan.extensions.PhysicalDeviceRayTracingPipelineFeaturesKHR;
 
 public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeatureExtensions {
 
@@ -60,6 +61,18 @@ public class RequestedPhysicalDeviceFeatureExtensions extends PhysicalDeviceFeat
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Available features does not match requested");
         }
         meshShaderFeatures = features;
+    }
+
+    /**
+     * Enables the ray tracing features
+     * 
+     * @param features
+     */
+    protected void addKHRRayTracing(PhysicalDeviceRayTracingPipelineFeaturesKHR features) {
+        if (!available.getPhysicalDeviceRayTracingPipelineFeaturesKHR().checkBooleansTrue(features, PhysicalDeviceRayTracingPipelineFeaturesKHR.class.getDeclaredFields())) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Available features does not match requested");
+        }
+        rayTracingFeatures = features;
     }
 
     /**

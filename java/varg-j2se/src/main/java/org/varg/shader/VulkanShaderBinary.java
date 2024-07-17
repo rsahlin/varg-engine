@@ -6,9 +6,12 @@ import org.gltfio.lib.ErrorMessage;
 import org.varg.spirv.SpirvBinary;
 import org.varg.vulkan.GLSLCompiler;
 
-public class VulkanMeshShaderBinary extends ShaderBinary {
+/**
+ * Implementation of vulkan shader binary - this will compile shader binary using data from shaderInfo and save in default directory.
+ */
+public class VulkanShaderBinary extends ShaderBinary {
 
-    public VulkanMeshShaderBinary() {
+    public VulkanShaderBinary() {
     }
 
     @Override

@@ -13,8 +13,7 @@ import org.varg.vulkan.extensions.KHRRayTracingPipeline.RayTracingShaderGroupCre
 import org.varg.vulkan.pipeline.PipelineShaderStageCreateInfo;
 import org.varg.vulkan.pipeline.PipelineShaderStageCreateInfo.SpecializationInfo;
 
-public class PickingRayTracingShader extends BaseShaderImplementation<RayTracingCreateInfo>
-        implements RayTracingShader {
+public class PickingRayTracingShader extends BaseShaderImplementation<RayTracingCreateInfo> implements RayTracingShader {
 
     public static class PickingRayTracingShaderCreateInfo extends RayTracingCreateInfo {
 
@@ -28,6 +27,8 @@ public class PickingRayTracingShader extends BaseShaderImplementation<RayTracing
             switch (rayTarget) {
                 case DATA:
                     return 10000;
+                case TOPLEVEL:
+                    return 0;
                 default:
                     throw new IllegalArgumentException();
             }
@@ -57,8 +58,9 @@ public class PickingRayTracingShader extends BaseShaderImplementation<RayTracing
     @Override
     public ShaderBinary getShaderSource(Stage stage) {
         switch (stage) {
-            case FRAGMENT:
-                VulkanMeshShaderBinary spirv = new VulkanMeshShaderBinary();
+            case RAYGEN:
+            case ANYHIT:
+                VulkanShaderBinary spirv = new VulkanShaderBinary();
                 return internalGetShaderSource(stage, getShaderInfo(), spirv);
             default:
                 throw new IllegalArgumentException(ErrorMessage.NOT_IMPLEMENTED.message + stage);
@@ -87,8 +89,7 @@ public class PickingRayTracingShader extends BaseShaderImplementation<RayTracing
 
     @Override
     public RayTracingShaderGroupCreateInfoKHR[] createRayTracingShaderGroupCreateInfo() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new IllegalArgumentException();
     }
 
 }

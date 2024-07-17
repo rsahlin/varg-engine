@@ -33,8 +33,7 @@ public class LWJGLVulkanLimits extends DeviceLimits {
                 } else if (field.getType() == SampleCountFlagBit.class) {
                     field.set(this, SampleCountFlagBit.get((Integer) read));
                 } else if (field.getType() == SampleCountFlagBit[].class) {
-                    field.set(this, BitFlags.getBitFlags((int) read, SampleCountFlagBit.values())
-                            .toArray(new SampleCountFlagBit[0]));
+                    field.set(this, BitFlags.getBitFlags((int) read, SampleCountFlagBit.values()).toArray(new SampleCountFlagBit[0]));
                 } else if (field.getType() == int.class || (field.getType() == Integer.class)) {
                     // Make sure value is not -1
                     int val = (Integer) read;
@@ -45,8 +44,7 @@ public class LWJGLVulkanLimits extends DeviceLimits {
                 } else {
                     field.set(this, read);
                 }
-            } catch (NoSuchFieldException | NoSuchMethodException | SecurityException | IllegalAccessException
-                    | IllegalArgumentException | InvocationTargetException e) {
+            } catch (NoSuchFieldException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 Logger.e(getClass(), e.toString());
             }
         }

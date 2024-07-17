@@ -23,7 +23,7 @@ public class BindBuffer {
     private final MemoryBuffer buffer;
     private final ByteBuffer backingByteBuffer;
     private final FloatBuffer backingFloatBuffer;
-    private final int backingBufferByteCapacity;
+    private final int backingBufferBytesRemaining;
     private final int backingBufferByteOffset;
     /**
      * Holds dynamic offsets
@@ -57,22 +57,38 @@ public class BindBuffer {
         copiedToDevice();
     }
 
+    /**
+     * Creates a bindbuffer for a device handle - used for instance when updating raytracing descriptorset for toplevel as.
+     * 
+     * @param handles Buffer with handles, positioned where handles are located. backing buffer capacity will be set to remaining bytes.
+     */
+    public BindBuffer(ByteBuffer handles) {
+        if (handles == null) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null");
+        }
+        this.dynamicSize = 0;
+        this.dynamicOffsets = null;
+        this.backingFloatBuffer = null;
+        this.buffer = null;
+        this.backingByteBuffer = handles;
+        this.backingBufferBytesRemaining = handles.remaining();
+        this.backingBufferByteOffset = handles.position();
+    }
+
     public BindBuffer(MemoryBuffer buffer, ByteBuffer backingBuffer, int dynamicOffsetCount) {
         if (buffer == null || backingBuffer == null) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null");
         }
         this.buffer = buffer;
-        // backingByteBuffer = backingBuffer;
-        // Make sure bytebuffer size matches that of the memorybuffer (NOT the memory size)
-        backingBufferByteOffset = backingBuffer.position();
-        backingBufferByteCapacity = (int) buffer.size;
-        backingBuffer.limit(backingBuffer.position() + backingBufferByteCapacity);
+        backingBufferByteOffset = 0; // Buffer is sliced so offset is zero
+        backingBufferBytesRemaining = (int) buffer.size;
+        backingBuffer.limit(backingBuffer.position() + backingBufferBytesRemaining);
         backingByteBuffer = backingBuffer.slice().order(backingBuffer.order());
         // Make sure bytebuffer size matches that of the memorybuffer (NOT the memory size)
-        if (backingBuffer.remaining() < backingBufferByteCapacity) {
+        if (backingBuffer.remaining() < backingBufferBytesRemaining) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
                     + "Backing byte buffer is too small, remaining: " + backingBuffer.remaining() + ", but needs "
-                    + backingBufferByteCapacity);
+                    + backingBufferBytesRemaining);
         }
 
         backingFloatBuffer = backingBuffer != null ? backingBuffer.asFloatBuffer() : null;
@@ -104,8 +120,9 @@ public class BindBuffer {
      * @return
      */
     public ByteBuffer getBackingBuffer() {
-        backingByteBuffer.position(0);
-        return backingByteBuffer.limit((int) buffer.size);
+        backingByteBuffer.limit(backingBufferBytesRemaining + backingBufferByteOffset);
+        backingByteBuffer.position(backingBufferByteOffset);
+        return backingByteBuffer;
     }
 
     /**
@@ -136,6 +153,22 @@ public class BindBuffer {
             backingFloatBuffer.put(floats);
             floatPosition += floats.length;
         }
+        return backingFloatBuffer.position();
+    }
+
+    /**
+     * 
+     * @param floatPosition in floats where the data is stored
+     * @param count Number of floats to store.
+     * @param floatData
+     * @return
+     */
+    int storeFloatData(int floatPosition, int count, float[] floatData) {
+        if (getDynamicSize() != 0) {
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Buffer uses dynamic offsets");
+        }
+        backingFloatBuffer.position(floatPosition);
+        backingFloatBuffer.put(floatData, 0, count);
         return backingFloatBuffer.position();
     }
 

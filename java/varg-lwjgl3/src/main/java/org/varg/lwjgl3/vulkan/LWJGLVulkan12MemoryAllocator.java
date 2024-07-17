@@ -12,8 +12,6 @@ import java.util.Set;
 import org.eclipse.jdt.annotation.NonNull;
 import org.gltfio.data.VertexBuffer;
 import org.gltfio.gltf2.JSONBuffer;
-import org.gltfio.gltf2.JSONBufferView;
-import org.gltfio.gltf2.JSONBufferView.Target;
 import org.gltfio.lib.BitFlags;
 import org.gltfio.lib.Buffers;
 import org.gltfio.lib.Constants;
@@ -57,7 +55,6 @@ import org.varg.vulkan.memory.ImageMemory;
 import org.varg.vulkan.memory.Memory;
 import org.varg.vulkan.memory.MemoryBuffer;
 import org.varg.vulkan.memory.VertexMemory;
-import org.varg.vulkan.memory.VertexMemory.Mode;
 import org.varg.vulkan.structs.DeviceLimits;
 import org.varg.vulkan.structs.FormatProperties;
 import org.varg.vulkan.structs.PhysicalDeviceMemoryProperties;
@@ -132,10 +129,10 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
         MemoryBuffer stagingBuf = createBuffer(sizeInBytes, usageFlags);
         Memory staging = allocateMemory(stagingBuf.size, BitFlags.getFlagsValue(
                 MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+                MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT),
+                0, 0);
         bindBufferMemory(stagingBuf, staging, 0L);
-        Logger.d(getClass(), "Allocated staging buffer with size: " + staging.size + ", usageflags " + BitFlags.toString(usageFlags, BufferUsageFlagBit.values()) + ", in " + (System.currentTimeMillis() - start)
-                + " millis");
+        Logger.d(getClass(), "Allocated staging buffer with size: " + staging.size + ", usageflags " + BitFlags.toString(usageFlags, BufferUsageFlagBit.values()) + ", in " + (System.currentTimeMillis() - start) + " millis");
         return stagingBuf;
     }
 
@@ -161,14 +158,10 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "Buffer already bound: " + ptr);
         }
         if (memoryOffset % buffer.alignment != 0) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Memory offset does not match alignment: " + memoryOffset + ", " + buffer.alignment + " ("
-                    + memoryOffset % buffer.alignment + ")");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Memory offset does not match alignment: " + memoryOffset + ", " + buffer.alignment + " (" + memoryOffset % buffer.alignment + ")");
         }
         if ((buffer.usage & Vulkan10.BufferUsageFlagBit.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT.value) != 0 && (memory.allocateFlags & Vulkan12.MemoryAllocateFlagBits.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.value) == 0) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Buffer created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,"
-                    + "memory must be allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Buffer created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT," + "memory must be allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT");
         }
 
         VkBindBufferMemoryInfo.Buffer bindInfo = VkBindBufferMemoryInfo.calloc(1)
@@ -180,8 +173,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
         int result = VK12.vkBindBufferMemory2(deviceInstance, bindInfo);
         VulkanBackend.assertResult(result);
         buffer.bindMemory(memory, memoryOffset);
-        Logger.d(getClass(),
-                "Bound buffer to memory, size " + buffer.size + "(" + buffer.allocationSize + ") at offset: " + memoryOffset + ", usageflags " + BitFlags.toString(buffer.usage, BufferUsageFlagBit.values()));
+        Logger.d(getClass(), "Bound buffer to memory, size " + buffer.size + "(" + buffer.allocationSize + ") at offset: " + memoryOffset + ", usageflags " + BitFlags.toString(buffer.usage, BufferUsageFlagBit.values()));
         boundBuffers.put(memory.pointer + memoryOffset, buffer);
     }
 
@@ -250,7 +242,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
                         + ", depth: " + createInfo.extent.depth);
         int memoryTypeIndex = deviceMemoryProperties.getMemoryTypeIndex(BitFlags.getFlagsValue(memoryFlags));
         MemoryType mt = deviceMemoryProperties.getMemoryType(memoryTypeIndex);
-        Memory memory = allocateMemory(memRequirements.size(), mt.flags);
+        Memory memory = allocateMemory(memRequirements.size(), mt.flags, 0, 0);
         ImageMemory image = new ImageMemory(createInfo.extent.width, createInfo.extent.height, createInfo.format,
                 0, memRequirements.size(), img, memory);
         bindImage(image);
@@ -670,11 +662,6 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
     }
 
     @Override
-    public Memory allocateMemory(long sizeInBytes, int memoryProperties) {
-        return allocateMemory(sizeInBytes, memoryProperties, 0, 0);
-    }
-
-    @Override
     public Memory allocateMemory(long sizeInBytes, int memoryProperties, int allocateFlags, int deviceMask) {
         long start = System.currentTimeMillis();
         VkMemoryAllocateFlagsInfo flagsInfo = null;
@@ -732,8 +719,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
         VkMemoryRequirements memoryRequirements = VkMemoryRequirements.calloc();
         VK12.vkGetBufferMemoryRequirements(deviceInstance, bufferPointer, memoryRequirements);
         long allocateSize = memoryRequirements.size();
-        MemoryBuffer result = new MemoryBuffer(bufferPointer, size, memoryRequirements.alignment(), allocateSize,
-                usage);
+        MemoryBuffer result = new MemoryBuffer(bufferPointer, size, memoryRequirements.alignment(), allocateSize, usage);
         Logger.d(getClass(), "Created memorybuffer " + result);
         bufferCreateInfo.free();
         return result;
@@ -801,12 +787,10 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
         buffer.mark();
         int size = buffer.remaining();
         if (size > Queue.UPDATE_BUFFER_MAX_BYTES) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Buffer too large for update: "
-                    + size);
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Buffer too large for update: " + size);
         }
         if (size % DeviceMemory.MIN_BUFFER_DATASIZE != 0) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message
-                    + "Size must be multiple of " + DeviceMemory.MIN_BUFFER_DATASIZE);
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Size must be multiple of " + DeviceMemory.MIN_BUFFER_DATASIZE);
         }
         queue.cmdUpdateBuffer(buffer, memory, destOffset);
         queue.cmdBufferMemoryBarrier2(PipelineStateFlagBits2.VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT.value,
@@ -831,25 +815,7 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
                         copyToDeviceMemory(byteBuffer, deviceBuffers[i], 0, queue);
                         queue.queueBegin();
                     }
-                }
-            }
-        }
-    }
-
-    @Override
-    public void updateBuffers(MemoryBuffer deviceBuffer, Queue queue, ByteBuffer... sourceBuffers) {
-        if (sourceBuffers != null) {
-            int offset = 0;
-            for (int i = 0; i < sourceBuffers.length; i++) {
-                if (sourceBuffers[i] != null) {
-                    ByteBuffer byteBuffer = sourceBuffers[i];
-                    if (byteBuffer.remaining() <= Queue.UPDATE_BUFFER_MAX_BYTES) {
-                        offset += updateBuffer(byteBuffer, deviceBuffer, offset, queue);
-                    } else {
-                        // When buffer is updated by queue the bytesize must be aligned to 4.
-                        offset += copyToDeviceMemory(byteBuffer, deviceBuffer, offset, queue);
-                        queue.queueBegin();
-                    }
+                    deviceBuffers[i].setState(BufferState.copiedToDevice);
                 }
             }
         }
@@ -969,16 +935,14 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
             result[0] = createBuffer(buffer.getByteLength(), bufferUsage);
             long size = result[index].allocationSize + result[index].alignment - (result[index].allocationSize
                     % result[index].alignment);
-            Memory vertexMemory = allocateMemory(size,
-                    BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+            Memory vertexMemory = allocateMemory(size, BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), 0, 0);
             bindBufferMemory(vertexMemory, result[index]);
         }
         return result;
     }
 
     @Override
-    public VertexMemory allocateVertexMemory(int indexUsage, VertexBuffer[] indexBuffers, int vertexUsage,
-            VertexBuffer[] vertexBuffers) {
+    public VertexMemory allocateVertexMemory(int indexUsage, VertexBuffer[] indexBuffers, int vertexUsage, VertexBuffer[] vertexBuffers) {
         MemoryBuffer[] indexArray = internalAllocate(indexUsage, indexBuffers);
         MemoryBuffer[] attributeArray = internalAllocate(vertexUsage, vertexBuffers);
         return new VertexMemory(indexArray, indexBuffers, attributeArray, vertexBuffers);
@@ -992,83 +956,17 @@ public class LWJGLVulkan12MemoryAllocator implements DeviceMemory {
                 VertexBuffer buffer = buffers[index];
                 if (buffer != null) {
                     MemoryBuffer memBuff = createBuffer(buffer.sizeInBytes, usage);
-                    Memory vertexMemory = allocateMemory(memBuff.allocationSize,
-                            BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+                    int memoryFlags = 0;
+                    if ((usage & Vulkan10.BufferUsageFlagBit.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT.value) != 0) {
+                        memoryFlags |= BitFlags.getFlagsValue(Vulkan12.MemoryAllocateFlagBits.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+                    }
+                    Memory vertexMemory = allocateMemory(memBuff.allocationSize, BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), memoryFlags, 0);
                     bindBufferMemory(memBuff, vertexMemory, 0);
                     result[index] = memBuff;
                 }
             }
         }
         return result;
-    }
-
-    @Override
-    public VertexMemory allocateVertexMemory(int bufferUsage, JSONBuffer[] indexBuffers,
-            JSONBuffer[] attributeBuffers) {
-        MemoryBuffer[] attributeArray = new MemoryBuffer[attributeBuffers.length];
-        MemoryBuffer[] indexArray = new MemoryBuffer[indexBuffers.length];
-        long totalSize = 0;
-        for (int index = 0; index < attributeBuffers.length; index++) {
-            JSONBuffer buffer = attributeBuffers[index];
-            if (buffer != null) {
-                MemoryBuffer memBuff = createBuffer(buffer.getByteLength(), bufferUsage);
-                totalSize += memBuff.allocationSize + memBuff.alignment - (memBuff.allocationSize % memBuff.alignment);
-                attributeArray[index] = memBuff;
-            }
-        }
-        for (int index = 0; index < indexArray.length; index++) {
-            JSONBuffer buffer = indexBuffers[index];
-            if (buffer != null) {
-                MemoryBuffer memBuff = createBuffer(buffer.getByteLength(), bufferUsage
-                        | BufferUsageFlagBit.VK_BUFFER_USAGE_INDEX_BUFFER_BIT.value);
-                totalSize += memBuff.allocationSize + memBuff.alignment - (memBuff.allocationSize % memBuff.alignment);
-                indexArray[index] = memBuff;
-            }
-        }
-        Memory vertexMemory = allocateMemory(totalSize,
-                BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-        long offset = bindBufferMemory(vertexMemory, attributeArray);
-        bindBufferMemory(vertexMemory, offset, indexArray);
-        return new VertexMemory(indexArray, attributeArray, indexBuffers, attributeBuffers);
-
-    }
-
-    private VertexMemory allocateVertexMemory(int bufferUsage, JSONBufferView... bufferViews) {
-        if (bufferViews == null) {
-            return null;
-        }
-        MemoryBuffer[] result = new MemoryBuffer[bufferViews.length];
-        long totalSize = 0;
-        int index = 0;
-        for (JSONBufferView bufferView : bufferViews) {
-            Target target = bufferView.getTarget();
-            if (target != null) {
-                if (target == Target.ELEMENT_ARRAY_BUFFER) {
-                    bufferUsage |= BufferUsageFlagBit.VK_BUFFER_USAGE_INDEX_BUFFER_BIT.value;
-                }
-                result[index] = createBuffer(bufferView.getByteLength(), bufferUsage);
-                totalSize += result[index].allocationSize + result[index].alignment - (result[index].allocationSize
-                        % result[index].alignment);
-            }
-            index++;
-        }
-        Memory vertexMemory = allocateMemory(totalSize,
-                BitFlags.getFlagsValue(MemoryPropertyFlagBit.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-        bindBufferMemory(vertexMemory, result);
-        return new VertexMemory(result, bufferViews);
-    }
-
-    @Override
-    public VertexMemory allocateVertexMemory(Mode mode, int bufferUsage, JSONBufferView... bufferViews) {
-        if (bufferViews == null) {
-            return null;
-        }
-        switch (mode) {
-            case BUFFERVIEWS:
-                return allocateVertexMemory(bufferUsage, bufferViews);
-            default:
-                throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + ", mode");
-        }
     }
 
     @Override

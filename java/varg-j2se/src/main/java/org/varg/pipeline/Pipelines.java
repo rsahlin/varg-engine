@@ -31,6 +31,7 @@ import org.varg.vulkan.Vulkan10.ShaderStageFlagBit;
 import org.varg.vulkan.pipeline.ComputePipeline;
 import org.varg.vulkan.pipeline.GraphicsPipeline;
 import org.varg.vulkan.pipeline.PipelineShaderStageCreateInfo.SpecializationInfo;
+import org.varg.vulkan.pipeline.RayTracingPipeline;
 
 /**
  * Handles fetching, loading and destruction of pipelines that can be used to render glTF models.
@@ -95,6 +96,9 @@ public interface Pipelines<A extends RenderableScene> {
 
     }
 
+    /**
+     * TODO - look into usage of this type - it's only used as a sorting mechanism when uploading/binding
+     */
     enum SetType {
         UNIFORM_TYPE(),
         TEXTURE_TYPE(),
@@ -184,8 +188,7 @@ public interface Pipelines<A extends RenderableScene> {
 
     /**
      * Creates the mesh pipeline for the shader, this will load and compile pipelines as needed for
-     * rendering the shader.
-     * call {@link #getPipeline(Subtype)} to get the pipeline
+     * rendering the shader. call {@link #getComputePipeline(Subtype)} to get the pipeline
      * 
      * @param shaderInfo
      * @return The created mesh shader
@@ -231,7 +234,7 @@ public interface Pipelines<A extends RenderableScene> {
      * @param pipelineHash
      * @return
      */
-    GraphicsPipeline getPipeline(int pipelineHash);
+    GraphicsPipeline getGraphicsPipeline(int pipelineHash);
 
     /**
      * Returns the graphics pipeline for the shader type
@@ -239,7 +242,7 @@ public interface Pipelines<A extends RenderableScene> {
      * @param shaderType
      * @return
      */
-    GraphicsPipeline getPipeline(GraphicsShader.GraphicsSubtype shaderType);
+    GraphicsPipeline getGraphicsPipeline(GraphicsShader.GraphicsSubtype shaderType);
 
     /**
      * Returns the compute pipeline for the shader type
@@ -247,7 +250,15 @@ public interface Pipelines<A extends RenderableScene> {
      * @param shaderType
      * @return
      */
-    ComputePipeline getPipeline(Shader.Subtype shaderType);
+    ComputePipeline getComputePipeline(Shader.Subtype shaderType);
+
+    /**
+     * Returns the raytracingshader
+     * 
+     * @param rayShader
+     * @return
+     */
+    RayTracingPipeline getRayTracingPipeline(RayTracingShader rayShader);
 
     /**
      * Update the descriptorsets

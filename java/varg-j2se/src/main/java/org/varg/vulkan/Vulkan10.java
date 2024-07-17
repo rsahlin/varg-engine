@@ -180,14 +180,42 @@ public interface Vulkan10 {
         VK_INDEX_TYPE_UINT32(1),
         VK_INDEX_TYPE_NONE_KHR(1000165000),
         VK_INDEX_TYPE_UINT8_EXT(0x3B9ED528),
-        VK_INDEX_TYPE_NONE_NV(VK_INDEX_TYPE_NONE_KHR.value),
-        VK_INDEX_TYPE_MAX_ENUM(0x7FFFFFFF);
+        VK_INDEX_TYPE_NONE_NV(VK_INDEX_TYPE_NONE_KHR.value);
 
         public final int value;
 
         IndexType(int value) {
             this.value = value;
         }
+
+        public static IndexType get(org.gltfio.gltf2.stream.PrimitiveStream.IndexType streamType) {
+            switch (streamType) {
+                case BYTE:
+                    return VK_INDEX_TYPE_UINT8_EXT;
+                case SHORT:
+                    return VK_INDEX_TYPE_UINT16;
+                case INT:
+                    return VK_INDEX_TYPE_UINT32;
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
+
+        public int sizeInBytes() {
+            switch (this) {
+                case VK_INDEX_TYPE_UINT8_EXT:
+                    return 1;
+                case VK_INDEX_TYPE_UINT16:
+                    return 2;
+                case VK_INDEX_TYPE_UINT32:
+                    return 4;
+                case VK_INDEX_TYPE_NONE_KHR:
+                    return 0;
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
+
     }
 
     enum AttachmentDescriptionFlagBit implements BitFlag {
@@ -854,14 +882,47 @@ public interface Vulkan10 {
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT(0x00000040),
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT(0x00000080),
         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT(0x00000100),
+
+        // Provided by VK_VERSION_1_2
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT(0x00020000),
+        // Provided by VK_KHR_video_decode_queue
+        VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR(0x00002000),
+        // Provided by VK_KHR_video_decode_queue
+        VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR(0x00004000),
+        // Provided by VK_EXT_transform_feedback
         VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT(0x00000800),
+        // Provided by VK_EXT_transform_feedback
         VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT(0x00001000),
+        // Provided by VK_EXT_conditional_rendering
         VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT(0x00000200),
-        VK_BUFFER_USAGE_RAY_TRACING_BIT_NV(0x00000400),
+        // Provided by VK_AMDX_shader_enqueue
+        VK_BUFFER_USAGE_EXECUTION_GRAPH_SCRATCH_BIT_AMDX(0x02000000),
+        // Provided by VK_KHR_acceleration_structure
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR(0x00080000),
+        // Provided by VK_KHR_acceleration_structure
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR(0x00100000),
+        // Provided by VK_KHR_ray_tracing_pipeline
+        VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR(0x00000400),
+        // Provided by VK_KHR_video_encode_queue
+        VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR(0x00008000),
+        // Provided by VK_KHR_video_encode_queue
+        VK_BUFFER_USAGE_VIDEO_ENCODE_SRC_BIT_KHR(0x00010000),
+        // Provided by VK_EXT_descriptor_buffer
+        VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT(0x00200000),
+        // Provided by VK_EXT_descriptor_buffer
+        VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT(0x00400000),
+        // Provided by VK_EXT_descriptor_buffer
+        VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT(0x04000000),
+        // Provided by VK_EXT_opacity_micromap
+        VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT(0x00800000),
+        // Provided by VK_EXT_opacity_micromap
+        VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT(0x01000000),
+        // Provided by VK_NV_ray_tracing
+        VK_BUFFER_USAGE_RAY_TRACING_BIT_NV(VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR.value),
+        // Provided by VK_EXT_buffer_device_address
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT(VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT.value),
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR(VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT.value),
-        VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM(0x7FFFFFFF);
+        // Provided by VK_KHR_buffer_device_address
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR(VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT.value);
 
         public final int value;
 
@@ -982,6 +1043,17 @@ public interface Vulkan10 {
                             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + flag);
                         }
                         bind = PipelineBindPoint.VK_PIPELINE_BIND_POINT_COMPUTE;
+                        break;
+                    case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+                    case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+                    case VK_SHADER_STAGE_MISS_BIT_KHR:
+                    case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+                    case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+                    case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+                        if (bind != null && bind != PipelineBindPoint.VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+                            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + flag);
+                        }
+                        bind = PipelineBindPoint.VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
                         break;
                     default:
                         throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + flag);
@@ -1188,8 +1260,22 @@ public interface Vulkan10 {
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC(8),
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC(9),
         VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT(10),
-        VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT(1000138000),
+        // Provided by VK_VERSION_1_3
+        VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK(1000138000),
+        // Provided by VK_KHR_acceleration_structure
+        VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR(1000150000),
+        // Provided by VK_NV_ray_tracing
         VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV(1000165000),
+        // Provided by VK_QCOM_image_processing
+        VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM(1000440000),
+        // Provided by VK_QCOM_image_processing
+        VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM(1000440001),
+        // Provided by VK_EXT_mutable_descriptor_type
+        VK_DESCRIPTOR_TYPE_MUTABLE_EXT(1000351000),
+        // Provided by VK_EXT_inline_uniform_block
+        VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.value),
+        // Provided by VK_VALVE_mutable_descriptor_type
+        VK_DESCRIPTOR_TYPE_MUTABLE_VALVE(VK_DESCRIPTOR_TYPE_MUTABLE_EXT.value),
         VK_DESCRIPTOR_TYPE_MAX_ENUM(0x7FFFFFFF);
 
         public final int value;
@@ -2036,7 +2122,9 @@ public interface Vulkan10 {
     enum PipelineBindPoint {
         VK_PIPELINE_BIND_POINT_GRAPHICS(0),
         VK_PIPELINE_BIND_POINT_COMPUTE(1),
-        VK_PIPELINE_BIND_POINT_RAY_TRACING_NV(1000165000),
+        // Provided by VK_KHR_ray_tracing_pipeline
+        VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR(1000165000),
+        VK_PIPELINE_BIND_POINT_RAY_TRACING_NV(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR.value),
         VK_PIPELINE_BIND_POINT_MAX_ENUM(0x7FFFFFFF);
 
         public final int value;

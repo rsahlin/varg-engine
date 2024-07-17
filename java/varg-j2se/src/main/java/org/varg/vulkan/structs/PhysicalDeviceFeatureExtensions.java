@@ -5,6 +5,7 @@ import org.varg.vulkan.extensions.EXTRobustness2.PhysicalDeviceRobustness2Featur
 import org.varg.vulkan.extensions.PhysicalDeviceAccelerationStructureFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceFragmentShadingRateFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
+import org.varg.vulkan.extensions.PhysicalDeviceRayTracingPipelineFeaturesKHR;
 
 public class PhysicalDeviceFeatureExtensions extends PlatformStruct {
 
@@ -15,6 +16,7 @@ public class PhysicalDeviceFeatureExtensions extends PlatformStruct {
     protected PhysicalDeviceRobustness2FeaturesEXT robustness2Features;
     protected PhysicalDeviceFragmentShadingRateFeaturesKHR fragmentShadingRateFeatures;
     protected PhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures;
+    protected PhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingFeatures;
 
     /**
      * Additional fields from extensions
@@ -28,6 +30,10 @@ public class PhysicalDeviceFeatureExtensions extends PlatformStruct {
 
     public final boolean hasConditionalRendering() {
         return conditionalRendering;
+    }
+
+    public final PhysicalDeviceRayTracingPipelineFeaturesKHR getPhysicalDeviceRayTracingPipelineFeaturesKHR() {
+        return rayTracingFeatures;
     }
 
     public final PhysicalDeviceFragmentShadingRateFeaturesKHR getPhysicalDeviceFragmentShadingRateFeaturesKHR() {

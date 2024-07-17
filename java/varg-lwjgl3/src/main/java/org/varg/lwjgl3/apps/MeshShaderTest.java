@@ -174,8 +174,7 @@ public class MeshShaderTest extends VARGViewer implements WindowListener, Create
 
     @Override
     protected void drawFrame() {
-        DescriptorBuffers<?> buf =
-                getRenderer().prepareFrameData(meshShader, sceneControl.getCurrentScene().getSceneTransform());
+        DescriptorBuffers<?> buf = getRenderer().prepareFrameData(meshShader, sceneControl.getCurrentScene().getSceneTransform());
         float time = internalDrawFrame(sceneControl.getCurrentScene(), meshShader);
         sprite.processAndStoreData(time, sceneControl.getCurrentScene().getSceneTransform(), buf);
     }
@@ -189,8 +188,7 @@ public class MeshShaderTest extends VARGViewer implements WindowListener, Create
     @Override
     public Features getRequestedDeviceFeatures(Features availableFeatures) {
         RequestedFeatures requestedFeatures = getDefaultRequestedFeatures(availableFeatures);
-        requestedFeatures.addEXTMeshShader(new PhysicalDeviceMeshShaderFeaturesEXT(true, true, false, false,
-                false));
+        requestedFeatures.addEXTMeshShader(new PhysicalDeviceMeshShaderFeaturesEXT(true, true, false, false, false));
         return requestedFeatures.getFeatures();
     }
 

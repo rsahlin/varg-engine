@@ -17,8 +17,8 @@ import org.gltfio.lib.MatrixUtils;
  */
 public class MVPMatrices {
 
-    public interface ConcatModelCallback {
-        void concatModelMatrix(JSONNode<JSONMesh<JSONPrimitive>> node, float[] matrix);
+    public interface StoreModelMatrixCallback {
+        void storeMatrix(JSONNode<JSONMesh<JSONPrimitive>> node, float[] matrix);
     }
 
     /**
@@ -190,19 +190,19 @@ public class MVPMatrices {
      * 
      * @param nodes
      */
-    public void concatModelMatrices(JSONNode<JSONMesh<JSONPrimitive>>[] nodes, ConcatModelCallback callback) {
+    public void concatModelMatrices(JSONNode<JSONMesh<JSONPrimitive>>[] nodes, StoreModelMatrixCallback callback) {
         for (int i = 0; i < nodes.length; i++) {
             concatModelMatrix(nodes[i], callback);
         }
 
     }
 
-    private void concatModelMatrix(JSONNode node, ConcatModelCallback callback) {
+    private void concatModelMatrix(JSONNode node, StoreModelMatrixCallback callback) {
         if (node != null && (node.getChildCount() > 0 || node.getMeshIndex() >= 0)) {
             push(Matrices.MODEL);
             concatModelMatrix(node.getTransform().updateMatrix());
             if (callback != null) {
-                callback.concatModelMatrix(node, matrices[Matrices.MODEL.index]);
+                callback.storeMatrix(node, matrices[Matrices.MODEL.index]);
             }
             concatModelMatrices(node.getChildNodes(), callback);
             pop(Matrices.MODEL);

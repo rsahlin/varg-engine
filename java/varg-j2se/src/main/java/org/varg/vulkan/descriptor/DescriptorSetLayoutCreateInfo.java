@@ -10,8 +10,7 @@ public class DescriptorSetLayoutCreateInfo {
     final Vulkan10.DescriptorSetLayoutCreateFlagBit[] flags;
     final DescriptorSetLayoutBinding descriptorSetlayout;
 
-    public DescriptorSetLayoutCreateInfo(Vulkan10.DescriptorSetLayoutCreateFlagBit[] flags,
-            DescriptorSetLayoutBinding descriptorSetlayout) {
+    public DescriptorSetLayoutCreateInfo(Vulkan10.DescriptorSetLayoutCreateFlagBit[] flags, DescriptorSetLayoutBinding descriptorSetlayout) {
         if (descriptorSetlayout == null) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null");
         }

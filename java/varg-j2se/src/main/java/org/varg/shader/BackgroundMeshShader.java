@@ -132,7 +132,7 @@ public class BackgroundMeshShader extends BaseShaderImplementation<MeshShaderCre
         switch (stage) {
             case MESH:
             case FRAGMENT:
-                VulkanMeshShaderBinary spirv = new VulkanMeshShaderBinary();
+                VulkanShaderBinary spirv = new VulkanShaderBinary();
                 return internalGetShaderSource(stage, getShaderInfo(), spirv);
             default:
                 throw new IllegalArgumentException(ErrorMessage.NOT_IMPLEMENTED.message + stage);

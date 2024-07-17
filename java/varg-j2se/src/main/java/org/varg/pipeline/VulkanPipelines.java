@@ -49,6 +49,7 @@ import org.varg.vulkan.PrimitiveVertexInputState;
 import org.varg.vulkan.Queue;
 import org.varg.vulkan.Vulkan10.CompareOp;
 import org.varg.vulkan.Vulkan10.CullModeFlagBit;
+import org.varg.vulkan.Vulkan10.DescriptorType;
 import org.varg.vulkan.Vulkan10.FrontFace;
 import org.varg.vulkan.Vulkan10.PipelineBindPoint;
 import org.varg.vulkan.Vulkan10.SampleCountFlagBit;
@@ -56,13 +57,18 @@ import org.varg.vulkan.Vulkan10.ShaderStageFlagBit;
 import org.varg.vulkan.Vulkan12Backend;
 import org.varg.vulkan.VulkanBackend.BackendProperties;
 import org.varg.vulkan.VulkanRenderableScene;
+import org.varg.vulkan.descriptor.AccelerationStructureDescriptorInfo;
 import org.varg.vulkan.descriptor.DescriptorBufferInfo;
 import org.varg.vulkan.descriptor.DescriptorSet;
 import org.varg.vulkan.descriptor.DescriptorSetLayout;
 import org.varg.vulkan.descriptor.DescriptorSetLayoutBinding;
 import org.varg.vulkan.descriptor.DescriptorSetLayoutCreateInfo;
 import org.varg.vulkan.descriptor.Descriptors;
+import org.varg.vulkan.extensions.KHRAccelerationStructure.DeviceOrHostAddress;
 import org.varg.vulkan.extensions.KHRFragmentShadingRate.PipelineFragmentShadingRateStateCreateInfoKHR;
+import org.varg.vulkan.extensions.KHRRayTracingPipeline;
+import org.varg.vulkan.extensions.KHRRayTracingPipeline.RayTracingPipelineCreateInfoKHR;
+import org.varg.vulkan.extensions.KHRRayTracingPipeline.RayTracingShaderGroupCreateInfoKHR;
 import org.varg.vulkan.extensions.KHRSwapchain;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
 import org.varg.vulkan.memory.MemoryBuffer;
@@ -84,6 +90,7 @@ import org.varg.vulkan.pipeline.PipelineShaderStageCreateInfo.SpecializationInfo
 import org.varg.vulkan.pipeline.PipelineShaderStageCreateInfo.SpecializationMapEntry;
 import org.varg.vulkan.pipeline.PipelineVertexInputStateCreateInfo;
 import org.varg.vulkan.pipeline.PipelineViewportStateCreateInfo;
+import org.varg.vulkan.pipeline.RayTracingPipeline;
 import org.varg.vulkan.structs.Extent2D;
 import org.varg.vulkan.structs.PushConstantRange;
 import org.varg.vulkan.structs.Viewport;
@@ -102,6 +109,7 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     final HashMap<String, GraphicsPipeline> graphicsPipelineMap = new HashMap<>();
     final HashMap<Integer, GraphicsPipeline> pipelineByHash = new HashMap<Integer, GraphicsPipeline>();
     final HashMap<String, ComputePipeline> computePipelines = new HashMap<>();
+    final HashMap<String, RayTracingPipeline> rayPipelines = new HashMap<>();
     private HashMap<Subtype, PipelineShaderStageCreateInfo[]> shaderStageInfo =
             new HashMap<Subtype, PipelineShaderStageCreateInfo[]>();
     private final Vulkan12Backend<?> backend;
@@ -298,34 +306,39 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
         try {
             Subtype shaderType = shaderInfo.shaderType;
             DescriptorBuffers<?> buffers = renderer.getAssets().getStorageBuffers(shaderType);
-
             if (buffers != null) {
                 createDescriptorSetLayouts(buffers, shaderType.getTargets());
                 createDescriptorSets(shaderType.getTargets());
                 updateDescriptorSets(buffers, shaderType.getTargets());
             }
-
             RayTracingShader rayTracingShader = shaderInfo.getInstance();
             GLSLCompiler compiler = GLSLCompiler.getInstance(shaderInfo.version);
             compiler.clearMacros();
             shaderInfo.setMacros(compiler);
-            rayTracingShader.loadModules(renderer.getBackend(), rayTracingShader.getShaderInfo().shaderType
-                    .getDescriptorSetLayoutHash());
+            rayTracingShader.loadModules(renderer.getBackend(), rayTracingShader.getShaderInfo().shaderType.getDescriptorSetLayoutHash());
             PipelineShaderStageCreateInfo[] stageInfo = rayTracingShader.createShaderStageInfos(specializationInfo);
             this.shaderStageInfo.put(rayTracingShader.getShaderInfo().shaderType, stageInfo);
             PipelineLayout layout = getPipelineLayout(rayTracingShader.getShaderInfo().shaderType);
             if (layout == null) {
-                PipelineLayoutCreateInfo layoutInfo = new PipelineLayoutCreateInfo(descriptors.getDescriptorLayouts(
-                        shaderType.getTargets()), null);
+                PipelineLayoutCreateInfo layoutInfo = new PipelineLayoutCreateInfo(descriptors.getDescriptorLayouts(shaderType.getTargets()), null);
                 layout = renderer.getBackend().createPipelineLayout(layoutInfo);
                 putPipelineLayout(rayTracingShader.getShaderInfo(), layout);
             } else {
                 // Todo - how do we now that this is a compatible layout?
                 Logger.d(getClass(), "Using existing layout for hash: " + shaderType.getDescriptorSetLayoutHash());
             }
-            // return renderer.getBackend().createGraphicsPipeline(pipelineCreateInfo, renderer.getRenderPass(),
-            // meshShader);
-            return null;
+            RayTracingShaderGroupCreateInfoKHR[] groupInfo =
+                    new RayTracingShaderGroupCreateInfoKHR[] { new RayTracingShaderGroupCreateInfoKHR(KHRRayTracingPipeline.RayTracingShaderGroupTypeKHR.VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR, stageInfo) };
+            // PipelineCreateFlagBit[] flags = new PipelineCreateFlagBit[] { PipelineCreateFlagBit.VK_PIPELINE_CREATE_LIBRARY_BIT_KHR };
+            RayTracingPipelineCreateInfoKHR createInfo = new RayTracingPipelineCreateInfoKHR(null, stageInfo, groupInfo, 0, layout, 0, null);
+            KHRRayTracingPipeline<?> extension = backend.getKHRRayTracingPipeline();
+            ByteBuffer groupHandles = extension.createGroupHandleBuffer(groupInfo);
+            RayTracingPipeline rayPipeline = extension.createRayTracingPipeline(createInfo, rayTracingShader);
+            extension.getRayTracingShaderGroupHandlesKHR(rayPipeline, 0, 1, groupHandles);
+            DeviceOrHostAddress sbtMemory = extension.createSBT(renderer.getBufferFactory(), backend.getKHRAccelerationStructure(), rayPipeline, groupHandles);
+            renderer.getBufferFactory().updateBuffers(new ByteBuffer[] { rayPipeline.getSBTByteBuffer() }, new MemoryBuffer[] { sbtMemory.getMemoryBuffer() }, renderer.getQueue());
+            rayPipelines.put(shaderType.getName(), rayPipeline);
+            return rayTracingShader;
         } catch (IOException e) {
             throw new BackendException(e);
         }
@@ -411,8 +424,16 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
         for (DescriptorSetTarget target : targets) {
             BindBuffer buffer = buffers.getBuffer(target);
             if (buffer != null && !buffer.isDescriptorSetUpdated()) {
-                long range = buffer.getDynamicSize() > 0 ? buffer.getDynamicSize() : buffer.getBuffer().size;
-                bufferInfos.add(new DescriptorBufferInfo(buffer.getBuffer(), 0, range));
+                if (buffer.getBuffer() == null) {
+                    if (target.getDescriptorType() == DescriptorType.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+                        bufferInfos.add(new AccelerationStructureDescriptorInfo(buffer.getBackingBuffer().asLongBuffer()));
+                    } else {
+                        throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + target.getDescriptorType());
+                    }
+                } else {
+                    long range = buffer.getDynamicSize() > 0 ? buffer.getDynamicSize() : buffer.getBuffer().size;
+                    bufferInfos.add(new DescriptorBufferInfo(buffer.getBuffer(), 0, range));
+                }
                 descriptorSets.add(descriptors.getDescriptorSet(target));
                 buffer.setDescriptorsetUpdated(true);
             }
@@ -421,7 +442,7 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     }
 
     @Override
-    public GraphicsPipeline getPipeline(int pipelineHash) {
+    public GraphicsPipeline getGraphicsPipeline(int pipelineHash) {
         GraphicsPipeline pipeline = pipelineByHash.get(pipelineHash);
         if (pipeline == null) {
             Logger.d(getClass(),
@@ -432,7 +453,7 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     }
 
     @Override
-    public GraphicsPipeline getPipeline(GraphicsShader.GraphicsSubtype shaderType) {
+    public GraphicsPipeline getGraphicsPipeline(GraphicsShader.GraphicsSubtype shaderType) {
         GraphicsPipeline p = graphicsPipelineMap.get(shaderType.getName());
         if (p == null) {
             throw new IllegalArgumentException(ErrorMessage.INVALID_STATE.message + "No graphics pipeline for "
@@ -585,8 +606,13 @@ public class VulkanPipelines implements Pipelines<VulkanRenderableScene>, Intern
     }
 
     @Override
-    public ComputePipeline getPipeline(Shader.Subtype shaderType) {
+    public ComputePipeline getComputePipeline(Shader.Subtype shaderType) {
         return computePipelines.get(shaderType.getName());
+    }
+
+    @Override
+    public RayTracingPipeline getRayTracingPipeline(RayTracingShader rayShader) {
+        return rayPipelines.get(rayShader.getShaderInfo().shaderType.getName());
     }
 
 }

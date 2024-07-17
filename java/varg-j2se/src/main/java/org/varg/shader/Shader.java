@@ -89,12 +89,11 @@ public interface Shader<T extends ShaderCreateInfo> {
         COMPUTE("comp", "_comp"),
         MESH("mesh", "_mesh"),
         TASK("task", "_task"),
-        RAYGEN("raygen", "_raygen"),
-        ANYHIT("anyhit", "_anyhit"),
-        CLOSESTHIT("closesthit", "_closesthit"),
-        MISS("miss", "_miss"),
-        INTERSECTION("intersection", "_intersection"),
-        CALLABLE("callable", "_callable");
+        RAYGEN("rgen", "_rgen"),
+        ANYHIT("rahit", "_rahit"),
+        CLOSESTHIT("rchit", "_rchit"),
+        MISS("rmiss", "_rmiss"),
+        INTERSECTION("rint", "_rint");
 
         public final String stage;
         public final String name;

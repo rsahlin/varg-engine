@@ -15,8 +15,7 @@ public interface Vulkan12 extends Vulkan10 {
         // Provided by VK_KHR_buffer_device_address
         VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.value),
         // Provided by VK_KHR_buffer_device_address
-        VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR(
-                VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.value);
+        VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.value);
 
         public final int value;
 

@@ -306,22 +306,7 @@ public class LWJGLVulkan12Queue extends Queue {
         for (IndexType indexType : IndexType.values()) {
             int count = drawCalls.getIndexedInstanceCount(indexType);
             if (count > 0) {
-                switch (indexType) {
-                    case BYTE:
-                        cmdBindIndexBuffer(drawCalls.getIndexBufferPointer(indexType), 0,
-                                Vulkan10.IndexType.VK_INDEX_TYPE_UINT8_EXT);
-                        break;
-                    case SHORT:
-                        cmdBindIndexBuffer(drawCalls.getIndexBufferPointer(indexType), 0,
-                                Vulkan10.IndexType.VK_INDEX_TYPE_UINT16);
-                        break;
-                    case INT:
-                        cmdBindIndexBuffer(drawCalls.getIndexBufferPointer(indexType), 0,
-                                Vulkan10.IndexType.VK_INDEX_TYPE_UINT32);
-                        break;
-                    default:
-                        throw new IllegalArgumentException(indexType.name());
-                }
+                cmdBindIndexBuffer(drawCalls.getIndexBufferPointer(indexType), 0, Vulkan10.IndexType.get(indexType));
                 VK12.vkCmdDrawIndexedIndirect(cmd, drawCalls.getIndirectMemory().getPointer(),
                         drawCalls.getIndirectIndexedMemoryOffset(indexType), count,
                         drawCalls.getIndexedCommandSize() * Integer.BYTES);

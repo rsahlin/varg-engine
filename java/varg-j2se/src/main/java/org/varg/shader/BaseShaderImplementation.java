@@ -230,6 +230,21 @@ public abstract class BaseShaderImplementation<T extends ShaderCreateInfo> {
                 case COMPUTE:
                     stageFlag = ShaderStageFlagBit.VK_SHADER_STAGE_COMPUTE_BIT;
                     break;
+                case RAYGEN:
+                    stageFlag = ShaderStageFlagBit.VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+                    break;
+                case ANYHIT:
+                    stageFlag = ShaderStageFlagBit.VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+                    break;
+                case CLOSESTHIT:
+                    stageFlag = ShaderStageFlagBit.VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+                    break;
+                case MISS:
+                    stageFlag = ShaderStageFlagBit.VK_SHADER_STAGE_MISS_BIT_KHR;
+                    break;
+                case INTERSECTION:
+                    stageFlag = ShaderStageFlagBit.VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+                    break;
                 default:
                     throw new IllegalArgumentException(ErrorMessage.NOT_IMPLEMENTED.message);
             }

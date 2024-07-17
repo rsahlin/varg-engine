@@ -12,6 +12,7 @@ import org.varg.vulkan.Vulkan10.VulkanExtension;
 import org.varg.vulkan.extensions.PhysicalDeviceAccelerationStructureFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceFragmentShadingRateFeaturesKHR;
 import org.varg.vulkan.extensions.PhysicalDeviceMeshShaderFeaturesEXT;
+import org.varg.vulkan.extensions.PhysicalDeviceRayTracingPipelineFeaturesKHR;
 import org.varg.vulkan.structs.PhysicalDeviceFeatures.VulkanFeatures;
 import org.varg.vulkan.structs.PhysicalDeviceFeatures.VulkanPhysicalDeviceFeatures;
 import org.varg.vulkan.structs.PhysicalDeviceVulkan11Features.Vulkan11Features;
@@ -74,6 +75,16 @@ public class RequestedFeatures {
     public void addEXTMeshShader(PhysicalDeviceMeshShaderFeaturesEXT features) {
         addExtension(Extension.VK_EXT_mesh_shader);
         requestedFeatureExtensions.addEXTMeshShader(features);
+    }
+
+    /**
+     * Adds the VK_KHR_ray_tracing_pipeline extension with the features.
+     * 
+     * @param features
+     */
+    public void addKHRRayTracing(PhysicalDeviceRayTracingPipelineFeaturesKHR features) {
+        addExtension(Extension.VK_KHR_ray_tracing_pipeline);
+        requestedFeatureExtensions.addKHRRayTracing(features);
     }
 
     /**
@@ -197,8 +208,7 @@ public class RequestedFeatures {
      * @return
      */
     public Features getFeatures() {
-        return new Features(requestedFeatures, requestedFeatureExtensions, requestedExtensionList.toArray(
-                new ExtensionProperties[0]));
+        return new Features(requestedFeatures, requestedFeatureExtensions, requestedExtensionList.toArray(new ExtensionProperties[0]));
     }
 
 }

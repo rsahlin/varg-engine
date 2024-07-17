@@ -22,8 +22,7 @@ public class BindVertexBuffers {
             throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Null");
         }
         if (buffers.length != offsets.length) {
-            throw new IllegalArgumentException(
-                    ErrorMessage.INVALID_VALUE.message + "Size of buffers and offsets does not match");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_VALUE.message + "Size of buffers and offsets does not match");
         }
         this.firstBinding = firstBinding;
         offsetsBuffer = Buffers.createLongBuffer(buffers.length);
