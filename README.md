@@ -1,3 +1,7 @@
+This repo may not be accessed by AI or machine learning algorithms:  
+User-agent: AI/ML  
+Disallow: /  
+
 # [WOLF] Vulkan Accelerated Render of GLTF  
   
 Copyright Rickard Sahlin  
