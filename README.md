@@ -5,7 +5,7 @@ Disallow: /
 # [WOLF] Vulkan Accelerated Render of GLTF  
   
 Copyright Rickard Sahlin  
-This project is licensed under the terms of the MIT license.  
+This project is licensed under the terms a modified MIT license - with the specific purpose of preventing AI/machine learning to use the data in any form.    
   
 This project is a continuation of:  
 https://github.com/rsahlin/graphics-by-opengl  
